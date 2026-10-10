@@ -1,0 +1,324 @@
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useForm, Link, router } from '@inertiajs/vue3';
+import AppLayout from '@/layouts/AppLayout.vue';
+
+const props = defineProps<{
+    invitation: {
+        id: number;
+        title: string;
+        slug: string;
+    };
+    guests: Array<{
+        id: number;
+        name: string;
+        token: string;
+        phone_number: string | null;
+        max_attendees: number;
+        rsvp: {
+            attendance_status: string;
+            attendee_count: number;
+            message: string | null;
+            submitted_at: string;
+        } | null;
+    }>;
+    rsvps: Array<any>;
+    guestbooks: Array<{
+        id: number;
+        guest_name: string;
+        message: string;
+        moderation_status: string;
+        created_at: string;
+    }>;
+    stats: {
+        total_guests: number;
+        total_attending: number;
+        total_declined: number;
+        total_messages: number;
+    };
+    canAddMore: boolean;
+}>();
+
+const activeTab = ref<'guests' | 'guestbook'>('guests');
+
+const form = useForm({
+    name: '',
+    phone_number: '',
+    max_attendees: 2,
+});
+
+const submitGuest = () => {
+    form.post(`/api/invitations/${props.invitation.id}/guests`, {
+        onSuccess: () => form.reset(),
+    });
+};
+
+const deleteGuest = (id: number, name: string) => {
+    if (confirm(`Hapus tamu "${name}" dari daftar?`)) {
+        router.delete(`/api/invitations/${props.invitation.id}/guests/${id}`);
+    }
+};
+
+const copyGuestUrl = (name: string, token: string) => {
+    const url = `${window.location.origin}/i/${props.invitation.slug}?to=${encodeURIComponent(name)}&t=${token}`;
+    navigator.clipboard.writeText(url);
+    alert(`Link khusus untuk "${name}" berhasil disalin!`);
+};
+
+const sendWhatsApp = (guest: any) => {
+    const url = `${window.location.origin}/i/${props.invitation.slug}?to=${encodeURIComponent(guest.name)}&t=${guest.token}`;
+    const text = `Halo ${guest.name}, kami mengundang Anda untuk menghadiri acara kami: ${url}`;
+    const phone = guest.phone_number ? guest.phone_number.replace(/^0/, '62') : '';
+    window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`, '_blank');
+};
+
+const moderateMessage = (id: number, status: 'approved' | 'rejected') => {
+    router.patch(`/api/invitations/${props.invitation.id}/guestbook/${id}`, { status });
+};
+</script>
+
+<template>
+    <AppLayout>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+            <!-- Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-6 border-b border-stone-200">
+                <div>
+                    <Link :href="`/invitations/${invitation.id}/editor`" class="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 mb-1">
+                        ← Kembali ke Editor
+                    </Link>
+                    <h1 class="text-2xl font-serif font-bold text-stone-900">Manajemen Tamu & RSVP</h1>
+                    <p class="text-xs text-stone-500">{{ invitation.title }}</p>
+                </div>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 my-6">
+                <div class="p-4 bg-white rounded-2xl border border-stone-200">
+                    <div class="text-[10px] uppercase font-bold text-stone-400">Total Tamu Diundang</div>
+                    <div class="font-serif text-2xl font-bold text-stone-900 mt-1">{{ stats.total_guests }}</div>
+                </div>
+                <div class="p-4 bg-white rounded-2xl border border-stone-200">
+                    <div class="text-[10px] uppercase font-bold text-emerald-600">Konfirmasi Hadir</div>
+                    <div class="font-serif text-2xl font-bold text-emerald-700 mt-1">{{ stats.total_attending }} org</div>
+                </div>
+                <div class="p-4 bg-white rounded-2xl border border-stone-200">
+                    <div class="text-[10px] uppercase font-bold text-rose-500">Berhalangan</div>
+                    <div class="font-serif text-2xl font-bold text-rose-700 mt-1">{{ stats.total_declined }}</div>
+                </div>
+                <div class="p-4 bg-white rounded-2xl border border-stone-200">
+                    <div class="text-[10px] uppercase font-bold text-amber-600">Total Doa & Ucapan</div>
+                    <div class="font-serif text-2xl font-bold text-amber-700 mt-1">{{ stats.total_messages }}</div>
+                </div>
+            </div>
+
+            <!-- Navigation Tabs -->
+            <div class="flex border-b border-stone-200 text-sm font-semibold mb-6">
+                <button
+                    @click="activeTab = 'guests'"
+                    :class="['py-3 px-4 border-b-2', activeTab === 'guests' ? 'border-rose-500 text-rose-600' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                >
+                    Daftar Tamu Undangan ({{ guests.length }})
+                </button>
+                <button
+                    @click="activeTab = 'guestbook'"
+                    :class="['py-3 px-4 border-b-2', activeTab === 'guestbook' ? 'border-rose-500 text-rose-600' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                >
+                    Moderasi Ucapan Buku Tamu ({{ guestbooks.length }})
+                </button>
+            </div>
+
+            <!-- TAB 1: GUESTS -->
+            <div v-if="activeTab === 'guests'" class="grid lg:grid-cols-12 gap-8 items-start">
+                <!-- Add Guest Form -->
+                <div class="lg:col-span-4 bg-white p-5 rounded-2xl border border-stone-200 space-y-4">
+                    <h3 class="font-serif font-bold text-base text-stone-900">+ Tambah Tamu Baru</h3>
+
+                    <div v-if="!canAddMore" class="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+                        Batas kuota 50 tamu untuk paket gratis telah tercapai.
+                        <Link href="/pricing" class="font-bold underline ml-1">Upgrade ke Premium</Link> untuk tamu tanpa batas.
+                    </div>
+
+                    <form v-else @submit.prevent="submitGuest" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">Nama Tamu *</label>
+                            <input
+                                v-model="form.name"
+                                type="text"
+                                required
+                                class="w-full text-xs p-2.5 rounded-xl border border-stone-300 bg-stone-50 focus:bg-white"
+                                placeholder="Contoh: Budi Santoso & Keluarga"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">Nomor WhatsApp (Opsional)</label>
+                            <input
+                                v-model="form.phone_number"
+                                type="text"
+                                class="w-full text-xs p-2.5 rounded-xl border border-stone-300 bg-stone-50 focus:bg-white"
+                                placeholder="08123456789"
+                            />
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-stone-700 mb-1">Maksimal Pax / Kuota Hadir</label>
+                            <select v-model.number="form.max_attendees" class="w-full text-xs p-2.5 rounded-xl border border-stone-300 bg-stone-50">
+                                <option :value="1">1 Orang</option>
+                                <option :value="2">2 Orang</option>
+                                <option :value="3">3 Orang</option>
+                                <option :value="4">4 Orang</option>
+                                <option :value="5">5 Orang</option>
+                            </select>
+                        </div>
+
+                        <div v-if="form.errors.name" class="text-xs text-rose-600">
+                            {{ form.errors.name }}
+                        </div>
+
+                        <button
+                            type="submit"
+                            :disabled="form.processing"
+                            class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-medium text-xs rounded-xl shadow-sm transition-colors disabled:opacity-50"
+                        >
+                            {{ form.processing ? 'Menyimpan...' : 'Simpan Tamu' }}
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Guests Table -->
+                <div class="lg:col-span-8 bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-xs text-stone-600">
+                            <thead class="bg-stone-50 border-b border-stone-200 text-stone-500 font-semibold uppercase text-[10px]">
+                                <tr>
+                                    <th class="p-3.5">Nama Tamu</th>
+                                    <th class="p-3.5">Status RSVP</th>
+                                    <th class="p-3.5">Link & WhatsApp</th>
+                                    <th class="p-3.5 text-right">Aksi</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-stone-100">
+                                <tr v-for="g in guests" :key="g.id" class="hover:bg-stone-50/50">
+                                    <td class="p-3.5">
+                                        <div class="font-bold text-stone-900">{{ g.name }}</div>
+                                        <div class="text-[11px] text-stone-400">Kuota: {{ g.max_attendees }} org</div>
+                                    </td>
+                                    <td class="p-3.5">
+                                        <span
+                                            v-if="g.rsvp && g.rsvp.attendance_status === 'attending'"
+                                            class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800"
+                                        >
+                                            Hadir ({{ g.rsvp.attendee_count }} org)
+                                        </span>
+                                        <span
+                                            v-else-if="g.rsvp && g.rsvp.attendance_status === 'declined'"
+                                            class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800"
+                                        >
+                                            Berhalangan
+                                        </span>
+                                        <span
+                                            v-else
+                                            class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-stone-100 text-stone-500"
+                                        >
+                                            Belum Konfirmasi
+                                        </span>
+                                    </td>
+                                    <td class="p-3.5">
+                                        <div class="flex items-center gap-1.5">
+                                            <button
+                                                @click="copyGuestUrl(g.name, g.token)"
+                                                class="px-2 py-1 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded text-[11px] font-medium transition-colors"
+                                                title="Salin Link Personal"
+                                            >
+                                                📋 Salin Link
+                                            </button>
+                                            <button
+                                                @click="sendWhatsApp(g)"
+                                                class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded text-[11px] font-medium transition-colors"
+                                                title="Kirim Pesan WA"
+                                            >
+                                                💬 WA
+                                            </button>
+                                        </div>
+                                    </td>
+                                    <td class="p-3.5 text-right">
+                                        <button
+                                            @click="deleteGuest(g.id, g.name)"
+                                            class="text-stone-400 hover:text-rose-600 transition-colors"
+                                        >
+                                            ✕
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr v-if="guests.length === 0">
+                                    <td colspan="4" class="p-8 text-center text-stone-400">
+                                        Belum ada tamu yang ditambahkan. Gunakan form di sebelah kiri untuk menambah tamu pertama.
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: GUESTBOOK MODERATION -->
+            <div v-if="activeTab === 'guestbook'" class="bg-white rounded-2xl border border-stone-200 p-6 space-y-4">
+                <h3 class="font-serif font-bold text-base text-stone-900">Moderasi Ucapan & Doa Restu</h3>
+
+                <div class="space-y-3">
+                    <div
+                        v-for="entry in guestbooks"
+                        :key="entry.id"
+                        class="p-4 rounded-xl border border-stone-200 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+                    >
+                        <div>
+                            <div class="flex items-center gap-2 mb-1">
+                                <span class="font-bold text-xs text-stone-900">{{ entry.guest_name }}</span>
+                                <span
+                                    v-if="entry.moderation_status === 'approved'"
+                                    class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-800"
+                                >
+                                    Disetujui (Tampil)
+                                </span>
+                                <span
+                                    v-else-if="entry.moderation_status === 'rejected'"
+                                    class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-800"
+                                >
+                                    Ditolak (Sembunyi)
+                                </span>
+                                <span
+                                    v-else
+                                    class="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-800"
+                                >
+                                    Menunggu Moderasi
+                                </span>
+                            </div>
+                            <p class="text-xs text-stone-600">{{ entry.message }}</p>
+                        </div>
+
+                        <div class="flex items-center gap-2 shrink-0">
+                            <button
+                                v-if="entry.moderation_status !== 'approved'"
+                                @click="moderateMessage(entry.id, 'approved')"
+                                class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold"
+                            >
+                                Setujui
+                            </button>
+                            <button
+                                v-if="entry.moderation_status !== 'rejected'"
+                                @click="moderateMessage(entry.id, 'rejected')"
+                                class="px-3 py-1 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-xs font-semibold"
+                            >
+                                Sembunyikan
+                            </button>
+                        </div>
+                    </div>
+
+                    <div v-if="guestbooks.length === 0" class="text-center text-xs text-stone-400 py-8">
+                        Belum ada pesan ucapan masuk dari tamu.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </AppLayout>
+</template>

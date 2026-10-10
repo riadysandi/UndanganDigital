@@ -1,0 +1,345 @@
+PRODUCT REQUIREMENTS& TECHNICAL BUILD SPECIFICATION
+PLATFORM UNDANGAN DIGITAL
+SaaS Multi-Pelanggan • Visual Drag-and-Drop Editor • Freemium & Premium Billing
+Dokumen final untuk AI coding agent / tim engineeringVersi 1.0 | 10 Oktober 2026
+0. Instruksi untuk AI Builder
+Gunakan dokumen ini sebagai spesifikasi utama untuk membangun aplikasi. Jangan hanya menghasilkan mockup atau halaman statis: bangun aplikasi full-stack yang benar-benar berjalan, dengan database, autentikasi, penyimpanan desain, publikasi undangan, RSVP, administrasi, serta alur pembayaran yang aman.
+Sebelum coding, periksa repository dan lingkungan yang tersedia. Pertahankan konvensi yang sehat; jangan menimpa kode yang sudah ada tanpa memahami dampaknya.
+Jika repository kosong, bootstrap proyek dengan stack yang ditetapkan di dokumen ini.
+Buat IMPLEMENTATION_PLAN.md, ARCHITECTURE.md, ERD.md, API_SPEC.md, dan README.md sebelum atau bersamaan dengan implementasi awal.
+Kerjakan bertahap, dengan migrasi, seeder, pengujian otomatis, dan dokumentasi pada setiap milestone.
+Jangan mengklaim fitur selesai jika hanya berupa UI dummy. Fitur harus terhubung ke backend dan memiliki test yang relevan.
+Jangan menanam secret, kredensial, API key, atau konfigurasi produksi di source code. Gunakan .env.example.
+Jika detail tidak ditentukan, pilih default yang aman, sederhana, dapat diuji, dan dokumentasikan asumsi tersebut. Jangan berhenti untuk bertanya tentang keputusan kecil.
+Jangan membangun microservices pada MVP. Gunakan modular monolith Laravel dengan batas domain yang jelas.
+1. Ringkasan Produk
+Bangun platform SaaS mandiri tempat banyak pelanggan dapat mendaftar, memilih template undangan pernikahan, mengedit desain secara visual dengan drag-and-drop, mempublikasikan undangan di URL unik, membagikan link, serta mengelola daftar tamu dan RSVP. Platform memiliki paket gratis, pembelian premium sekali bayar, dan paket berlangganan.
+1.1 Tujuan produk
+Pelanggan dapat membuat undangan tanpa kemampuan coding.
+Editor mudah dipakai di desktop dan tetap mendukung workflow mobile yang wajar.
+Undangan publik cepat, responsif, dapat dibagikan, dan tidak membutuhkan login untuk dilihat.
+Paket dan hak fitur ditentukan backend serta transaksi yang terverifikasi.
+Platform dapat dikembangkan dengan template, fitur, serta kapasitas yang bertambah tanpa menulis ulang arsitektur.
+1.2 Batasan MVP
+Fokus MVP adalah undangan pernikahan. Jangan memasukkan editor universal seperti Canva, kolaborasi real-time, AI generatif, marketplace template pihak ketiga, atau microservices pada rilis pertama. Siapkan struktur yang memungkinkan fitur lanjutan ditambahkan kelak.
+2. Stack Teknologi Wajib
+Lapisan
+Pilihan
+Ketentuan
+Backend
+Laravel + PHP versi stabil yang kompatibel
+Modular monolith; validasi request, service/domain layer, policies, jobs, events.
+Frontend
+Vue 3 + TypeScript + Inertia.js
+Pola resmi Laravel/Vue yang stabil; hindari duplikasi state server.
+UI
+Tailwind CSS
+Komponen konsisten, aksesibel, mobile-responsive.
+Editor visual
+Fabric.js sebagai pilihan awal
+Proof of concept untuk teks, gambar, transform, serialisasi JSON; evaluasi Konva.js.
+Database
+PostgreSQL
+Foreign keys, indexes, unique constraints, transactions, JSONB.
+Cache/queue
+Redis
+Cache dan antrean pekerjaan bila diperlukan.
+File storage
+S3-compatible object storage
+Simpan media dan aset template; database hanya menyimpan storage key/metadata.
+Web server
+Nginx + PHP-FPM
+HTTPS, upload aman, caching asset.
+Deployment
+Docker Compose + Linux VPS
+Lingkungan konsisten; secret via environment.
+Pembayaran
+Payment gateway Indonesia
+Evaluasi provider dan dukungan recurring billing sebelum implementasi.
+Jangan mengunci aplikasi ke satu payment provider. Buat adapter/provider interface agar integrasi dapat diganti. Verifikasi kemampuan provider dan metode pembayaran sebelum mengimplementasikan subscription otomatis.
+3. Arsitektur Sistem
+Browser menjalankan dashboard, visual editor, preview, dan halaman publik menggunakan Vue 3 + TypeScript.
+Laravel mengatur autentikasi, authorization, data, template, draft, publishing, RSVP, paket, pembayaran, dan administrasi.
+PostgreSQL menjadi sumber data utama; object storage menyimpan foto, video, font, dan aset media.
+Redis/queue menjalankan pekerjaan asinkron seperti optimasi media dan notifikasi.
+Halaman publik membaca snapshot versi desain yang diterbitkan; tidak menampilkan draft yang belum dipublikasikan.
+Gunakan satu codebase Laravel modular pada MVP; jangan memecah layanan kecuali ada kebutuhan terukur.
+4. Modul dan Fitur Produk
+4.1 Autentikasi dan akun
+Registrasi, login, logout, reset password, verifikasi email.
+Profil pengguna dan pengaturan akun.
+Authorization server-side untuk seluruh resource.
+Rate limit login, reset password, dan endpoint publik yang rawan spam.
+4.2 Dashboard pelanggan
+Daftar undangan milik pengguna; buat, edit, duplikasi, arsipkan, dan hapus sesuai aturan.
+Tampilkan status draft/published/archived, waktu update, URL publik, dan status paket.
+Aksi cepat: edit, preview, publish, unpublish, kelola tamu, lihat RSVP.
+Tampilkan batas paket dan pemakaian secara jelas.
+4.3 Template
+Katalog template dengan thumbnail, kategori, demo/preview, dan penanda premium.
+Template memiliki schema_version dan konfigurasi desain default.
+Template premium tidak dapat dipakai/diterbitkan tanpa entitlement yang sah.
+Admin dapat membuat, memperbarui, mengaktifkan/nonaktifkan, dan menguji template.
+4.4 Editor visual
+Canvas berbasis desain undangan; jangan gunakan freeform canvas sebagai satu-satunya struktur halaman.
+Model hybrid: section/halaman undangan dapat diurutkan dan ditampilkan/disembunyikan, dengan canvas editor untuk mengubah elemen dalam section.
+Elemen MVP: text, image, background, decorative shape/ornament, button/link, dan predefined event/content sections.
+Properti: teks, font yang diizinkan, ukuran, warna, alignment, posisi, dimensi, rotasi terbatas, opacity bila perlu, crop gambar, dan urutan layer.
+Tambah, pilih, pindahkan, resize, reorder layer, duplicate, delete, undo/redo, zoom, dan preview.
+Autosave dengan debounce, indikator saving/saved/error, retry, serta pencegahan overwrite tidak disengaja.
+Validasi dan serialisasi JSON dengan schema version. Jangan mengizinkan HTML/JavaScript arbitrary dari pengguna.
+Preview desktop/mobile dan tampilan publik harus konsisten dengan desain yang disimpan.
+MVP tidak membutuhkan collaborative editing real-time.
+4.5 Halaman undangan publik
+Cover dan nama pasangan; detail pasangan/cerita opsional.
+Akad/resepsi atau beberapa acara dengan tanggal, zona waktu, venue, alamat, dan link peta.
+Countdown opsional dan galeri foto; video hanya jika kapasitas serta kebijakan media ditentukan.
+RSVP, buku tamu/ucapan dengan moderasi, dan tombol bagikan WhatsApp.
+Musik opsional dengan kontrol pengguna; jangan mengandalkan autoplay yang diblokir browser.
+Metadata sosial/SEO dasar, favicon, title, dan preview image.
+Halaman publik tidak membutuhkan login; dashboard/editor membutuhkan login.
+4.6 Tamu dan RSVP
+Pelanggan dapat melihat, menambah, dan mengelola tamu.
+Tamu mengirim RSVP hadir/tidak hadir dan jumlah orang sesuai batas.
+Token link tamu harus acak dan tidak mudah ditebak.
+Cegah spam, validasi jumlah tamu, dan siapkan ekspor CSV sebagai fitur lanjutan.
+Buku tamu dapat dimoderasi sebelum tampil di halaman publik.
+4.7 Paket, order, pembayaran
+Paket gratis, premium sekali bayar, dan recurring bulanan/tahunan bila didukung provider.
+Entitlement diperiksa server-side untuk template, fitur, branding, domain, dan masa aktif.
+Order, payment attempt, provider webhook event, subscription, serta entitlement dicatat terpisah.
+Verifikasi signature webhook, idempotency, transisi status valid, dan audit logging.
+Jangan mengaktifkan premium hanya karena browser diarahkan ke halaman sukses.
+Tangani pending, paid, failed, expired, refunded, canceled, past_due, dan grace period sesuai kebijakan.
+Simpan snapshot harga/mata uang/produk saat transaksi; perubahan katalog tidak boleh mengubah transaksi historis.
+Tentukan masa aktif premium sekali bayar secara eksplisit. Default awal: 12 bulan, configurable.
+4.8 Admin
+Mengelola pengguna dan status akun.
+Mengelola template, kategori, status premium, serta aset.
+Mengelola paket dan konfigurasi fitur.
+Melihat order, pembayaran, subscription, dan webhook event tanpa menyimpan data kartu sensitif.
+Statistik dasar, laporan error, dan moderasi buku tamu.
+Akses admin dilindungi role/permission; tindakan sensitif dicatat pada audit log.
+5. Skema Database
+Gunakan primary key konsisten, timestamps, foreign keys, index, unique constraints, dan soft delete hanya bila sesuai. Terapkan tenant ownership melalui user_id/invitation_id dan policies.
+Tabel
+Kolom inti / tujuan
+users
+id, name, email unique, password, email_verified_at, timestamps
+roles/permissions
+Role admin/customer; gunakan implementasi yang sederhana dan aman.
+plans
+id, name, code unique, features_json, is_active
+plan_prices
+id, plan_id, billing_interval, amount, currency, provider_price_id, active_from/to
+templates
+id, name, slug unique, category, thumbnail_path, default_design_json, schema_version, is_premium, is_active
+invitations
+id, user_id, template_id, title, slug unique, status, published_version_id nullable, published_at, expires_at
+invitation_designs
+id, invitation_id unique, design_json JSONB, schema_version, updated_at
+invitation_versions
+id, invitation_id, version_number, design_json JSONB, schema_version, published_at, created_by; unique(invitation_id, version_number)
+invitation_media
+id, invitation_id, storage_key, media_type, mime_type, size_bytes, metadata_json, created_at
+events
+id, invitation_id, name, starts_at, ends_at, timezone, venue_name, address, maps_url
+guests
+id, invitation_id, name, token_hash/token, max_attendees, timestamps
+rsvps
+id, invitation_id, guest_id nullable, attendance_status, attendee_count, message, submitted_at
+guestbook_entries
+id, invitation_id, guest_name, message, moderation_status, created_at
+orders
+id, user_id, invitation_id nullable, plan_id, order_type, amount, currency, status, product_snapshot_json
+payments
+id, order_id, provider, provider_transaction_id, status, amount, currency, paid_at, sanitized metadata
+subscriptions
+id, user_id, plan_id, provider, provider_subscription_id, status, current_period_start/end, cancel_at_period_end
+webhook_events
+id, provider, provider_event_id unique, event_type, processed_at, status, sanitized_payload_json
+audit_logs
+id, actor_user_id, action, subject_type, subject_id, metadata_json, created_at
+5.1 Relasi dan aturan database
+users 1:N invitations; templates 1:N invitations.
+invitations 1:1 invitation_designs; invitations 1:N invitation_versions, invitation_media, events, guests, rsvps, guestbook_entries.
+orders 1:N payments; users 1:N subscriptions; plans berelasi dengan plan_prices dan subscriptions.
+published_version_id harus mengacu ke versi milik invitation yang sama; validasi melalui service/transaksi.
+Slug publik harus unik dan divalidasi; perubahan slug mempertimbangkan link yang sudah dibagikan.
+Simpan guest token dalam bentuk hash bila token hanya perlu diverifikasi.
+Jangan menyimpan nomor kartu, CVV, password provider, atau secret pembayaran.
+Gunakan transaksi database untuk publish, pembelian, dan pembaruan entitlement yang saling terkait.
+6. Format Dokumen Desain
+Format desain JSON harus versioned dan tervalidasi. Contoh minimal:
+{  "schemaVersion": 1,  "canvas": {"width": 1080, "height": 1920, "background": "#F8F3EA"},  "sections": [{    "id": "cover",    "type": "cover",    "visible": true,    "elements": [{      "id": "heading-1",      "type": "text",      "x": 100, "y": 240, "width": 880, "height": 160,      "text": "The Wedding Of",      "fontSize": 48, "color": "#5D6B50"    }]  }]}
+Elemen memiliki ID stabil; jangan bergantung pada urutan array sebagai identitas.
+Image element merujuk mediaId/storage key yang diotorisasi, bukan URL arbitrary.
+Validasi batas ukuran, jumlah elemen, font, URL, dimensi, dan properti per tipe elemen.
+Buat migrator dari schema version lama ke versi baru.
+Simpan draft terpisah dari published snapshot. Publikasi membuat versi immutable baru dan memperbarui pointer published_version_id secara atomik.
+7. API / Endpoint yang Diperlukan
+Kelompok
+Endpoint contoh
+Akses
+Auth
+Endpoint auth Laravel/Inertia yang sesuai
+Publik untuk login/register; terproteksi setelah login
+Templates
+GET /api/templates; GET /api/templates/{slug}
+Katalog publik; admin untuk pengelolaan
+Invitations
+GET/POST /api/invitations; GET/PATCH/DELETE /api/invitations/{id}
+Pemilik undangan
+Design
+GET/PUT /api/invitations/{id}/design
+Pemilik; validasi schema
+Media
+POST /api/invitations/{id}/media; DELETE /api/invitations/{id}/media/{mediaId}
+Pemilik; validasi file dan kepemilikan
+Publish
+POST /api/invitations/{id}/publish; POST /api/invitations/{id}/unpublish
+Pemilik; cek entitlement
+Public invite
+GET /i/{slug}
+Publik; hanya published version aktif
+Events
+CRUD /api/invitations/{id}/events
+Pemilik
+Guests/RSVP
+CRUD /api/invitations/{id}/guests; POST /api/public/{slug}/rsvp
+Pemilik/public dengan rate limit
+Billing
+POST /api/checkout; GET /api/orders/{id}
+Login; status dikonfirmasi backend
+Webhook
+POST /api/webhooks/{provider}
+Provider; signature verification dan idempotency
+Admin
+/admin/* atau /api/admin/*
+Role admin/permission
+Endpoint adalah contoh kontrak. Tentukan apakah memakai Inertia actions, route web, atau API JSON sesuai kebutuhan. Jangan membuat API duplikat tanpa manfaat. Dokumentasikan request, response, validasi, status code, dan authorization.
+8. Aturan Publikasi dan URL
+Setiap undangan mempunyai slug unik, misalnya https://domain.tld/i/andi-siti.
+Prefix /i/ disarankan untuk menghindari benturan dengan route sistem.
+Halaman publik hanya menampilkan versi published yang valid dan belum melewati masa aktif.
+Draft tidak boleh bocor ke publik. Perhatikan cache invalidation saat publish, unpublish, atau expiry.
+Ketika draft diedit, versi published sebelumnya tetap tersedia sampai versi baru dipublikasikan.
+Unpublish/expiry menampilkan halaman status yang jelas tanpa membocorkan data privat.
+9. UI/UX dan Responsivitas
+Gaya profesional, elegan, modern, dengan tipografi dan whitespace konsisten.
+Dashboard: daftar undangan, status, aksi utama, dan penggunaan paket.
+Template gallery: thumbnail berkualitas, kategori, filter gratis/premium, preview.
+Editor desktop: toolbar atas untuk undo/redo/save/preview/publish; panel elemen/layer di kiri; canvas di tengah; properti di kanan.
+Editor mobile: gunakan drawer/panel bawah; jangan memaksakan tiga panel desktop.
+Tampilkan loading, empty state, validation error, save status, upload progress, dan konfirmasi tindakan destruktif.
+Gunakan semantic HTML, keyboard navigation, label form, kontras memadai, dan fokus terlihat.
+Halaman publik mobile-first, ringan, dan terbaca di berbagai ukuran layar.
+10. Keamanan, Privasi, dan Keandalan
+Authorization server-side di semua operasi data; jangan mengandalkan penyembunyian tombol UI.
+Cegah IDOR dengan policy dan query scoped ke pemilik.
+Validasi upload: ukuran, MIME, ekstensi, dan konten bila memungkinkan; gunakan nama acak dan storage yang sesuai.
+Escape teks pengguna untuk mencegah XSS; jangan merender HTML arbitrary dari desain.
+Rate limit RSVP, buku tamu, login, dan endpoint rawan spam.
+Verifikasi webhook, idempotency, dan transisi status pembayaran.
+HTTPS, CSRF protection, secure cookies, dan CORS minimum jika API terpisah.
+Simpan secret hanya di environment; sanitasi log dan payload webhook.
+Backup database rutin dan uji restore; siapkan monitoring error, health check, dan log terstruktur.
+Sediakan kebijakan privasi, ketentuan layanan, retensi data, serta proses penghapusan data yang sesuai.
+11. Testing dan Kriteria Penerimaan
+11.1 Pengujian wajib
+Unit test untuk entitlement, slug, validasi design JSON, publishing, dan transisi billing.
+Feature/integration test untuk auth, ownership, create/edit invitation, upload, publish/unpublish, RSVP, dan webhook.
+Frontend tests untuk serialisasi/deserialisasi editor, undo/redo, properti elemen, dan autosave.
+End-to-end test dari registrasi sampai undangan terbit dan RSVP dikirim.
+Security tests untuk akses lintas pengguna, payload invalid, upload berbahaya, webhook replay, dan rate limit.
+Test responsive untuk halaman publik dan workflow editor desktop/mobile.
+11.2 Acceptance criteria MVP
+Pengguna baru dapat mendaftar, login, dan membuat undangan.
+Pengguna dapat memilih template, mengubah teks/foto/warna/posisi, menyimpan draft, refresh, dan melanjutkan tanpa kehilangan desain.
+Undo/redo berfungsi untuk aksi editor yang didukung.
+Preview mobile dan desktop konsisten dengan desain.
+Publikasi menghasilkan URL unik; orang tanpa login dapat melihat undangan yang diterbitkan.
+Perubahan draft tidak mengubah versi publik sebelum publish ulang.
+Tamu dapat mengirim RSVP; pemilik hanya melihat data undangannya sendiri.
+Pelanggan gratis tidak dapat melewati batas premium dengan memanipulasi request.
+Webhook valid mengubah status secara idempotent; webhook palsu ditolak.
+Admin dapat mengelola template dan memantau order/pembayaran.
+README memungkinkan developer lain menjalankan aplikasi lokal dari awal.
+12. Tahapan Implementasi
+Milestone
+Pekerjaan
+Definition of Done
+M0 — Discovery
+Inspeksi repo, rencana, arsitektur, ERD, UI flow.
+Dokumen desain dan keputusan teknis tercatat.
+M1 — Foundation
+Laravel, Vue, TypeScript, DB, auth, Docker, lint/test, CI.
+Aplikasi lokal berjalan dan auth diuji.
+M2 — Data/domain
+Migration, model, policies, template seed, invitations, media.
+CRUD terotorisasi dan test dasar lolos.
+M3 — Public renderer
+Template engine, halaman publik, event details, slug.
+Undangan published tampil responsif.
+M4 — Visual editor
+Canvas, elemen, panel properti, serialization, history, autosave.
+Desain bertahan setelah reload; test editor lolos.
+M5 — Guest features
+RSVP, guestbook, admin moderation.
+RSVP aman dan dapat dikelola pemilik.
+M6 — Monetization
+Plans, orders, payments, webhook, subscriptions, entitlement.
+Pembayaran sandbox teruji end-to-end.
+M7 — Hardening
+Security review, performance, backups, logs, deployment.
+Acceptance criteria lolos dan runbook tersedia.
+Perkiraan kasar untuk satu developer berpengalaman adalah 5–9 minggu untuk MVP dengan editor terbatas; ini bukan komitmen jadwal. Editor kompleks, animasi, domain kustom, dan recurring billing dapat memperpanjang waktu.
+13. Struktur Repository yang Disarankan
+app/  Domain/    Accounts/    Templates/    Invitations/    DesignEditor/    Media/    Events/    Guests/    RSVP/    Billing/    Administration/  Http/    Controllers/    Requests/    Middleware/    Resources/  Jobs/  Policies/  Models/resources/  js/    layouts/    pages/    components/    editor/      canvas/      elements/      panels/      history/      serialization/    types/  css/  views/database/  migrations/  factories/  seeders/routes/  web.php  api.phptests/  Feature/  Unit/  Browser/
+Struktur ini adalah panduan, bukan aturan kaku. Hindari membuat abstraksi berlebihan sebelum ada kebutuhan nyata.
+14. Deployment dan Operasional
+Sediakan Docker Compose untuk local development dengan service aplikasi, PostgreSQL, dan Redis bila digunakan.
+Production menggunakan Linux VPS, Nginx, PHP-FPM, worker queue, scheduler, database yang dibackup, dan object storage.
+Gunakan domain dan HTTPS; pisahkan staging dan production.
+Jangan menyimpan media besar pada filesystem container yang ephemeral.
+Dokumentasikan deployment, rollback, migrasi database, rotasi secret, backup, dan restore.
+Optimalkan image, gunakan cache/CDN bila perlu, dan pantau ukuran media serta bandwidth.
+Mulai dengan VPS sederhana; lakukan sizing berdasarkan beban nyata.
+15. Keputusan yang Belum Final dan Default
+Keputusan
+Default awal
+Catatan
+Nama/brand/domain
+Belum ditentukan
+Jangan hardcode nama brand; gunakan konfigurasi.
+Payment gateway
+Adapter provider; sandbox dahulu
+Pilih setelah memverifikasi recurring billing dan metode pembayaran.
+Masa aktif premium sekali bayar
+12 bulan, configurable
+Konfirmasi kebijakan bisnis sebelum produksi.
+URL undangan
+/i/{slug}
+Mengurangi konflik route; domain kustom tahap berikutnya.
+Editor canvas
+Fabric.js proof of concept
+Bandingkan Konva.js sebelum komitmen final.
+Database
+PostgreSQL
+MySQL boleh dipilih jika tim lebih familier; jangan gunakan dua DB sekaligus.
+Email
+SMTP/provider email via interface
+Untuk verifikasi email, reset password, notifikasi.
+Paket/limit
+Konfigurasi database
+Jangan menanam aturan paket hanya di frontend.
+16. Perintah Kerja Pertama untuk AI Coding Agent
+Inspeksi repository, versi runtime, serta instruksi proyek yang sudah ada.
+Buat IMPLEMENTATION_PLAN.md, ARCHITECTURE.md, ERD.md, API_SPEC.md, dan README.md.
+Identifikasi risiko editor; buat proof of concept Fabric.js untuk membuat, memilih, memindahkan, mengubah ukuran, menyimpan JSON, lalu memuat kembali teks dan gambar.
+Implementasikan M1 secara penuh dengan test dan dokumentasi.
+Lanjutkan milestone satu per satu; setelah tiap milestone, jalankan formatter, linter, static analysis bila tersedia, dan test.
+Laporkan file yang dibuat/diubah, keputusan teknis, test yang dijalankan beserta hasilnya, fitur yang selesai, dan blocker.
+Jangan menghapus test atau menurunkan validasi agar build terlihat sukses. Jangan mengganti integrasi nyata dengan mock tanpa mendokumentasikan mode development.
+17. Definition of Done Global
+Aplikasi siap MVP ketika seluruh acceptance criteria wajib lulus, database dan storage dapat dipulihkan, alur pembayaran diuji di sandbox, tidak ada akses lintas-pelanggan, dokumentasi setup lengkap, dan deployment staging berhasil. UI yang terlihat bagus saja tidak memenuhi definisi selesai.
