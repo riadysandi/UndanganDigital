@@ -15,6 +15,9 @@
         @inertiaHead
     </head>
     <body class="font-sans antialiased text-gray-900 bg-gray-50 h-full">
+        @if (!empty($page))
+            <script data-page="app" type="application/json">{!! json_encode($page) !!}</script>
+        @endif
         @inertia
     </body>
 </html>
