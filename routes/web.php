@@ -83,6 +83,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/api/sandbox/simulate-payment/{order}', [BillingController::class, 'simulatePayment'])->name('billing.simulate');
 });
 
+// Layanan Jasa Pembuatan "Dibantu Tim Kami" (Terima Beres)
+Route::get('/bantu-buat', [\App\Http\Controllers\ServiceRequestController::class, 'create'])->name('services.request');
+Route::post('/bantu-buat', [\App\Http\Controllers\ServiceRequestController::class, 'store'])->name('services.store');
+
 // Admin Panel Routes
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
@@ -90,4 +94,6 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::post('/templates/{template}/toggle', [AdminController::class, 'toggleTemplate'])->name('templates.toggle');
     Route::get('/users', [AdminController::class, 'users'])->name('users');
     Route::get('/orders', [AdminController::class, 'orders'])->name('orders');
+    Route::get('/service-requests', [\App\Http\Controllers\ServiceRequestController::class, 'adminIndex'])->name('service-requests');
+    Route::patch('/service-requests/{serviceRequest}', [\App\Http\Controllers\ServiceRequestController::class, 'updateStatus'])->name('service-requests.update');
 });

@@ -63,6 +63,7 @@ class PublicInvitationController extends Controller
                 'slug' => $invitation->slug,
                 'published_at' => $invitation->published_at,
             ],
+            'template' => $invitation->template,
             'design' => $publishedVersion ? $publishedVersion->design_json : null,
             'events' => $events,
             'guestbook' => $guestbookEntries,

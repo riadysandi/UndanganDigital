@@ -30,19 +30,25 @@ defineProps<{
                         <p class="mt-6 text-base sm:text-lg text-stone-600 max-w-2xl leading-relaxed">
                             Buat, rancang dengan editor visual drag-and-drop, dan bagikan undangan pernikahan interaktif dalam hitungan menit. Dilengkapi RSVP otomatis, buku tamu, pemutar musik, dan link personal tamu.
                         </p>
-                        <div class="mt-8 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                        <div class="mt-8 flex flex-col sm:flex-row gap-3 justify-center lg:justify-start">
                             <Link
                                 href="/register"
-                                class="inline-flex justify-center items-center px-6 py-3.5 text-base font-medium rounded-xl text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-200 hover:shadow-lg transition-all"
+                                class="inline-flex justify-center items-center px-6 py-3.5 text-sm sm:text-base font-medium rounded-xl text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-200 hover:shadow-lg transition-all"
                             >
-                                Buat Undangan Sekarang
+                                Buat Sendiri (Gratis)
+                            </Link>
+                            <Link
+                                href="/bantu-buat"
+                                class="inline-flex justify-center items-center px-6 py-3.5 text-sm sm:text-base font-semibold rounded-xl text-amber-900 bg-amber-100 hover:bg-amber-200 border border-amber-300 shadow-sm transition-all"
+                            >
+                                ✨ Terima Beres (Dibantu Tim) →
                             </Link>
                             <Link
                                 href="/i/dimas-anisa"
                                 target="_blank"
-                                class="inline-flex justify-center items-center px-6 py-3.5 text-base font-medium rounded-xl text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 shadow-sm transition-all"
+                                class="inline-flex justify-center items-center px-5 py-3.5 text-sm sm:text-base font-medium rounded-xl text-stone-700 bg-white hover:bg-stone-50 border border-stone-300 shadow-sm transition-all"
                             >
-                                Lihat Contoh Undangan ↗
+                                Demo 3D ↗
                             </Link>
                         </div>
                         <div class="mt-8 flex items-center justify-center lg:justify-start gap-6 text-xs text-stone-500">

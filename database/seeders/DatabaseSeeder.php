@@ -249,6 +249,26 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        $design3D = $designModern;
+        $design3D['theme'] = '3d-royal';
+        $design3D['is_3d'] = true;
+        $design3D['canvas']['background'] = '#16191E';
+        $design3D['canvas']['primaryColor'] = '#E5C07B';
+        $design3D['canvas']['fontFamily'] = 'Cinzel';
+
+        $tpl3D = Template::firstOrCreate(
+            ['slug' => 'royal-3d-envelope'],
+            [
+                'name' => 'Royal 3D Envelope & Wax Seal',
+                'category' => '3d',
+                'thumbnail_path' => 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80',
+                'default_design_json' => $design3D,
+                'schema_version' => 1,
+                'is_premium' => true,
+                'is_active' => true,
+            ]
+        );
+
         $designTraditional = $designModern;
         $designTraditional['theme'] = 'traditional';
         $designTraditional['canvas']['background'] = '#FFFBF2';
@@ -376,5 +396,80 @@ class DatabaseSeeder extends Seeder
                 'moderation_status' => 'approved',
             ]
         );
+
+        // 9. Dedicated 3D Model Demo Invitation
+        $invitation3D = Invitation::firstOrCreate(
+            ['slug' => 'dimas-anisa-3d'],
+            [
+                'user_id' => $customer->id,
+                'template_id' => $tpl3D->id,
+                'title' => 'The Wedding of Dimas & Anisa (3D Royal Envelope & Wax Seal)',
+                'status' => 'published',
+                'published_at' => now(),
+                'expires_at' => now()->addMonths(12),
+            ]
+        );
+
+        $designDraft3D = InvitationDesign::updateOrCreate(
+            ['invitation_id' => $invitation3D->id],
+            [
+                'design_json' => $design3D,
+                'schema_version' => 1,
+            ]
+        );
+
+        $version3D = InvitationVersion::firstOrCreate(
+            ['invitation_id' => $invitation3D->id, 'version_number' => 1],
+            [
+                'design_json' => $design3D,
+                'schema_version' => 1,
+                'created_by' => $customer->id,
+                'published_at' => now(),
+            ]
+        );
+
+        $invitation3D->update(['published_version_id' => $version3D->id]);
+
+        Event::firstOrCreate(
+            ['invitation_id' => $invitation3D->id, 'name' => 'Akad Nikah'],
+            [
+                'starts_at' => '2026-12-28 08:00:00',
+                'ends_at' => '2026-12-28 10:00:00',
+                'timezone' => 'WIB',
+                'venue_name' => 'Masjid Agung Jawa Tengah',
+                'address' => 'Jl. Gajah Raya, Sambirejo, Kec. Gayamsari, Kota Semarang, Jawa Tengah',
+                'maps_url' => 'https://maps.google.com/?q=Masjid+Agung+Jawa+Tengah',
+            ]
+        );
+
+        Event::firstOrCreate(
+            ['invitation_id' => $invitation3D->id, 'name' => 'Resepsi Akbar'],
+            [
+                'starts_at' => '2026-12-28 11:00:00',
+                'ends_at' => '2026-12-28 14:00:00',
+                'timezone' => 'WIB',
+                'venue_name' => 'Grand Ballroom Rama Shinta',
+                'address' => 'Jl. Pemuda No. 123, Semarang, Jawa Tengah',
+                'maps_url' => 'https://maps.google.com/?q=Semarang',
+            ]
+        );
+
+        Guest::firstOrCreate(
+            ['invitation_id' => $invitation3D->id, 'name' => 'Bpk. Ridwan Kamil & Keluarga'],
+            [
+                'token' => 'vip-ridwan-3d',
+                'phone_number' => '081234567899',
+                'max_attendees' => 2,
+            ]
+        );
+
+        GuestbookEntry::firstOrCreate(
+            ['invitation_id' => $invitation3D->id, 'guest_name' => 'Bpk. Ridwan Kamil & Keluarga'],
+            [
+                'message' => 'Selamat untuk Dimas dan Anisa! Desain undangannya sangat istimewa dengan efek 3D wax seal mewah. Semoga bahagia selalu!',
+                'moderation_status' => 'approved',
+            ]
+        );
     }
 }
+

@@ -29,6 +29,10 @@ const logout = () => {
 
                     <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-stone-600">
                         <Link href="/pricing" class="hover:text-stone-900 transition-colors">Paket & Harga</Link>
+                        <Link href="/bantu-buat" class="text-rose-600 hover:text-rose-700 font-semibold transition-colors flex items-center gap-1.5">
+                            <span class="text-xs">✨</span>
+                            Dibantu Tim Kami
+                        </Link>
                         <template v-if="user">
                             <Link href="/dashboard" class="hover:text-stone-900 transition-colors">Dashboard Saya</Link>
                             <Link v-if="user.role === 'admin'" href="/admin/dashboard" class="text-rose-600 hover:text-rose-700 font-semibold transition-colors flex items-center gap-1">
