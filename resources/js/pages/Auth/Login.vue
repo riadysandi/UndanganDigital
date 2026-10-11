@@ -54,13 +54,13 @@ const fillDemo = (role: 'admin' | 'customer') => {
                             >
                                 Pengantin (Customer)
                             </button>
-                            <button
-                                type="button"
-                                @click="fillDemo('admin')"
-                                class="flex-1 py-1.5 px-2 bg-amber-100/80 hover:bg-amber-200 text-amber-800 rounded-lg text-xs font-medium transition-colors border border-amber-300"
+                            <Link
+                                href="/admin/login"
+                                class="flex-1 py-1.5 px-2 bg-stone-900 hover:bg-stone-800 text-amber-300 rounded-lg text-xs font-medium transition-colors border border-stone-800 text-center flex items-center justify-center gap-1"
                             >
-                                Administrator
-                            </button>
+                                <span>🛡️</span>
+                                <span>Portal Admin</span>
+                            </Link>
                         </div>
                     </div>
 

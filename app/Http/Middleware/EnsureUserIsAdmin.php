@@ -13,7 +13,11 @@ class EnsureUserIsAdmin
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (!$request->user() || !$request->user()->isAdmin()) {
+        if (!$request->user()) {
+            return redirect()->route('admin.login');
+        }
+
+        if (!$request->user()->isAdmin()) {
             abort(403, 'Akses khusus administrator.');
         }
 

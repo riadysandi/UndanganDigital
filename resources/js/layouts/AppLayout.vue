@@ -103,6 +103,10 @@ const logout = () => {
                     <a href="#" class="hover:text-stone-800">Syarat & Ketentuan</a>
                     <span class="text-stone-300">•</span>
                     <a href="#" class="hover:text-stone-800">Kebijakan Privasi</a>
+                    <span class="text-stone-300">•</span>
+                    <Link href="/admin/login" class="hover:text-amber-600 font-medium flex items-center gap-1">
+                        <span>🛡️</span> Portal Admin
+                    </Link>
                 </div>
             </div>
         </footer>
