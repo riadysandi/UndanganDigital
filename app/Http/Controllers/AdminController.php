@@ -75,4 +75,40 @@ class AdminController extends Controller
             'orders' => $orders,
         ]);
     }
+
+    public function invitations(): Response
+    {
+        $invitations = Invitation::with(['user', 'template', 'publishedVersion'])
+            ->withCount(['guests', 'rsvps'])
+            ->latest()
+            ->paginate(20);
+
+        return Inertia::render('Admin/Invitations', [
+            'invitations' => $invitations,
+        ]);
+    }
+
+    public function auditLogs(): Response
+    {
+        $logs = AuditLog::with('actor')->latest()->paginate(25);
+
+        return Inertia::render('Admin/AuditLogs', [
+            'logs' => $logs,
+        ]);
+    }
+
+    public function settings(): Response
+    {
+        return Inertia::render('Admin/Settings', [
+            'app_name' => config('app.name'),
+            'app_url' => config('app.url'),
+            'whatsapp_cs' => '6281234567890',
+            'system_info' => [
+                'php_version' => PHP_VERSION,
+                'laravel_version' => app()->version(),
+                'server_time' => now()->toDateTimeString(),
+                'db_connection' => config('database.default'),
+            ],
+        ]);
+    }
 }
