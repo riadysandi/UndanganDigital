@@ -22,8 +22,11 @@ class PublicInvitationController extends Controller
             abort(404, 'Undangan tidak ditemukan.');
         }
 
-        // 2. Cek status publikasi (Draft tidak boleh bocor ke publik sesuai PRD Bagian 8)
-        if ($invitation->status !== 'published' || !$invitation->published_version_id) {
+        // 2. Cek status publikasi (Kecuali jika owner sedang melihat pratinjau ?preview=1)
+        $isPreview = $request->boolean('preview');
+        $isOwnerOrAdmin = auth()->check() && (auth()->id() === $invitation->user_id || auth()->user()->role === 'admin');
+
+        if ((!$isOwnerOrAdmin || !$isPreview) && ($invitation->status !== 'published' || !$invitation->published_version_id)) {
             return Inertia::render('Public/Unpublished', [
                 'title' => $invitation->title,
                 'status' => $invitation->status,
@@ -31,14 +34,18 @@ class PublicInvitationController extends Controller
         }
 
         // 3. Cek masa kedaluwarsa jika ada
-        if ($invitation->expires_at && $invitation->expires_at->isPast()) {
+        if ($invitation->expires_at && $invitation->expires_at->isPast() && !$isPreview) {
             return Inertia::render('Public/Expired', [
                 'title' => $invitation->title,
             ]);
         }
 
-        // 4. Load published version snapshot yang immutable
+        // 4. Load published version atau draft terkini
         $publishedVersion = $invitation->publishedVersion;
+        $designJson = ($isPreview || !$publishedVersion) && $invitation->design
+            ? $invitation->design->design_json
+            : ($publishedVersion?->design_json ?? $invitation->design?->design_json);
+
         $events = $invitation->events;
         $guestbookEntries = $invitation->approvedGuestbookEntries;
 
@@ -64,7 +71,7 @@ class PublicInvitationController extends Controller
                 'published_at' => $invitation->published_at,
             ],
             'template' => $invitation->template,
-            'design' => $publishedVersion ? $publishedVersion->design_json : null,
+            'design' => $designJson,
             'events' => $events,
             'guestbook' => $guestbookEntries,
             'guestName' => $guestName,

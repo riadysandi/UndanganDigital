@@ -28,7 +28,7 @@ const lastSavedTime = ref<string>('Baru saja');
 const previewMode = ref<'mobile' | 'canvas'>('mobile');
 const previewKey = ref<number>(0);
 const zoomLevel = ref<number>(1);
-const activeTab = ref<'elements' | 'media' | 'sections' | 'events' | 'features'>('elements');
+const activeTab = ref<'couple' | 'theme' | 'media' | 'events' | 'features' | 'canvas'>('couple');
 
 const refreshPreview = () => {
     previewKey.value++;
@@ -39,40 +39,144 @@ const historyStack = ref<string[]>([]);
 const historyIndex = ref<number>(-1);
 let isHistoryUpdating = false;
 
-// Sections & Features state
+// Color Palette Presets
+const colorPalettes = [
+    {
+        id: 'gold',
+        name: 'Royal Gold',
+        badge: 'bg-amber-500',
+        primary: '#D4AF37',
+        secondary: '#F3E5AB',
+        bg: '#14171c',
+        card: '#1a1f26',
+    },
+    {
+        id: 'rose',
+        name: 'Rose Gold',
+        badge: 'bg-rose-400',
+        primary: '#E0A9A5',
+        secondary: '#FDE8E7',
+        bg: '#1c1517',
+        card: '#271d21',
+    },
+    {
+        id: 'emerald',
+        name: 'Emerald Jade',
+        badge: 'bg-emerald-500',
+        primary: '#10B981',
+        secondary: '#A7F3D0',
+        bg: '#0c1914',
+        card: '#13261e',
+    },
+    {
+        id: 'terracotta',
+        name: 'Terracotta Warm',
+        badge: 'bg-orange-600',
+        primary: '#C25E43',
+        secondary: '#F8D5C8',
+        bg: '#1c1412',
+        card: '#271c19',
+    },
+    {
+        id: 'sapphire',
+        name: 'Sapphire Navy',
+        badge: 'bg-sky-500',
+        primary: '#38BDF8',
+        secondary: '#BAE6FD',
+        bg: '#0b1329',
+        card: '#121e3d',
+    },
+    {
+        id: 'burgundy',
+        name: 'Burgundy Wine',
+        badge: 'bg-rose-700',
+        primary: '#F43F5E',
+        secondary: '#FECDD3',
+        bg: '#1a0e14',
+        card: '#29141f',
+    },
+];
+
+const fontOptions = [
+    { name: 'Playfair Display (Serif Mewah)', value: 'Playfair Display' },
+    { name: 'Cormorant Garamond (Klasik Elegan)', value: 'Cormorant Garamond' },
+    { name: 'Cinzel (Royal Kerajaan)', value: 'Cinzel' },
+    { name: 'Great Vibes (Kaligrafi Script)', value: 'Great Vibes' },
+    { name: 'Plus Jakarta Sans (Modern Bersih)', value: 'Plus Jakarta Sans' },
+];
+
+// Reactive Design State
 const designData = reactive({
     schemaVersion: 1,
+    theme: {
+        palette: 'gold',
+        primaryColor: '#D4AF37',
+        secondaryColor: '#F3E5AB',
+        bgColor: '#14171c',
+        cardBgColor: '#1a1f26',
+        textColor: '#f3f4f6',
+        fontFamily: 'Playfair Display',
+    },
+    content: {
+        coverBadge: 'Royal 3D Wax Seal Edition',
+        coverSubtitle: "Walimatul 'Ursy",
+        weddingTitle: props.invitation?.title || 'Dimas & Anisa',
+        weddingDateText: 'Minggu, 28 Desember 2026',
+        coverImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+        quote: 'Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang.',
+        quoteSource: 'QS. Ar-Rum: 21',
+        groom: {
+            nickname: 'Dimas',
+            fullName: 'Dimas Prasetyo, S.Kom',
+            parents: 'Putra pertama dari Bpk. Bambang Prasetyo & Ibu Sri Wahyuni',
+            photo: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
+            instagram: '@dimasprasetyo',
+        },
+        bride: {
+            nickname: 'Anisa',
+            fullName: 'Anisa Rahmawati, S.E',
+            parents: 'Putri kedua dari Bpk. H. Rahmat Hidayat & Ibu Siti Aminah',
+            photo: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
+            instagram: '@anisarahmawati',
+        },
+        gallery: [
+            'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=600&q=80',
+            'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=600&q=80',
+        ],
+    },
     canvas: {
-        width: 480,
-        height: 720,
-        background: '#FDFBF7',
-        primaryColor: '#5D6B50',
+        width: 380,
+        height: 620,
+        background: '#14171c',
+        primaryColor: '#D4AF37',
         fontFamily: 'Playfair Display',
     },
     musicUrl: 'https://actions.google.com/sounds/v1/ambient/relaxing_music.ogg',
     gift: {
         enabled: true,
         title: 'Amplop Digital & Kado Nikah',
-        description: 'Doa restu Anda adalah karunia terindah bagi kami. Namun jika memberi adalah ungkapan kasih, Anda dapat mentransfer melalui rekening berikut:',
+        description: 'Doa restu Anda adalah karunia terindah bagi kami. Namun jika memberi adalah ungkapan kasih, Anda dapat menyalurkannya melalui cashless digital gift di bawah ini:',
         accounts: [
             {
                 bank: 'BCA',
                 account_number: '8210984721',
                 account_name: 'Dimas Prasetyo',
-                qr_image: '',
+                qr_image: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226590014ID.LINKAJA.WWW01189360091800000000005204581253033605802ID5914DIMAS_PRASETYO6007JAKARTA63041234',
             },
             {
                 bank: 'Bank Mandiri',
                 account_number: '1370019283741',
                 account_name: 'Anisa Rahmawati',
-                qr_image: '',
+                qr_image: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226590014ID.LINKAJA.WWW01189360091800000000005204581253033605802ID5915ANISA_RAHMAWATI6007JAKARTA63045678',
             },
         ],
         physical_gift: {
             enabled: true,
             receiver_name: 'Dimas & Anisa',
             phone: '0812-3456-7890',
-            address: 'Jl. Melati Indah No. 42, RT 03/RW 05, Cilandak, Jakarta Selatan 12430',
+            address: 'Jl. Melati Indah No. 42, RT 03/RW 05, Cilandak Barat, Jakarta Selatan 12430',
         },
     },
     sections: [
@@ -84,6 +188,41 @@ const designData = reactive({
     ],
 });
 
+// Apply Color Palette Preset
+const applyPalette = (palette: typeof colorPalettes[0]) => {
+    designData.theme.palette = palette.id;
+    designData.theme.primaryColor = palette.primary;
+    designData.theme.secondaryColor = palette.secondary;
+    designData.theme.bgColor = palette.bg;
+    designData.theme.cardBgColor = palette.card;
+    designData.canvas.background = palette.bg;
+    designData.canvas.primaryColor = palette.primary;
+    triggerAutosave();
+};
+
+// Events in invitation
+const eventsList = ref<any[]>(props.invitation.events || []);
+
+const addEvent = () => {
+    eventsList.value.push({
+        id: Date.now(),
+        name: 'Resepsi Pernikahan',
+        starts_at: '2026-12-28 11:00:00',
+        ends_at: '2026-12-28 14:00:00',
+        timezone: 'WIB',
+        venue_name: 'Grand Ballroom Hotel Arya',
+        address: 'Jl. Sudirman No. 123, Jakarta Pusat',
+        maps_url: 'https://maps.google.com',
+    });
+    triggerAutosave();
+};
+
+const removeEvent = (index: number) => {
+    eventsList.value.splice(index, 1);
+    triggerAutosave();
+};
+
+// Bank Accounts for Digital Gift
 const addBankAccount = () => {
     if (!designData.gift.accounts) {
         designData.gift.accounts = [];
@@ -102,19 +241,77 @@ const removeBankAccount = (idx: number) => {
     triggerAutosave();
 };
 
+// Upload Photo Handler
+const isUploading = ref(false);
+const uploadError = ref('');
+const targetUploadField = ref<string>(''); // 'cover' | 'groom' | 'bride' | 'gallery_0' .. 'gallery_3'
+const fileInputRef = ref<HTMLInputElement | null>(null);
+
+const triggerUploadFor = (field: string) => {
+    targetUploadField.value = field;
+    if (fileInputRef.value) {
+        fileInputRef.value.click();
+    }
+};
+
+const handleFileUpload = async (event: any) => {
+    const file = event.target?.files?.[0];
+    if (!file) return;
+
+    isUploading.value = true;
+    uploadError.value = '';
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('type', targetUploadField.value.startsWith('gallery') ? 'gallery' : targetUploadField.value);
+
+    try {
+        const res = await fetch(`/api/invitations/${props.invitation.id}/upload`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as any)?.content || '',
+                'Accept': 'application/json',
+            },
+            body: formData,
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success && data.url) {
+            const uploadedUrl = data.url;
+            if (targetUploadField.value === 'cover') {
+                designData.content.coverImage = uploadedUrl;
+            } else if (targetUploadField.value === 'groom') {
+                designData.content.groom.photo = uploadedUrl;
+            } else if (targetUploadField.value === 'bride') {
+                designData.content.bride.photo = uploadedUrl;
+            } else if (targetUploadField.value.startsWith('gallery_')) {
+                const idx = parseInt(targetUploadField.value.split('_')[1]);
+                if (!isNaN(idx) && designData.content.gallery[idx] !== undefined) {
+                    designData.content.gallery[idx] = uploadedUrl;
+                }
+            }
+            triggerAutosave();
+        } else {
+            uploadError.value = data.message || 'Gagal mengunggah foto.';
+        }
+    } catch (e: any) {
+        uploadError.value = 'Terjadi kesalahan saat mengunggah foto.';
+    } finally {
+        isUploading.value = false;
+        if (event.target) event.target.value = '';
+    }
+};
+
 // Selected Element Properties in Canvas
 const selectedObj = ref<any>(null);
 const objProps = reactive({
     text: '',
     fontSize: 24,
-    fill: '#333333',
+    fill: '#D4AF37',
     fontFamily: 'Playfair Display',
     textAlign: 'center',
     opacity: 1,
 });
-
-// Events in invitation
-const eventsList = ref<any[]>(props.invitation.events || []);
 
 // Publish Modal State
 const showPublishModal = ref(false);
@@ -124,44 +321,54 @@ const publishedUrl = ref('');
 
 // Initialize Fabric.js Canvas
 onMounted(() => {
-    if (!canvasEl.value) return;
-
     // Load initial design JSON if exists
     if (props.invitation.design?.design_json) {
-        Object.assign(designData, props.invitation.design.design_json);
+        const loaded = props.invitation.design.design_json;
+        if (loaded.theme) Object.assign(designData.theme, loaded.theme);
+        if (loaded.content) {
+            if (loaded.content.groom) Object.assign(designData.content.groom, loaded.content.groom);
+            if (loaded.content.bride) Object.assign(designData.content.bride, loaded.content.bride);
+            if (loaded.content.gallery && Array.isArray(loaded.content.gallery)) {
+                designData.content.gallery = [...loaded.content.gallery];
+            }
+            Object.assign(designData.content, loaded.content);
+        }
+        if (loaded.canvas) Object.assign(designData.canvas, loaded.canvas);
+        if (loaded.musicUrl) designData.musicUrl = loaded.musicUrl;
+        if (loaded.gift) Object.assign(designData.gift, loaded.gift);
+        if (loaded.sections) designData.sections = loaded.sections;
     }
 
-    canvas = new fabric.Canvas(canvasEl.value, {
-        width: 380,
-        height: 620,
-        backgroundColor: designData.canvas.background || '#16191E',
-        selection: true,
-        preserveObjectStacking: true,
-    });
+    if (canvasEl.value) {
+        canvas = new fabric.Canvas(canvasEl.value, {
+            width: 380,
+            height: 620,
+            backgroundColor: designData.theme.bgColor || '#14171c',
+            selection: true,
+            preserveObjectStacking: true,
+        });
 
-    // Load initial objects into canvas
-    loadCanvasContent();
+        loadCanvasContent();
 
-    // Event listeners
-    canvas.on('selection:created', onObjectSelected);
-    canvas.on('selection:updated', onObjectSelected);
-    canvas.on('selection:cleared', () => {
-        selectedObj.value = null;
-    });
+        canvas.on('selection:created', onObjectSelected);
+        canvas.on('selection:updated', onObjectSelected);
+        canvas.on('selection:cleared', () => {
+            selectedObj.value = null;
+        });
 
-    canvas.on('object:modified', () => {
-        saveHistoryState();
-        triggerAutosave();
-    });
-
-    canvas.on('object:added', () => {
-        if (!isHistoryUpdating) {
+        canvas.on('object:modified', () => {
             saveHistoryState();
-        }
-    });
+            triggerAutosave();
+        });
 
-    // Save initial history
-    saveHistoryState();
+        canvas.on('object:added', () => {
+            if (!isHistoryUpdating) {
+                saveHistoryState();
+            }
+        });
+
+        saveHistoryState();
+    }
 });
 
 onBeforeUnmount(() => {
@@ -173,68 +380,55 @@ onBeforeUnmount(() => {
 const loadCanvasContent = () => {
     if (!canvas) return;
 
-    const bg = (designData.canvas.background || '#16191E').toLowerCase();
-    const isDark = bg.startsWith('#1') || bg.startsWith('#2') || bg.startsWith('#0') || bg.includes('black');
+    const primaryColor = designData.theme.primaryColor || '#D4AF37';
+    const textColor = designData.theme.secondaryColor || '#F3E5AB';
 
-    const primaryColor = isDark ? '#D4AF37' : '#5D6B50';
-    const textColor = isDark ? '#FDFBF7' : '#1E293B';
-    const subColor = isDark ? '#E5C07B' : '#64748B';
-
-    // Default decorative elements
-    const titleText = new fabric.IText('The Wedding Of', {
+    const subTitle = new fabric.IText(designData.content.coverSubtitle || "WALIMATUL 'URSY", {
         left: 190,
-        top: 150,
-        originX: 'center',
-        originY: 'center',
-        fontFamily: 'Playfair Display',
-        fontSize: 18,
+        top: 100,
+        fontSize: 12,
+        fontFamily: designData.theme.fontFamily || 'Playfair Display',
         fill: primaryColor,
+        originX: 'center',
     });
 
-    const coupleText = new fabric.IText('Dimas & Anisa', {
+    const coupleNames = new fabric.IText(designData.content.weddingTitle || 'Dimas & Anisa', {
         left: 190,
-        top: 240,
-        originX: 'center',
-        originY: 'center',
-        fontFamily: 'Great Vibes',
-        fontSize: 48,
+        top: 135,
+        fontSize: 32,
+        fontFamily: designData.theme.fontFamily || 'Playfair Display',
+        fontWeight: 'bold',
         fill: textColor,
-    });
-
-    const line = new fabric.Line([100, 290, 280, 290], {
-        stroke: primaryColor,
-        strokeWidth: 1.5,
-    });
-
-    const dateText = new fabric.IText('Minggu, 28 Desember 2026', {
-        left: 190,
-        top: 340,
         originX: 'center',
-        originY: 'center',
-        fontFamily: 'Playfair Display',
-        fontSize: 14,
-        fill: subColor,
     });
 
-    canvas.add(titleText);
-    canvas.add(coupleText);
-    canvas.add(line);
+    const dateText = new fabric.IText(designData.content.weddingDateText || 'Minggu, 28 Desember 2026', {
+        left: 190,
+        top: 185,
+        fontSize: 12,
+        fontFamily: designData.theme.fontFamily || 'Playfair Display',
+        fill: primaryColor,
+        originX: 'center',
+    });
+
+    canvas.add(subTitle);
+    canvas.add(coupleNames);
     canvas.add(dateText);
     canvas.renderAll();
 };
 
 const onObjectSelected = (e: any) => {
-    const active = canvas?.getActiveObject();
-    if (active) {
-        selectedObj.value = active;
-        if (active.type === 'i-text' || active.type === 'text') {
-            objProps.text = (active as any).text || '';
-            objProps.fontSize = (active as any).fontSize || 20;
-            objProps.fill = (active as any).fill || '#333333';
-            objProps.fontFamily = (active as any).fontFamily || 'Playfair Display';
-            objProps.textAlign = (active as any).textAlign || 'center';
-            objProps.opacity = active.opacity ?? 1;
-        }
+    const obj = e.selected?.[0] || canvas?.getActiveObject();
+    if (!obj) return;
+    selectedObj.value = obj;
+
+    if (obj.type === 'i-text' || obj.type === 'text') {
+        objProps.text = obj.text || '';
+        objProps.fontSize = obj.fontSize || 24;
+        objProps.fill = (obj.fill as string) || '#D4AF37';
+        objProps.fontFamily = obj.fontFamily || 'Playfair Display';
+        objProps.textAlign = obj.textAlign || 'center';
+        objProps.opacity = obj.opacity || 1;
     }
 };
 
@@ -242,134 +436,65 @@ const updateTextProp = (prop: string, val: any) => {
     if (!selectedObj.value || !canvas) return;
     selectedObj.value.set(prop, val);
     canvas.renderAll();
+    saveHistoryState();
     triggerAutosave();
 };
 
-// Add Element to Canvas
-const addText = (preset: 'title' | 'names' | 'subtext') => {
+const addText = (type: 'title' | 'names' | 'subtext') => {
     if (!canvas) return;
-
     let textObj: fabric.IText;
-    if (preset === 'title') {
-        textObj = new fabric.IText('Judul Acara', {
-            left: 240,
-            top: 150,
-            originX: 'center',
-            fontSize: 28,
-            fontFamily: 'Playfair Display',
-            fill: '#5D6B50',
-        });
-    } else if (preset === 'names') {
-        textObj = new fabric.IText('Nama Mempelai', {
-            left: 240,
+
+    if (type === 'title') {
+        textObj = new fabric.IText('The Wedding Celebration', {
+            left: 190,
             top: 250,
+            fontSize: 14,
+            fontFamily: designData.theme.fontFamily,
+            fill: designData.theme.primaryColor,
             originX: 'center',
-            fontSize: 48,
-            fontFamily: 'Great Vibes',
-            fill: '#1A1A1A',
+        });
+    } else if (type === 'names') {
+        textObj = new fabric.IText(designData.content.weddingTitle, {
+            left: 190,
+            top: 290,
+            fontSize: 34,
+            fontFamily: designData.theme.fontFamily,
+            fontWeight: 'bold',
+            fill: designData.theme.secondaryColor,
+            originX: 'center',
         });
     } else {
-        textObj = new fabric.IText('Kami mengundang Anda untuk hadir...', {
-            left: 240,
+        textObj = new fabric.IText('Doa restu Anda adalah kehormatan bagi kami.', {
+            left: 190,
             top: 360,
+            fontSize: 12,
+            fontFamily: designData.theme.fontFamily,
+            fill: '#d1d5db',
             originX: 'center',
-            fontSize: 14,
-            fontFamily: 'Plus Jakarta Sans',
-            fill: '#555555',
         });
     }
 
     canvas.add(textObj);
     canvas.setActiveObject(textObj);
     canvas.renderAll();
+    saveHistoryState();
     triggerAutosave();
 };
 
 const addOrnament = () => {
     if (!canvas) return;
-
-    const heart = new fabric.Path('M 10,30 A 20,20 0,0,1 50,30 A 20,20 0,0,1 90,30 Q 90,60 50,90 Q 10,60 10,30 z', {
-        left: 240,
-        top: 400,
+    const textObj = new fabric.IText('♥', {
+        left: 190,
+        top: 220,
+        fontSize: 26,
+        fill: designData.theme.primaryColor,
         originX: 'center',
-        originY: 'center',
-        fill: '#E0CEC7',
-        scaleX: 0.5,
-        scaleY: 0.5,
     });
-
-    canvas.add(heart);
-    canvas.setActiveObject(heart);
+    canvas.add(textObj);
+    canvas.setActiveObject(textObj);
     canvas.renderAll();
+    saveHistoryState();
     triggerAutosave();
-};
-
-// Upload Media State & Logic
-const isUploading = ref(false);
-const uploadError = ref('');
-const fileInputRef = ref<HTMLInputElement | null>(null);
-const uploadedMedia = ref<Array<{ url: string; filename: string }>>([]);
-
-const triggerFileInput = () => {
-    fileInputRef.value?.click();
-};
-
-const handleFileUpload = async (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    if (!target.files || target.files.length === 0) return;
-    const file = target.files[0];
-
-    isUploading.value = true;
-    uploadError.value = '';
-
-    try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('type', 'gallery');
-
-        const res = await fetch(`/api/invitations/${props.invitation.id}/upload`, {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as any)?.content || '',
-                'Accept': 'application/json',
-            },
-            body: formData,
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-            uploadedMedia.value.unshift({ url: data.url, filename: data.filename });
-            addImageToCanvas(data.url);
-        } else {
-            uploadError.value = data.message || 'Gagal mengunggah foto.';
-        }
-    } catch (err: any) {
-        uploadError.value = 'Terjadi kesalahan saat upload foto.';
-    } finally {
-        isUploading.value = false;
-        if (target) target.value = '';
-    }
-};
-
-const addImageToCanvas = (imageUrl: string) => {
-    if (!canvas) return;
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-        const fabricImg = new fabric.FabricImage(img, {
-            left: 240,
-            top: 300,
-            originX: 'center',
-            originY: 'center',
-        });
-        fabricImg.scaleToWidth(220);
-        canvas!.add(fabricImg);
-        canvas!.setActiveObject(fabricImg);
-        canvas!.renderAll();
-        saveHistoryState();
-        triggerAutosave();
-    };
-    img.src = imageUrl;
 };
 
 const deleteSelected = () => {
@@ -389,20 +514,6 @@ const duplicateSelected = async () => {
     });
     canvas.add(cloned);
     canvas.setActiveObject(cloned);
-    canvas.renderAll();
-    triggerAutosave();
-};
-
-const bringForward = () => {
-    if (!canvas || !selectedObj.value) return;
-    canvas.bringObjectForward(selectedObj.value);
-    canvas.renderAll();
-    triggerAutosave();
-};
-
-const sendBackward = () => {
-    if (!canvas || !selectedObj.value) return;
-    canvas.sendObjectBackwards(selectedObj.value);
     canvas.renderAll();
     triggerAutosave();
 };
@@ -442,19 +553,6 @@ const redo = async () => {
     }
 };
 
-// Zoom controls
-const setZoom = (delta: number) => {
-    if (!canvas) return;
-    let newZoom = zoomLevel.value + delta;
-    if (newZoom < 0.5) newZoom = 0.5;
-    if (newZoom > 2.0) newZoom = 2.0;
-    zoomLevel.value = newZoom;
-    canvas.setZoom(newZoom);
-    canvas.setWidth(designData.canvas.width * newZoom);
-    canvas.setHeight(designData.canvas.height * newZoom);
-    canvas.renderAll();
-};
-
 // Autosave with Debounce
 let autosaveTimeout: any = null;
 const triggerAutosave = () => {
@@ -462,19 +560,22 @@ const triggerAutosave = () => {
     clearTimeout(autosaveTimeout);
     autosaveTimeout = setTimeout(async () => {
         await executeSave();
-    }, 1200);
+    }, 1000);
 };
 
 const executeSave = async () => {
-    if (!canvas) return;
     try {
         saveStatus.value = 'saving';
-        const canvasObjects = canvas.toJSON();
+        const canvasObjects = canvas ? canvas.toJSON() : null;
 
         const payload = {
             design: {
                 schemaVersion: 1,
+                theme: designData.theme,
+                content: designData.content,
                 canvas: designData.canvas,
+                musicUrl: designData.musicUrl,
+                gift: designData.gift,
                 sections: designData.sections,
                 canvasObjects: canvasObjects,
             },
@@ -495,6 +596,8 @@ const executeSave = async () => {
             saveStatus.value = 'saved';
             const now = new Date();
             lastSavedTime.value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+            // Refresh preview iframe to show new edits
+            refreshPreview();
         } else {
             saveStatus.value = 'error';
         }
@@ -513,7 +616,6 @@ const confirmPublish = async () => {
     isPublishing.value = true;
     publishMessage.value = '';
 
-    // First ensure current canvas is saved
     await executeSave();
 
     try {
@@ -548,55 +650,53 @@ const copyUrl = () => {
 
 <template>
     <div class="h-screen flex flex-col bg-stone-100 overflow-hidden font-sans">
-        <!-- Top Application Toolbar -->
-        <header class="h-14 bg-white border-b border-stone-200 px-4 flex items-center justify-between z-30 shrink-0">
-            <div class="flex items-center gap-4">
-                <Link href="/dashboard" class="flex items-center gap-1.5 text-xs font-semibold text-stone-600 hover:text-stone-900 bg-stone-100 hover:bg-stone-200 px-3 py-1.5 rounded-lg transition-colors">
-                    ← Dashboard
+        <!-- Hidden file input for direct uploads -->
+        <input
+            ref="fileInputRef"
+            type="file"
+            accept="image/png,image/jpeg,image/webp,image/jpg"
+            class="hidden"
+            @change="handleFileUpload"
+        />
+
+        <!-- Top Header Navigation -->
+        <header class="h-14 bg-white border-b border-stone-200 px-4 flex items-center justify-between z-30 shrink-0 shadow-xs">
+            <div class="flex items-center gap-3">
+                <Link
+                    href="/dashboard"
+                    class="p-2 text-stone-500 hover:text-stone-800 hover:bg-stone-100 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-colors"
+                >
+                    <span>←</span>
+                    <span class="hidden sm:inline">Dashboard</span>
                 </Link>
                 <div class="h-4 w-px bg-stone-200"></div>
-                <div>
-                    <h1 class="text-xs font-bold text-stone-900 truncate max-w-xs">{{ invitation.title }}</h1>
-                    <div class="flex items-center gap-2 text-[10px] text-stone-400">
-                        <span v-if="saveStatus === 'saving'" class="text-amber-600 flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span> Menyimpan...
-                        </span>
-                        <span v-else-if="saveStatus === 'saved'" class="text-emerald-600 flex items-center gap-1">
-                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Tersimpan ({{ lastSavedTime }})
-                        </span>
-                        <span v-else class="text-rose-600">Gagal menyimpan</span>
-                    </div>
+                <div class="flex items-center gap-2">
+                    <span class="font-serif font-bold text-stone-800 text-sm truncate max-w-[200px]">
+                        {{ designData.content.weddingTitle }}
+                    </span>
+                    <span
+                        v-if="saveStatus === 'saving'"
+                        class="text-[10px] text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full font-medium flex items-center gap-1 animate-pulse"
+                    >
+                        <span>●</span> Menyimpan...
+                    </span>
+                    <span
+                        v-else-if="saveStatus === 'saved'"
+                        class="text-[10px] text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full font-medium flex items-center gap-1"
+                    >
+                        <span>✓</span> Tersimpan {{ lastSavedTime }}
+                    </span>
+                    <span
+                        v-else-if="saveStatus === 'error'"
+                        class="text-[10px] text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full font-medium"
+                    >
+                        Gagal Menyimpan
+                    </span>
                 </div>
             </div>
 
-            <!-- Middle Controls: Undo, Redo, Zoom, View Mode -->
+            <!-- Center Mode Switcher -->
             <div class="flex items-center gap-2">
-                <div class="flex items-center bg-stone-100 rounded-lg p-0.5 border border-stone-200">
-                    <button
-                        @click="undo"
-                        :disabled="historyIndex <= 0"
-                        title="Undo (Ctrl+Z)"
-                        class="p-1.5 text-xs text-stone-700 hover:bg-white rounded transition-colors disabled:opacity-30"
-                    >
-                        ↶
-                    </button>
-                    <button
-                        @click="redo"
-                        :disabled="historyIndex >= historyStack.length - 1"
-                        title="Redo (Ctrl+Y)"
-                        class="p-1.5 text-xs text-stone-700 hover:bg-white rounded transition-colors disabled:opacity-30"
-                    >
-                        ↷
-                    </button>
-                </div>
-
-                <div v-if="previewMode === 'canvas'" class="flex items-center bg-stone-100 rounded-lg p-0.5 border border-stone-200 text-xs">
-                    <button @click="setZoom(-0.1)" class="px-2 py-1 hover:bg-white rounded">-</button>
-                    <span class="px-1 text-[11px] font-mono text-stone-600">{{ Math.round(zoomLevel * 100) }}%</span>
-                    <button @click="setZoom(0.1)" class="px-2 py-1 hover:bg-white rounded">+</button>
-                </div>
-
-                <!-- Mode View Switcher: Mobile Live vs Canvas Cover -->
                 <div class="flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200 text-xs">
                     <button
                         type="button"
@@ -617,19 +717,18 @@ const copyUrl = () => {
                 </div>
             </div>
 
-            <!-- Right Controls: Preview & Publish -->
-            <div class="flex items-center gap-3">
+            <!-- Right Controls: Refresh & Publish -->
+            <div class="flex items-center gap-2.5">
                 <button
-                    v-if="previewMode === 'mobile'"
                     type="button"
                     @click="refreshPreview"
                     class="px-2.5 py-1.5 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors flex items-center gap-1"
-                    title="Segarkan iframe tampilan mobile"
+                    title="Segarkan tampilan preview"
                 >
                     <span>🔄 Refresh</span>
                 </button>
                 <a
-                    :href="`/i/${invitation.slug}`"
+                    :href="`/i/${invitation.slug}?preview=1`"
                     target="_blank"
                     class="px-3 py-1.5 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors flex items-center gap-1"
                 >
@@ -646,216 +745,583 @@ const copyUrl = () => {
 
         <!-- Main Workspace -->
         <div class="flex-1 flex overflow-hidden">
-            <!-- Left Sidebar: Tools & Sections -->
-            <aside class="w-64 bg-white border-r border-stone-200 flex flex-col shrink-0">
-                <div class="flex border-b border-stone-200 text-xs font-semibold">
+            <!-- Left Sidebar: Dedicated Editing Tabs -->
+            <aside class="w-80 bg-white border-r border-stone-200 flex flex-col shrink-0">
+                <!-- Navigation Tabs -->
+                <div class="grid grid-cols-6 border-b border-stone-200 text-[11px] font-semibold text-center bg-stone-50/50">
                     <button
-                        @click="activeTab = 'elements'"
-                        :class="['flex-1 py-3 text-center border-b-2', activeTab === 'elements' ? 'border-rose-500 text-rose-600' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                        @click="activeTab = 'couple'"
+                        :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'couple' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                        title="Teks & Mempelai"
                     >
-                        Elemen
+                        <span>✍️</span>
+                        <span class="text-[9px]">Mempelai</span>
+                    </button>
+                    <button
+                        @click="activeTab = 'theme'"
+                        :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'theme' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                        title="Warna & Gaya"
+                    >
+                        <span>🎨</span>
+                        <span class="text-[9px]">Warna</span>
                     </button>
                     <button
                         @click="activeTab = 'media'"
-                        :class="['flex-1 py-3 text-center border-b-2 flex items-center justify-center gap-1', activeTab === 'media' ? 'border-rose-500 text-rose-600' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                        :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'media' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                        title="Foto & Galeri"
                     >
                         <span>📷</span>
-                        <span>Foto</span>
-                    </button>
-                    <button
-                        @click="activeTab = 'sections'"
-                        :class="['flex-1 py-3 text-center border-b-2', activeTab === 'sections' ? 'border-rose-500 text-rose-600' : 'border-transparent text-stone-500 hover:text-stone-800']"
-                    >
-                        Section
+                        <span class="text-[9px]">Foto</span>
                     </button>
                     <button
                         @click="activeTab = 'events'"
-                        :class="['flex-1 py-3 text-center border-b-2', activeTab === 'events' ? 'border-rose-500 text-rose-600' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                        :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'events' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                        title="Jadwal Acara"
                     >
-                        Acara
+                        <span>📅</span>
+                        <span class="text-[9px]">Acara</span>
                     </button>
                     <button
                         @click="activeTab = 'features'"
-                        :class="['flex-1 py-3 text-center border-b-2', activeTab === 'features' ? 'border-rose-500 text-rose-600' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                        :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'features' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                        title="Musik & Kado"
                     >
-                        Fitur
+                        <span>🎁</span>
+                        <span class="text-[9px]">Fitur</span>
+                    </button>
+                    <button
+                        @click="activeTab = 'canvas'"
+                        :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'canvas' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                        title="Kanvas Cover"
+                    >
+                        <span>🖌️</span>
+                        <span class="text-[9px]">Kanvas</span>
                     </button>
                 </div>
 
-                <div class="p-4 flex-1 overflow-y-auto space-y-4">
-                    <!-- Hidden File Input for Image Upload -->
-                    <input
-                        ref="fileInputRef"
-                        type="file"
-                        accept="image/png,image/jpeg,image/webp,image/jpg"
-                        class="hidden"
-                        @change="handleFileUpload"
-                    />
+                <!-- Tab Content Body (Scrollable) -->
+                <div class="p-4 flex-1 overflow-y-auto space-y-4 text-xs">
+                    <!-- ============================================== -->
+                    <!-- TAB 1: TEKS & PROFIL MEMPELAI                  -->
+                    <!-- ============================================== -->
+                    <div v-if="activeTab === 'couple'" class="space-y-4">
+                        <div class="p-3 bg-rose-50/50 rounded-xl border border-rose-100 text-stone-600 text-[11px] leading-relaxed">
+                            💡 Ubah nama mempelai, orang tua, dan kutipan ayat. Perubahan otomatis tersimpan dan tampil langsung di pratinjau mobile.
+                        </div>
 
-                    <!-- Tab: Foto & Media -->
-                    <div v-if="activeTab === 'media'" class="space-y-4">
+                        <!-- Info Cover & Judul -->
+                        <div class="space-y-2 border-b pb-4 border-stone-200">
+                            <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Judul & Cover</div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Judul Utama Undangan</label>
+                                <input
+                                    v-model="designData.content.weddingTitle"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="Contoh: Dimas & Anisa"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 font-serif font-bold text-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Subtitle / Jenis Acara</label>
+                                <input
+                                    v-model="designData.content.coverSubtitle"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="Contoh: Walimatul 'Ursy / The Wedding Celebration"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Tanggal Pernikahan Teks</label>
+                                <input
+                                    v-model="designData.content.weddingDateText"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="Contoh: Minggu, 28 Desember 2026"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Profil Mempelai Pria -->
+                        <div class="space-y-2 border-b pb-4 border-stone-200">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">🤵 Mempelai Pria</span>
+                                <span class="text-[10px] text-stone-500 font-mono">Groom</span>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Nama Panggilan (Monogram)</label>
+                                <input
+                                    v-model="designData.content.groom.nickname"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="Contoh: Dimas"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Nama Lengkap & Gelar</label>
+                                <input
+                                    v-model="designData.content.groom.fullName"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="Contoh: Dimas Prasetyo, S.Kom"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 font-bold text-stone-900 focus:bg-white"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Nama Orang Tua (Ayah & Ibu)</label>
+                                <textarea
+                                    v-model="designData.content.groom.parents"
+                                    @input="triggerAutosave"
+                                    rows="2"
+                                    placeholder="Putra pertama dari Bpk. Bambang & Ibu Sri"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
+                                ></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Username Instagram (Opsional)</label>
+                                <input
+                                    v-model="designData.content.groom.instagram"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="@dimasprasetyo"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Profil Mempelai Wanita -->
+                        <div class="space-y-2 border-b pb-4 border-stone-200">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">👰 Mempelai Wanita</span>
+                                <span class="text-[10px] text-stone-500 font-mono">Bride</span>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Nama Panggilan (Monogram)</label>
+                                <input
+                                    v-model="designData.content.bride.nickname"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="Contoh: Anisa"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Nama Lengkap & Gelar</label>
+                                <input
+                                    v-model="designData.content.bride.fullName"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="Contoh: Anisa Rahmawati, S.E"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 font-bold text-stone-900 focus:bg-white"
+                                />
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Nama Orang Tua (Ayah & Ibu)</label>
+                                <textarea
+                                    v-model="designData.content.bride.parents"
+                                    @input="triggerAutosave"
+                                    rows="2"
+                                    placeholder="Putri kedua dari Bpk. H. Rahmat & Ibu Siti"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
+                                ></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Username Instagram (Opsional)</label>
+                                <input
+                                    v-model="designData.content.bride.instagram"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="@anisarahmawati"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Kutipan Ayat & Doa -->
+                        <div class="space-y-2">
+                            <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Kutipan Ayat / Doa Restu</div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Teks Ayat / Kata Mutiara</label>
+                                <textarea
+                                    v-model="designData.content.quote"
+                                    @input="triggerAutosave"
+                                    rows="3"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white italic"
+                                ></textarea>
+                            </div>
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Sumber Ayat (Misal: QS. Ar-Rum: 21)</label>
+                                <input
+                                    v-model="designData.content.quoteSource"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================== -->
+                    <!-- TAB 2: WARNA, PALET & TEMA                      -->
+                    <!-- ============================================== -->
+                    <div v-if="activeTab === 'theme'" class="space-y-4">
+                        <div class="p-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-600 text-[11px] leading-relaxed">
+                            🎨 Pilih salah satu preset palet warna di bawah, atau tentukan kode warna heksadesimal kustom Anda sendiri.
+                        </div>
+
+                        <!-- Preset Palettes -->
                         <div>
-                            <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-2">Upload Foto dari Perangkat</div>
-                            <div
-                                @click="triggerFileInput"
-                                class="p-5 border-2 border-dashed border-stone-300 hover:border-rose-400 hover:bg-rose-50/30 rounded-2xl text-center cursor-pointer transition-colors"
-                            >
-                                <div class="text-2xl mb-1">🖼️</div>
-                                <div class="text-xs font-bold text-stone-800">
-                                    {{ isUploading ? 'Sedang Mengunggah...' : 'Pilih Foto dari HP/Laptop' }}
+                            <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider mb-2">Preset Palet Warna Mewah</div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button
+                                    v-for="p in colorPalettes"
+                                    :key="p.id"
+                                    type="button"
+                                    @click="applyPalette(p)"
+                                    :class="['p-2.5 rounded-xl border text-left flex items-center gap-2.5 transition-all', designData.theme.palette === p.id ? 'border-rose-500 bg-rose-50/50 shadow-xs ring-1 ring-rose-400' : 'border-stone-200 hover:border-stone-300 bg-white']"
+                                >
+                                    <div class="w-5 h-5 rounded-full shrink-0 shadow-inner flex items-center justify-center border border-white" :style="{ backgroundColor: p.primary }">
+                                        <div class="w-1.5 h-1.5 rounded-full" :style="{ backgroundColor: p.secondary }"></div>
+                                    </div>
+                                    <span class="font-semibold text-stone-800 text-[11px] truncate">{{ p.name }}</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Custom Color Pickers -->
+                        <div class="space-y-3 pt-2 border-t border-stone-200">
+                            <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Kustom Warna Hex</div>
+
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Warna Aksen Utama (Emas / Rose / Emerald)</label>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        v-model="designData.theme.primaryColor"
+                                        @input="triggerAutosave"
+                                        class="w-9 h-9 rounded-lg border p-0.5 cursor-pointer bg-white"
+                                    />
+                                    <input
+                                        v-model="designData.theme.primaryColor"
+                                        @input="triggerAutosave"
+                                        type="text"
+                                        class="flex-1 p-2 border rounded-lg bg-stone-50 font-mono text-xs uppercase"
+                                    />
                                 </div>
-                                <div class="text-[10px] text-stone-400 mt-1">
-                                    JPG, PNG, atau WebP (Maks. 10MB)
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Warna Highlight & Teks Judul</label>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        v-model="designData.theme.secondaryColor"
+                                        @input="triggerAutosave"
+                                        class="w-9 h-9 rounded-lg border p-0.5 cursor-pointer bg-white"
+                                    />
+                                    <input
+                                        v-model="designData.theme.secondaryColor"
+                                        @input="triggerAutosave"
+                                        type="text"
+                                        class="flex-1 p-2 border rounded-lg bg-stone-50 font-mono text-xs uppercase"
+                                    />
                                 </div>
-                                <div v-if="isUploading" class="mt-2 text-xs font-semibold text-rose-600 animate-pulse">
-                                    Mengompresi & Menyimpan...
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Warna Background Undangan</label>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        v-model="designData.theme.bgColor"
+                                        @input="triggerAutosave"
+                                        class="w-9 h-9 rounded-lg border p-0.5 cursor-pointer bg-white"
+                                    />
+                                    <input
+                                        v-model="designData.theme.bgColor"
+                                        @input="triggerAutosave"
+                                        type="text"
+                                        class="flex-1 p-2 border rounded-lg bg-stone-50 font-mono text-xs uppercase"
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Warna Background Kartu & Section</label>
+                                <div class="flex items-center gap-2">
+                                    <input
+                                        type="color"
+                                        v-model="designData.theme.cardBgColor"
+                                        @input="triggerAutosave"
+                                        class="w-9 h-9 rounded-lg border p-0.5 cursor-pointer bg-white"
+                                    />
+                                    <input
+                                        v-model="designData.theme.cardBgColor"
+                                        @input="triggerAutosave"
+                                        type="text"
+                                        class="flex-1 p-2 border rounded-lg bg-stone-50 font-mono text-xs uppercase"
+                                    />
                                 </div>
                             </div>
                         </div>
 
+                        <!-- Font Family Selection -->
+                        <div class="space-y-2 pt-2 border-t border-stone-200">
+                            <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Pilihan Tipografi & Font</div>
+                            <div>
+                                <select
+                                    v-model="designData.theme.fontFamily"
+                                    @change="triggerAutosave"
+                                    class="w-full p-2.5 border rounded-xl bg-stone-50 text-xs font-medium"
+                                >
+                                    <option v-for="f in fontOptions" :key="f.value" :value="f.value">
+                                        {{ f.name }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ============================================== -->
+                    <!-- TAB 3: FOTO & GALERI                           -->
+                    <!-- ============================================== -->
+                    <div v-if="activeTab === 'media'" class="space-y-4">
                         <div v-if="uploadError" class="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">
                             {{ uploadError }}
                         </div>
+                        <div v-if="isUploading" class="p-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl animate-pulse">
+                            ⏳ Sedang mengunggah dan mengompres foto...
+                        </div>
 
-                        <!-- Gallery of uploaded images -->
-                        <div v-if="uploadedMedia.length > 0" class="space-y-2">
-                            <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider">Foto Tersimpan di Cloud</div>
-                            <div class="grid grid-cols-2 gap-2">
-                                <div
-                                    v-for="(item, idx) in uploadedMedia"
-                                    :key="idx"
-                                    class="relative group rounded-xl overflow-hidden border border-stone-200 bg-stone-100 aspect-square"
+                        <!-- Foto Cover Hero -->
+                        <div class="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-stone-800 text-[11px]">Foto Cover Utama (Hero)</span>
+                                <button
+                                    type="button"
+                                    @click="triggerUploadFor('cover')"
+                                    class="text-[10px] text-rose-600 hover:underline font-bold"
                                 >
-                                    <img :src="item.url" class="w-full h-full object-cover" />
-                                    <button
-                                        @click="addImageToCanvas(item.url)"
-                                        class="absolute inset-0 bg-black/50 text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
-                                    >
-                                        + Pasang
-                                    </button>
+                                    📁 Upload Foto
+                                </button>
+                            </div>
+                            <div class="flex gap-3 items-center">
+                                <div class="w-14 h-16 rounded-lg overflow-hidden border bg-stone-200 shrink-0">
+                                    <img :src="designData.content.coverImage" class="w-full h-full object-cover" />
+                                </div>
+                                <input
+                                    v-model="designData.content.coverImage"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="https://..."
+                                    class="flex-1 p-2 border rounded-lg bg-white text-xs"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- Foto Mempelai Pria & Wanita -->
+                        <div class="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-stone-800 text-[11px]">Foto Mempelai Pria</span>
+                                <button
+                                    type="button"
+                                    @click="triggerUploadFor('groom')"
+                                    class="text-[10px] text-rose-600 hover:underline font-bold"
+                                >
+                                    📁 Upload Foto
+                                </button>
+                            </div>
+                            <div class="flex gap-3 items-center">
+                                <div class="w-12 h-12 rounded-full overflow-hidden border bg-stone-200 shrink-0">
+                                    <img :src="designData.content.groom.photo" class="w-full h-full object-cover" />
+                                </div>
+                                <input
+                                    v-model="designData.content.groom.photo"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="https://..."
+                                    class="flex-1 p-2 border rounded-lg bg-white text-xs"
+                                />
+                            </div>
+                        </div>
+
+                        <div class="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-stone-800 text-[11px]">Foto Mempelai Wanita</span>
+                                <button
+                                    type="button"
+                                    @click="triggerUploadFor('bride')"
+                                    class="text-[10px] text-rose-600 hover:underline font-bold"
+                                >
+                                    📁 Upload Foto
+                                </button>
+                            </div>
+                            <div class="flex gap-3 items-center">
+                                <div class="w-12 h-12 rounded-full overflow-hidden border bg-stone-200 shrink-0">
+                                    <img :src="designData.content.bride.photo" class="w-full h-full object-cover" />
+                                </div>
+                                <input
+                                    v-model="designData.content.bride.photo"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="https://..."
+                                    class="flex-1 p-2 border rounded-lg bg-white text-xs"
+                                />
+                            </div>
+                        </div>
+
+                        <!-- 4 Foto Galeri Kenangan -->
+                        <div class="space-y-2 border-t pt-3 border-stone-200">
+                            <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">4 Foto Galeri Kenangan</div>
+                            <div class="space-y-2">
+                                <div
+                                    v-for="(photoUrl, idx) in designData.content.gallery"
+                                    :key="idx"
+                                    class="p-2.5 bg-stone-50 border border-stone-200 rounded-xl space-y-1.5"
+                                >
+                                    <div class="flex items-center justify-between text-[10px]">
+                                        <span class="font-bold text-stone-700">Foto Galeri #{{ idx + 1 }}</span>
+                                        <button
+                                            type="button"
+                                            @click="triggerUploadFor('gallery_' + idx)"
+                                            class="text-rose-600 font-bold hover:underline"
+                                        >
+                                            📁 Ganti File
+                                        </button>
+                                    </div>
+                                    <div class="flex gap-2 items-center">
+                                        <div class="w-10 h-10 rounded-lg overflow-hidden border bg-stone-200 shrink-0">
+                                            <img :src="photoUrl" class="w-full h-full object-cover" />
+                                        </div>
+                                        <input
+                                            v-model="designData.content.gallery[idx]"
+                                            @input="triggerAutosave"
+                                            type="text"
+                                            class="flex-1 p-1.5 border rounded-lg bg-white text-xs"
+                                        />
+                                    </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    <!-- Tab: Elements -->
-                    <div v-if="activeTab === 'elements'" class="space-y-4">
-                        <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider">Tambah Teks</div>
-                        <div class="grid grid-cols-1 gap-2">
-                            <button
-                                @click="addText('title')"
-                                class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-xs font-serif font-bold text-stone-800 transition-colors"
-                            >
-                                + Judul Acara (Playfair)
-                            </button>
-                            <button
-                                @click="addText('names')"
-                                class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-sm font-script text-stone-800 transition-colors"
-                            >
-                                + Nama Pasangan (Script)
-                            </button>
-                            <button
-                                @click="addText('subtext')"
-                                class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-xs text-stone-600 transition-colors"
-                            >
-                                + Paragraf / Deskripsi
-                            </button>
-                        </div>
 
-                        <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider pt-2">Dekorasi & Ornamen</div>
-                        <button
-                            @click="addOrnament"
-                            class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-xs text-stone-700 transition-colors flex items-center gap-2"
-                        >
-                            <span class="text-rose-400">♥</span> Simbol Cinta (Heart)
-                        </button>
-                    </div>
-
-                    <!-- Tab: Sections -->
-                    <div v-if="activeTab === 'sections'" class="space-y-2">
-                        <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-2">Urutan Bagian Undangan</div>
-                        <div
-                            v-for="sec in designData.sections"
-                            :key="sec.id"
-                            class="flex items-center justify-between p-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs"
-                        >
-                            <span class="font-medium text-stone-700">{{ sec.title }}</span>
-                            <input
-                                type="checkbox"
-                                v-model="sec.visible"
-                                @change="triggerAutosave"
-                                class="rounded text-rose-600 focus:ring-rose-500"
-                            />
-                        </div>
-                    </div>
-
-                    <!-- Tab: Events Schedule -->
+                    <!-- ============================================== -->
+                    <!-- TAB 4: JADWAL & AGENDA ACARA                   -->
+                    <!-- ============================================== -->
                     <div v-if="activeTab === 'events'" class="space-y-4">
-                        <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider">Jadwal Acara</div>
-                        <div v-for="ev in eventsList" :key="ev.id" class="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-2">
-                            <div>
-                                <label class="text-[10px] font-semibold text-stone-600">Nama Acara</label>
-                                <input v-model="ev.name" @input="triggerAutosave" type="text" class="w-full text-xs p-1.5 border rounded bg-white" />
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Rangkaian Acara</span>
+                            <button
+                                type="button"
+                                @click="addEvent"
+                                class="px-2.5 py-1 bg-rose-50 hover:bg-rose-100 text-rose-600 text-xs font-bold rounded-lg border border-rose-200 transition-colors"
+                            >
+                                + Tambah Acara
+                            </button>
+                        </div>
+
+                        <div v-for="(ev, idx) in eventsList" :key="ev.id" class="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-2.5 relative">
+                            <div class="flex items-center justify-between">
+                                <span class="font-bold text-stone-800 text-[11px]">Acara #{{ idx + 1 }}</span>
+                                <button
+                                    v-if="eventsList.length > 1"
+                                    type="button"
+                                    @click="removeEvent(idx)"
+                                    class="text-stone-400 hover:text-rose-600 text-xs font-bold"
+                                    title="Hapus Acara"
+                                >
+                                    ✕ Hapus
+                                </button>
                             </div>
+
                             <div>
-                                <label class="text-[10px] font-semibold text-stone-600">Venue / Lokasi</label>
-                                <input v-model="ev.venue_name" @input="triggerAutosave" type="text" class="w-full text-xs p-1.5 border rounded bg-white" />
+                                <label class="block text-[10px] font-semibold text-stone-600 mb-0.5">Nama Acara</label>
+                                <input
+                                    v-model="ev.name"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="Akad Nikah / Resepsi"
+                                    class="w-full text-xs p-1.5 border rounded-lg bg-white"
+                                />
                             </div>
+
                             <div>
-                                <label class="text-[10px] font-semibold text-stone-600">Alamat</label>
-                                <textarea v-model="ev.address" @input="triggerAutosave" rows="2" class="w-full text-xs p-1.5 border rounded bg-white"></textarea>
+                                <label class="block text-[10px] font-semibold text-stone-600 mb-0.5">Waktu Mulai</label>
+                                <input
+                                    v-model="ev.starts_at"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="2026-12-28 08:00:00"
+                                    class="w-full text-xs p-1.5 border rounded-lg bg-white font-mono"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-semibold text-stone-600 mb-0.5">Nama Venue / Tempat</label>
+                                <input
+                                    v-model="ev.venue_name"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="Gedung / Masjid / Hotel"
+                                    class="w-full text-xs p-1.5 border rounded-lg bg-white"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-semibold text-stone-600 mb-0.5">Alamat Lengkap</label>
+                                <textarea
+                                    v-model="ev.address"
+                                    @input="triggerAutosave"
+                                    rows="2"
+                                    placeholder="Jl. Melati No. 12..."
+                                    class="w-full text-xs p-1.5 border rounded-lg bg-white"
+                                ></textarea>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-semibold text-stone-600 mb-0.5">Link Google Maps (URL)</label>
+                                <input
+                                    v-model="ev.maps_url"
+                                    @input="triggerAutosave"
+                                    type="text"
+                                    placeholder="https://maps.google.com/..."
+                                    class="w-full text-xs p-1.5 border rounded-lg bg-white"
+                                />
                             </div>
                         </div>
                     </div>
 
-                    <!-- Tab: Features (Musik & Amplop Digital) -->
-                    <div v-if="activeTab === 'features'" class="space-y-6">
-                        <!-- Music Player Settings -->
-                        <div class="space-y-3 pb-4 border-b border-stone-200">
-                            <div class="flex items-center gap-1.5 text-xs font-bold text-stone-900">
-                                <span>🎵</span>
-                                <span>Musik Latar (Background Music)</span>
-                            </div>
-
+                    <!-- ============================================== -->
+                    <!-- TAB 5: FITUR MUSIK & AMPLOP DIGITAL             -->
+                    <!-- ============================================== -->
+                    <div v-if="activeTab === 'features'" class="space-y-4">
+                        <!-- Musik Latar -->
+                        <div class="space-y-2 border-b pb-4 border-stone-200">
+                            <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Musik Latar (Vinyl Player)</div>
                             <div>
-                                <label class="block text-[10px] font-semibold text-stone-600 mb-1">Preset Musik Romantis</label>
-                                <select
-                                    @change="(e: any) => { designData.musicUrl = e.target.value; triggerAutosave(); }"
-                                    :value="designData.musicUrl"
-                                    class="w-full text-xs p-2 rounded-xl border border-stone-300 bg-white"
-                                >
-                                    <option value="https://actions.google.com/sounds/v1/ambient/relaxing_music.ogg">🎶 Ambient Relaxing Melody (Default)</option>
-                                    <option value="https://actions.google.com/sounds/v1/ambiences/daytime_forest_bonfire.ogg">🌿 Acoustic Nature Harmony</option>
-                                    <option value="https://actions.google.com/sounds/v1/water/gentle_stream_waterfall.ogg">💧 Serene Soft Harmony</option>
-                                </select>
-                            </div>
-
-                            <div>
-                                <label class="block text-[10px] font-semibold text-stone-600 mb-1">Atau Gunakan Custom Audio URL (.mp3 / .ogg)</label>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">URL Audio (MP3 / OGG)</label>
                                 <input
                                     v-model="designData.musicUrl"
                                     @input="triggerAutosave"
-                                    type="url"
-                                    placeholder="https://example.com/audio.mp3"
-                                    class="w-full text-xs p-2 rounded-xl border border-stone-300 bg-white font-mono"
+                                    type="text"
+                                    placeholder="https://.../music.mp3"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-xs"
                                 />
-                                <p class="text-[9px] text-stone-400 mt-1">
-                                    Musik akan berputar otomatis dengan pemutar piringan hitam (vinyl) interaktif.
-                                </p>
                             </div>
                         </div>
 
-                        <!-- Amplop Digital Settings -->
-                        <div class="space-y-3 pb-4 border-b border-stone-200">
+                        <!-- Amplop Digital -->
+                        <div class="space-y-3">
                             <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-1.5 text-xs font-bold text-stone-900">
-                                    <span>🎁</span>
-                                    <span>Amplop Digital & Rekening</span>
-                                </div>
+                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">🎁 Amplop Digital & QRIS</span>
                                 <input
                                     v-model="designData.gift.enabled"
                                     @change="triggerAutosave"
                                     type="checkbox"
-                                    class="rounded text-rose-600 focus:ring-rose-500"
+                                    class="rounded text-rose-600"
                                 />
                             </div>
 
@@ -870,9 +1336,7 @@ const copyUrl = () => {
                                     />
                                 </div>
 
-                                <div class="space-y-2.5">
-                                    <div class="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Daftar Rekening Bank:</div>
-
+                                <div class="space-y-2">
                                     <div
                                         v-for="(acc, idx) in designData.gift.accounts"
                                         :key="idx"
@@ -885,18 +1349,16 @@ const copyUrl = () => {
                                         >
                                             ✕
                                         </button>
-
                                         <div>
                                             <label class="text-[9px] font-semibold text-stone-500">Nama Bank / E-Wallet</label>
                                             <input
                                                 v-model="acc.bank"
                                                 @input="triggerAutosave"
                                                 type="text"
-                                                placeholder="BCA / Mandiri / BRI / GoPay"
+                                                placeholder="BCA / Mandiri / GoPay"
                                                 class="w-full text-xs p-1 border rounded bg-white"
                                             />
                                         </div>
-
                                         <div>
                                             <label class="text-[9px] font-semibold text-stone-500">Nomor Rekening</label>
                                             <input
@@ -907,14 +1369,12 @@ const copyUrl = () => {
                                                 class="w-full text-xs p-1 border rounded bg-white font-mono"
                                             />
                                         </div>
-
                                         <div>
                                             <label class="text-[9px] font-semibold text-stone-500">Atas Nama (a.n)</label>
                                             <input
                                                 v-model="acc.account_name"
                                                 @input="triggerAutosave"
                                                 type="text"
-                                                placeholder="Nama Pemilik Rekening"
                                                 class="w-full text-xs p-1 border rounded bg-white"
                                             />
                                         </div>
@@ -925,56 +1385,58 @@ const copyUrl = () => {
                                         @click="addBankAccount"
                                         class="w-full py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold rounded-xl border border-stone-200 transition-colors"
                                     >
-                                        + Tambah Rekening Bank Lain
+                                        + Tambah Rekening Lain
                                     </button>
                                 </div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Physical Gift Delivery Address -->
-                        <div class="space-y-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center gap-1.5 text-xs font-bold text-stone-900">
-                                    <span>📦</span>
-                                    <span>Pengiriman Kado Fisik</span>
-                                </div>
-                                <input
-                                    v-model="designData.gift.physical_gift.enabled"
-                                    @change="triggerAutosave"
-                                    type="checkbox"
-                                    class="rounded text-rose-600 focus:ring-rose-500"
-                                />
-                            </div>
+                    <!-- ============================================== -->
+                    <!-- TAB 6: KANVAS COVER FABRIC.JS                   -->
+                    <!-- ============================================== -->
+                    <div v-if="activeTab === 'canvas'" class="space-y-4">
+                        <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Tambah Teks ke Kanvas</div>
+                        <div class="grid grid-cols-1 gap-2">
+                            <button
+                                @click="addText('title')"
+                                class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-xs font-bold text-stone-800 transition-colors"
+                            >
+                                + Judul Acara
+                            </button>
+                            <button
+                                @click="addText('names')"
+                                class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-xs font-bold text-stone-800 transition-colors"
+                            >
+                                + Nama Pasangan
+                            </button>
+                            <button
+                                @click="addText('subtext')"
+                                class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-xs text-stone-600 transition-colors"
+                            >
+                                + Paragraf / Doa
+                            </button>
+                            <button
+                                @click="addOrnament"
+                                class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-xs text-stone-700 transition-colors flex items-center gap-2"
+                            >
+                                <span class="text-rose-500">♥</span> Simbol Cinta (Heart)
+                            </button>
+                        </div>
 
-                            <div v-if="designData.gift.physical_gift.enabled" class="space-y-2">
-                                <div>
-                                    <label class="text-[10px] font-semibold text-stone-600">Nama Penerima</label>
-                                    <input
-                                        v-model="designData.gift.physical_gift.receiver_name"
-                                        @input="triggerAutosave"
-                                        type="text"
-                                        class="w-full text-xs p-1.5 border rounded-lg bg-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-semibold text-stone-600">Nomor Telepon / WhatsApp</label>
-                                    <input
-                                        v-model="designData.gift.physical_gift.phone"
-                                        @input="triggerAutosave"
-                                        type="text"
-                                        class="w-full text-xs p-1.5 border rounded-lg bg-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label class="text-[10px] font-semibold text-stone-600">Alamat Lengkap Pengiriman</label>
-                                    <textarea
-                                        v-model="designData.gift.physical_gift.address"
-                                        @input="triggerAutosave"
-                                        rows="3"
-                                        class="w-full text-xs p-1.5 border rounded-lg bg-white"
-                                    ></textarea>
-                                </div>
-                            </div>
+                        <div class="flex items-center gap-2 pt-2 border-t border-stone-200">
+                            <button
+                                @click="undo"
+                                class="flex-1 py-1.5 border rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-50"
+                            >
+                                ↺ Undo
+                            </button>
+                            <button
+                                @click="redo"
+                                class="flex-1 py-1.5 border rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-50"
+                            >
+                                ↻ Redo
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -985,7 +1447,7 @@ const copyUrl = () => {
                 <!-- MODE 1: Interactive Live Mobile Phone Mockup -->
                 <div v-show="previewMode === 'mobile'" class="flex flex-col items-center gap-3">
                     <div class="relative w-[380px] h-[720px] bg-stone-900 rounded-[50px] p-3 shadow-2xl border-4 border-stone-800 flex flex-col overflow-hidden ring-1 ring-white/10">
-                        <!-- Smartphone Speaker & Dynamic Island Notch -->
+                        <!-- Dynamic Island Notch -->
                         <div class="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-4 bg-stone-950 rounded-full z-30 flex items-center justify-center shadow-inner">
                             <div class="w-2.5 h-2.5 rounded-full bg-stone-900 mr-2 border border-stone-800"></div>
                             <div class="w-10 h-1 bg-stone-800 rounded-full"></div>
@@ -995,7 +1457,7 @@ const copyUrl = () => {
                         <div class="w-full h-full rounded-[40px] overflow-hidden bg-stone-950 relative">
                             <iframe
                                 :key="previewKey"
-                                :src="`/i/${invitation.slug}`"
+                                :src="`/i/${invitation.slug}?preview=1`"
                                 class="w-full h-full border-0 select-none"
                             ></iframe>
                         </div>
@@ -1025,7 +1487,7 @@ const copyUrl = () => {
                 </div>
             </main>
 
-            <!-- Right Sidebar: Properties Inspector -->
+            <!-- Right Sidebar: Properties Inspector (Canvas Object) -->
             <aside class="w-64 bg-white border-l border-stone-200 p-4 flex flex-col shrink-0 overflow-y-auto">
                 <div class="text-xs font-bold text-stone-800 uppercase tracking-wider mb-4 pb-2 border-b border-stone-100">
                     Inspektor Properti
@@ -1041,12 +1503,9 @@ const copyUrl = () => {
                                 @change="updateTextProp('fontFamily', objProps.fontFamily)"
                                 class="w-full p-2 border rounded-xl bg-stone-50 text-xs"
                             >
-                                <option value="Playfair Display">Playfair Display (Serif)</option>
-                                <option value="Great Vibes">Great Vibes (Script)</option>
-                                <option value="Alex Brush">Alex Brush (Brush)</option>
-                                <option value="Cinzel">Cinzel (Classic)</option>
-                                <option value="Cormorant Garamond">Cormorant Garamond</option>
-                                <option value="Plus Jakarta Sans">Plus Jakarta Sans</option>
+                                <option v-for="f in fontOptions" :key="f.value" :value="f.value">
+                                    {{ f.name }}
+                                </option>
                             </select>
                         </div>
 
@@ -1102,20 +1561,8 @@ const copyUrl = () => {
 
                     <!-- Layer & Object Actions -->
                     <div class="pt-4 border-t border-stone-100 space-y-2">
-                        <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-2">Layer & Aksi</div>
+                        <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-2">Aksi Objek</div>
                         <div class="grid grid-cols-2 gap-2">
-                            <button
-                                @click="bringForward"
-                                class="p-2 border border-stone-200 rounded-lg hover:bg-stone-50 text-[11px] font-medium"
-                            >
-                                Ke Depan ↑
-                            </button>
-                            <button
-                                @click="sendBackward"
-                                class="p-2 border border-stone-200 rounded-lg hover:bg-stone-50 text-[11px] font-medium"
-                            >
-                                Ke Belakang ↓
-                            </button>
                             <button
                                 @click="duplicateSelected"
                                 class="p-2 border border-stone-200 rounded-lg hover:bg-stone-50 text-[11px] font-medium"
@@ -1132,8 +1579,8 @@ const copyUrl = () => {
                     </div>
                 </div>
 
-                <div v-else class="text-center py-12 text-stone-400 text-xs">
-                    Pilih objek di kanvas untuk mengubah properti teks, font, warna, atau urutan layer.
+                <div v-else class="text-center py-12 text-stone-400 text-xs leading-relaxed">
+                    Pilih tab di sebelah kiri untuk mengedit mempelai, warna tema, foto, acara, atau fitur.
                 </div>
             </aside>
         </div>
@@ -1148,7 +1595,7 @@ const copyUrl = () => {
 
                 <div v-if="!publishedUrl">
                     <p class="text-xs text-stone-600 leading-relaxed mb-4">
-                        Publikasi akan membuat versi baru yang dapat dilihat oleh seluruh tamu tanpa perlu login. Perubahan draft selanjutnya tidak akan mengubah halaman publik sebelum Anda mempublikasikannya kembali.
+                        Publikasi akan membuat versi baru yang dapat dilihat oleh seluruh tamu tanpa perlu login. Perubahan teks dan warna akan disinkronkan langsung ke link publik.
                     </p>
                     <div class="p-3 bg-stone-50 rounded-xl text-xs text-stone-500 mb-4">
                         <div><strong class="text-stone-700">Target URL:</strong> /i/{{ invitation.slug }}</div>
@@ -1179,7 +1626,7 @@ const copyUrl = () => {
                         ✓
                     </div>
                     <h4 class="font-bold text-stone-900 text-base">Selamat! Undangan Anda Sudah Terbit</h4>
-                    <p class="text-xs text-stone-500">Link undangan digital Anda kini sudah aktif dan dapat dibagikan.</p>
+                    <p class="text-xs text-stone-500">Link undangan digital Anda kini sudah aktif dan dapat dibagikan ke para tamu.</p>
                     
                     <div class="p-3 bg-stone-50 rounded-xl border border-stone-200 flex items-center justify-between text-xs">
                         <span class="font-mono text-stone-700 truncate mr-2">{{ publishedUrl }}</span>
