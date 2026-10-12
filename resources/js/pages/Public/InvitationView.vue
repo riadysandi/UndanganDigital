@@ -247,19 +247,114 @@ const shareWhatsApp = () => {
     const text = `Halo, kami mengundang Anda ke acara pernikahan kami melalui tautan undangan digital 3D berikut: ${window.location.href}`;
     window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
 };
+
+// Background Music Source
+const musicSource = computed(() => {
+    return props.design?.musicUrl || 'https://actions.google.com/sounds/v1/ambient/relaxing_music.ogg';
+});
+
+// Guest QR Code for Reception Check-in
+const guestQrCodeUrl = computed(() => {
+    const token = props.guestToken || props.invitation.slug;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(token)}`;
+});
+
+// Google Calendar Integration
+const getGoogleCalendarUrl = (event: any) => {
+    const title = `${event.name}: ${props.invitation.title}`;
+    const cleanDate = (dateStr: string) => {
+        try {
+            const d = new Date(dateStr);
+            return d.toISOString().replace(/-|:|\.\d\d\d/g, "");
+        } catch {
+            return '20261228T080000Z';
+        }
+    };
+    const startDate = cleanDate(event.starts_at);
+    let endDate = startDate;
+    try {
+        if (event.ends_at) {
+            endDate = cleanDate(event.ends_at);
+        } else {
+            const d = new Date(event.starts_at);
+            d.setHours(d.getHours() + 3);
+            endDate = cleanDate(d.toISOString());
+        }
+    } catch {
+        endDate = startDate;
+    }
+    const details = `Undangan Pernikahan: ${props.invitation.title}\nAcara: ${event.name}\nLokasi: ${event.venue_name}\nAlamat: ${event.address || ''}\nBuka Undangan: ${window.location.href}`;
+    const location = `${event.venue_name}, ${event.address || ''}`;
+
+    return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${startDate}/${endDate}&details=${encodeURIComponent(details)}&location=${encodeURIComponent(location)}`;
+};
+
+// Amplop Digital & Kado Hadiah Data
+const copiedBankIndex = ref<number | null>(null);
+const copyAccountNumber = (accNumber: string, index: number) => {
+    navigator.clipboard.writeText(accNumber);
+    copiedBankIndex.value = index;
+    setTimeout(() => {
+        copiedBankIndex.value = null;
+    }, 2500);
+};
+
+const copiedAddressToast = ref(false);
+const copyAddress = (address: string) => {
+    navigator.clipboard.writeText(address);
+    copiedAddressToast.value = true;
+    setTimeout(() => {
+        copiedAddressToast.value = false;
+    }, 2500);
+};
+
+const showQrisModal = ref(false);
+const activeQris = ref<any>(null);
+const openQris = (account: any) => {
+    activeQris.value = account;
+    showQrisModal.value = true;
+};
+
+const digitalGift = computed(() => {
+    return props.design?.gift || {
+        enabled: true,
+        title: 'Amplop Digital & Kado Nikah',
+        description: 'Doa restu Anda adalah karunia terindah bagi kami. Namun jika memberi adalah ungkapan kasih, Anda dapat menyalurkannya melalui cashless digital gift di bawah ini:',
+        accounts: [
+            {
+                bank: 'BCA',
+                account_number: '8210984721',
+                account_name: 'Dimas Prasetyo',
+                qr_image: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226590014ID.LINKAJA.WWW01189360091800000000005204581253033605802ID5914DIMAS_PRASETYO6007JAKARTA63041234',
+            },
+            {
+                bank: 'Bank Mandiri',
+                account_number: '1370019283741',
+                account_name: 'Anisa Rahmawati',
+                qr_image: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226590014ID.LINKAJA.WWW01189360091800000000005204581253033605802ID5915ANISA_RAHMAWATI6007JAKARTA63045678',
+            },
+        ],
+        physical_gift: {
+            enabled: true,
+            receiver_name: 'Dimas & Anisa',
+            phone: '0812-3456-7890',
+            address: 'Jl. Melati Indah No. 42, RT 03/RW 05, Cilandak Barat, Jakarta Selatan 12430',
+        },
+    };
+});
 </script>
 
 <template>
     <div class="min-h-screen bg-[#0f1115] text-stone-100 font-sans selection:bg-amber-400 selection:text-stone-900">
-        <!-- Optional Audio Element -->
+        <!-- Audio Element -->
         <audio
             ref="audioEl"
             loop
-            src="https://actions.google.com/sounds/v1/ambient/relaxing_music.ogg"
+            :src="musicSource"
         ></audio>
 
         <!-- Floating Controls (shown after opened) -->
-        <div v-if="isOpen" class="fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+        <div v-if="isOpen" class="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3">
             <!-- Reopen 3D Envelope -->
             <button
                 @click="reopenEnvelope"
@@ -269,14 +364,42 @@ const shareWhatsApp = () => {
                 <span class="text-lg group-hover:rotate-12 transition-transform">✉️</span>
             </button>
 
-            <!-- Music Player -->
+            <!-- Floating Spinning Vinyl Music Player -->
             <button
                 @click="toggleMusic"
-                class="w-12 h-12 rounded-full bg-stone-900/90 backdrop-blur text-white flex items-center justify-center shadow-xl border border-amber-500/30 hover:scale-110 active:scale-95 transition-all"
-                :title="isPlayingMusic ? 'Jeda Musik' : 'Putar Musik'"
+                class="relative group focus:outline-none"
+                :title="isPlayingMusic ? 'Jeda Musik Latar' : 'Putar Musik Latar'"
             >
-                <span v-if="isPlayingMusic" class="animate-spin text-sm">🎵</span>
-                <span v-else class="text-sm">🔇</span>
+                <!-- Outer Pulse Glow when playing -->
+                <div
+                    v-if="isPlayingMusic"
+                    class="absolute -inset-1 rounded-full bg-amber-500/30 blur-sm animate-pulse"
+                ></div>
+
+                <!-- Realistic Vinyl Record Disk -->
+                <div
+                    class="w-12 h-12 rounded-full bg-gradient-to-tr from-stone-950 via-[#1a1c22] to-stone-900 border-2 border-stone-700/80 shadow-[0_8px_25px_rgba(0,0,0,0.8)] flex items-center justify-center relative overflow-hidden transition-transform group-hover:scale-105 active:scale-95"
+                    :class="{ 'animate-[spin_4s_linear_infinite]': isPlayingMusic }"
+                >
+                    <!-- Vinyl Grooves -->
+                    <div class="absolute inset-1 rounded-full border border-stone-800/80"></div>
+                    <div class="absolute inset-2 rounded-full border border-stone-700/40"></div>
+                    <div class="absolute inset-3 rounded-full border border-stone-800/60"></div>
+
+                    <!-- Vinyl Center Label (Gold & Rose) -->
+                    <div class="w-4 h-4 rounded-full bg-gradient-to-br from-amber-400 to-amber-600 border border-amber-200/80 flex items-center justify-center shadow-inner">
+                        <div class="w-1 h-1 rounded-full bg-stone-950"></div>
+                    </div>
+                </div>
+
+                <!-- Floating note badge indicator -->
+                <div
+                    class="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shadow-md border"
+                    :class="isPlayingMusic ? 'bg-amber-500 text-stone-950 border-amber-300' : 'bg-stone-800 text-stone-400 border-stone-700'"
+                >
+                    <span v-if="isPlayingMusic">🎵</span>
+                    <span v-else>🔇</span>
+                </div>
             </button>
         </div>
 
@@ -326,12 +449,15 @@ const shareWhatsApp = () => {
                                     <div class="w-8 h-0.5 bg-amber-600/40 mx-auto my-1.5"></div>
                                 </div>
 
-                                <div class="my-auto py-1">
-                                    <div class="text-[10px] text-stone-500 uppercase tracking-wider mb-0.5">Spesial Untuk Yth:</div>
-                                    <div class="text-sm sm:text-base font-serif font-bold text-stone-900 px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                                <div class="my-auto py-1 flex flex-col items-center">
+                                    <div class="text-[9px] text-stone-500 uppercase tracking-wider mb-0.5">Spesial Untuk Yth:</div>
+                                    <div class="text-xs sm:text-sm font-serif font-bold text-stone-900 px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20">
                                         {{ guestName || 'Tamu Undangan Yang Berbahagia' }}
                                     </div>
-                                    <div class="text-[10px] text-stone-500 mt-1">Keluarga Besar / Partner</div>
+                                    <div class="flex items-center gap-1.5 mt-1 text-[9px] text-stone-500 font-mono">
+                                        <span>🎟️ Kode Tamu:</span>
+                                        <span class="font-bold text-amber-900 bg-amber-100/80 px-1.5 py-0.5 rounded">{{ guestToken ? guestToken.substring(0, 8) : 'VIP' }}</span>
+                                    </div>
                                 </div>
 
                                 <button
@@ -592,9 +718,22 @@ const shareWhatsApp = () => {
                                     </div>
                                 </div>
 
-                                <div class="w-full pt-3 border-t border-stone-800 text-[11px] text-amber-400/90 font-medium flex items-center justify-center gap-1.5">
-                                    <span>👉 Ketuk kartu untuk lihat Peta & Rute</span>
-                                    <span>🔄</span>
+                                <div class="w-full pt-3 border-t border-stone-800 flex flex-col gap-2">
+                                    <div class="flex items-center justify-center gap-2" @click.stop>
+                                        <a
+                                            :href="getGoogleCalendarUrl(event)"
+                                            target="_blank"
+                                            class="px-3.5 py-1.5 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-semibold flex items-center gap-1.5 transition-colors shadow-xs"
+                                            title="Simpan Acara ke Google Calendar"
+                                        >
+                                            <span>📅</span>
+                                            <span>Simpan ke Google Calendar</span>
+                                        </a>
+                                    </div>
+                                    <div class="text-[10px] text-amber-400/80 font-medium flex items-center justify-center gap-1">
+                                        <span>👉 Ketuk kartu untuk rute Google Maps</span>
+                                        <span>🔄</span>
+                                    </div>
                                 </div>
                             </div>
 
@@ -615,22 +754,32 @@ const shareWhatsApp = () => {
                                     </p>
                                 </div>
 
-                                <div class="w-full flex items-center gap-2 pt-2" @click.stop>
+                                <div class="w-full flex items-center gap-1.5 pt-2" @click.stop>
                                     <a
                                         v-if="event.maps_url"
                                         :href="event.maps_url"
                                         target="_blank"
-                                        class="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-1.5"
+                                        class="flex-1 py-2 px-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-1"
                                     >
                                         <span>🗺️</span>
-                                        <span>Buka Google Maps</span>
+                                        <span>Maps</span>
+                                    </a>
+                                    <a
+                                        :href="getGoogleCalendarUrl(event)"
+                                        target="_blank"
+                                        class="py-2 px-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs font-semibold border border-amber-500/30 flex items-center gap-1"
+                                        title="Simpan ke Google Calendar"
+                                    >
+                                        <span>📅</span>
+                                        <span>Kalender</span>
                                     </a>
                                     <button
                                         type="button"
                                         @click="toggleFlip(event.id)"
-                                        class="py-2 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-semibold border border-stone-700"
+                                        class="py-2 px-2.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-semibold border border-stone-700"
+                                        title="Balik Kartu"
                                     >
-                                        🔄 Balik
+                                        🔄
                                     </button>
                                 </div>
                             </div>
@@ -752,8 +901,130 @@ const shareWhatsApp = () => {
                 </form>
             </section>
 
+            <!-- VIP QR Check-in Reception Pass -->
+            <section class="py-12 px-6 bg-[#12151a] border-t border-stone-800 text-center">
+                <div class="max-w-sm mx-auto p-6 rounded-3xl bg-gradient-to-b from-[#1c222b] to-[#141820] border border-amber-500/30 shadow-2xl relative overflow-hidden">
+                    <div class="absolute -top-12 -right-12 w-28 h-28 rounded-full bg-amber-500/10 blur-xl pointer-events-none"></div>
+
+                    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold tracking-widest uppercase mb-3">
+                        <span>📱</span>
+                        <span>QR Check-in Meja Resepsi</span>
+                    </div>
+
+                    <h3 class="font-serif text-lg font-bold text-amber-100">Kartu Akses Kehadiran</h3>
+                    <p class="text-[11px] text-stone-400 mt-1 mb-5">
+                        Tunjukkan QR Code ini kepada penerima tamu di pintu resepsi untuk absensi kehadiran langsung.
+                    </p>
+
+                    <!-- QR Code Canvas / Image -->
+                    <div class="w-44 h-44 mx-auto p-3 bg-white rounded-2xl shadow-xl border-2 border-amber-400/60 flex items-center justify-center">
+                        <img
+                            :src="guestQrCodeUrl"
+                            alt="QR Check-in"
+                            class="w-full h-full object-contain"
+                        />
+                    </div>
+
+                    <div class="mt-4 pt-3 border-t border-stone-800 space-y-1">
+                        <div class="font-serif font-bold text-amber-200 text-sm">
+                            {{ guestName || 'Tamu Undangan Yang Terhormat' }}
+                        </div>
+                        <div class="font-mono text-[10px] text-stone-400 tracking-wider">
+                            TOKEN: {{ guestToken || 'GENERAL-INVITATION' }}
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Amplop Digital & Tanda Kasih Section -->
+            <section v-if="digitalGift.enabled" class="py-16 px-6 bg-[#161a20] border-t border-stone-800 text-center">
+                <div class="max-w-sm mx-auto space-y-8">
+                    <div>
+                        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px] font-bold tracking-widest uppercase mb-2">
+                            <span>🎁</span>
+                            <span>Wedding Gift</span>
+                        </div>
+                        <h2 class="font-serif text-2xl font-bold text-amber-100">{{ digitalGift.title }}</h2>
+                        <p class="text-xs text-stone-400 mt-2 leading-relaxed">
+                            {{ digitalGift.description }}
+                        </p>
+                    </div>
+
+                    <!-- Bank Accounts -->
+                    <div class="space-y-4">
+                        <div
+                            v-for="(acc, idx) in digitalGift.accounts"
+                            :key="idx"
+                            class="p-5 rounded-2xl bg-[#1c222b] border border-amber-500/30 shadow-lg text-left relative overflow-hidden"
+                        >
+                            <div class="flex items-center justify-between mb-3">
+                                <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                                    {{ acc.bank }}
+                                </span>
+                                <span class="text-xs text-stone-400 font-serif">Cashless Gift</span>
+                            </div>
+
+                            <div class="space-y-1 my-2">
+                                <div class="text-[11px] text-stone-400">Nomor Rekening:</div>
+                                <div class="font-mono text-lg font-bold text-amber-100 tracking-wider">
+                                    {{ acc.account_number }}
+                                </div>
+                                <div class="text-xs text-stone-300">
+                                    a.n <span class="font-semibold text-white">{{ acc.account_name }}</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-2 pt-3 border-t border-stone-800">
+                                <button
+                                    @click="copyAccountNumber(acc.account_number, idx)"
+                                    class="flex-1 py-2 px-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs shadow-md transition-colors flex items-center justify-center gap-1.5"
+                                >
+                                    <span v-if="copiedBankIndex === idx">✓ Tersalin!</span>
+                                    <span v-else>📋 Salin No Rekening</span>
+                                </button>
+                                <button
+                                    v-if="acc.qr_image"
+                                    @click="openQris(acc)"
+                                    class="py-2 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs font-semibold border border-amber-500/30 flex items-center gap-1"
+                                >
+                                    <span>📱</span>
+                                    <span>QRIS</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Physical Gift Address -->
+                    <div
+                        v-if="digitalGift.physical_gift && digitalGift.physical_gift.enabled"
+                        class="p-5 rounded-2xl bg-[#1a1e26] border border-stone-700/80 shadow-lg text-left space-y-2.5"
+                    >
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg">📦</span>
+                            <h3 class="font-serif font-bold text-sm text-amber-100">Kirim Kado Pernikahan (Fisik)</h3>
+                        </div>
+                        <p class="text-xs text-stone-300 leading-relaxed">
+                            {{ digitalGift.physical_gift.address }}
+                        </p>
+                        <div class="text-[11px] text-stone-400">
+                            Penerima: <strong class="text-white">{{ digitalGift.physical_gift.receiver_name }}</strong> &bull; {{ digitalGift.physical_gift.phone }}
+                        </div>
+
+                        <div class="pt-2">
+                            <button
+                                @click="copyAddress(digitalGift.physical_gift.address)"
+                                class="w-full py-2 px-3 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-300 text-xs font-semibold border border-stone-700 transition-colors flex items-center justify-center gap-1.5"
+                            >
+                                <span v-if="copiedAddressToast">✓ Alamat Tersalin!</span>
+                                <span v-else>📋 Salin Alamat Pengiriman</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Guestbook / Wishes Wall -->
-            <section class="py-16 px-6 bg-[#161a20] border-t border-stone-800">
+            <section class="py-16 px-6 bg-[#14171c] border-t border-stone-800">
                 <div class="text-center mb-8">
                     <h2 class="font-serif text-2xl font-bold text-amber-100">Buku Tamu & Ucapan</h2>
                     <p class="text-xs text-stone-400 mt-1">Doa restu hangat dari para sahabat dan keluarga:</p>
@@ -796,6 +1067,53 @@ const shareWhatsApp = () => {
                     Platform Undangan Digital &bull; Efek 3D Wax Seal Interaktif
                 </div>
             </footer>
+        </div>
+
+        <!-- QRIS Preview Modal Popup -->
+        <div
+            v-if="showQrisModal && activeQris"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+            @click.self="showQrisModal = false"
+        >
+            <div class="bg-[#181c24] text-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-amber-500/40 text-center space-y-4">
+                <div class="flex items-center justify-between border-b border-stone-800 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">📱</span>
+                        <h3 class="font-serif font-bold text-amber-200 text-sm">QRIS Cashless Gift</h3>
+                    </div>
+                    <button
+                        @click="showQrisModal = false"
+                        class="text-stone-400 hover:text-white p-1 rounded-lg text-sm"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div class="space-y-1">
+                    <div class="text-xs font-bold text-amber-300 uppercase tracking-wider">{{ activeQris.bank }}</div>
+                    <div class="text-sm font-semibold text-white">{{ activeQris.account_name }}</div>
+                </div>
+
+                <!-- QRIS Image -->
+                <div class="w-60 h-60 mx-auto p-4 bg-white rounded-2xl shadow-xl flex items-center justify-center">
+                    <img
+                        :src="activeQris.qr_image"
+                        alt="QRIS Code"
+                        class="w-full h-full object-contain"
+                    />
+                </div>
+
+                <p class="text-[11px] text-stone-400 leading-relaxed">
+                    Scan menggunakan aplikasi m-Banking apa saja (BCA, Mandiri, BRI, BNI) atau e-Wallet (GoPay, OVO, Dana, ShopeePay, LinkAja).
+                </p>
+
+                <button
+                    @click="showQrisModal = false"
+                    class="w-full py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs uppercase tracking-wider transition-colors"
+                >
+                    Tutup
+                </button>
+            </div>
         </div>
     </div>
 </template>

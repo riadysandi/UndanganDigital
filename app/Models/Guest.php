@@ -18,6 +18,11 @@ class Guest extends Model
         'token',
         'phone_number',
         'max_attendees',
+        'checked_in_at',
+    ];
+
+    protected $casts = [
+        'checked_in_at' => 'datetime',
     ];
 
     protected static function booted()

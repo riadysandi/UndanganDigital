@@ -76,8 +76,12 @@ Route::middleware('auth')->group(function () {
     // Guests & RSVP Management
     Route::get('/invitations/{invitation}/guests', [GuestController::class, 'index'])->name('invitations.guests');
     Route::post('/api/invitations/{invitation}/guests', [GuestController::class, 'store'])->name('api.guests.store');
+    Route::post('/api/invitations/{invitation}/guests/import', [GuestController::class, 'import'])->name('api.guests.import');
+    Route::get('/invitations/{invitation}/guests/export', [GuestController::class, 'export'])->name('invitations.guests.export');
     Route::delete('/api/invitations/{invitation}/guests/{guest}', [GuestController::class, 'destroy'])->name('api.guests.destroy');
     Route::patch('/api/invitations/{invitation}/guestbook/{entryId}', [GuestController::class, 'moderateGuestbook'])->name('api.guestbook.moderate');
+    Route::get('/invitations/{invitation}/checkin', [GuestController::class, 'checkInPage'])->name('invitations.checkin');
+    Route::post('/api/invitations/{invitation}/guests/check-in', [GuestController::class, 'checkIn'])->name('api.guests.checkin');
 
     // Billing & Orders
     Route::post('/checkout', [BillingController::class, 'checkout'])->name('billing.checkout');

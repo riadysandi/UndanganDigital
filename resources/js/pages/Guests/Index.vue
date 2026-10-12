@@ -15,6 +15,7 @@ const props = defineProps<{
         token: string;
         phone_number: string | null;
         max_attendees: number;
+        checked_in_at?: string | null;
         rsvp: {
             attendance_status: string;
             attendee_count: number;
@@ -34,6 +35,7 @@ const props = defineProps<{
         total_guests: number;
         total_attending: number;
         total_declined: number;
+        total_checked_in?: number;
         total_messages: number;
     };
     canAddMore: boolean;
@@ -41,11 +43,57 @@ const props = defineProps<{
 
 const activeTab = ref<'guests' | 'guestbook'>('guests');
 
+// Single Guest Form
 const form = useForm({
     name: '',
     phone_number: '',
     max_attendees: 2,
 });
+
+// Import Guests Modal State & Form
+const showImportModal = ref(false);
+const importMode = ref<'file' | 'text'>('file');
+const importCsvFile = ref<File | null>(null);
+const importRawText = ref('');
+const importSubmitting = ref(false);
+const importError = ref('');
+
+const onFileChange = (e: any) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+        importCsvFile.value = files[0];
+    }
+};
+
+const handleImportSubmit = () => {
+    importSubmitting.value = true;
+    importError.value = '';
+
+    const formData = new FormData();
+    if (importMode.value === 'file' && importCsvFile.value) {
+        formData.append('csv_file', importCsvFile.value);
+    } else if (importMode.value === 'text' && importRawText.value) {
+        formData.append('raw_text', importRawText.value);
+    } else {
+        importError.value = 'Silakan pilih file CSV atau ketik daftar nama tamu.';
+        importSubmitting.value = false;
+        return;
+    }
+
+    router.post(`/api/invitations/${props.invitation.id}/guests/import`, formData, {
+        onSuccess: () => {
+            showImportModal.value = false;
+            importRawText.value = '';
+            importCsvFile.value = null;
+        },
+        onError: (err) => {
+            importError.value = Object.values(err)[0] as string || 'Gagal mengimpor tamu.';
+        },
+        onFinish: () => {
+            importSubmitting.value = false;
+        },
+    });
+};
 
 const submitGuest = () => {
     form.post(`/api/invitations/${props.invitation.id}/guests`, {
@@ -126,24 +174,52 @@ const moderateMessage = (id: number, status: 'approved' | 'rejected') => {
                     <h1 class="text-2xl font-serif font-bold text-stone-900">Manajemen Tamu & RSVP</h1>
                     <p class="text-xs text-stone-500">{{ invitation.title }}</p>
                 </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <button
+                        @click="showImportModal = true"
+                        class="px-3.5 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 text-stone-700 font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5"
+                    >
+                        <span>📥</span>
+                        <span>Import Tamu (Excel/CSV)</span>
+                    </button>
+                    <a
+                        :href="`/invitations/${invitation.id}/guests/export`"
+                        class="px-3.5 py-2 rounded-xl bg-white border border-stone-200 hover:bg-stone-50 text-stone-700 font-semibold text-xs shadow-xs transition-colors flex items-center gap-1.5"
+                    >
+                        <span>📤</span>
+                        <span>Download Rekap (CSV)</span>
+                    </a>
+                    <Link
+                        :href="`/invitations/${invitation.id}/checkin`"
+                        class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-md shadow-emerald-500/20 transition-colors flex items-center gap-1.5"
+                    >
+                        <span>📱</span>
+                        <span>Meja Resepsi (Check-in QR)</span>
+                    </Link>
+                </div>
             </div>
 
             <!-- Stats Bar -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 my-6">
-                <div class="p-4 bg-white rounded-2xl border border-stone-200">
-                    <div class="text-[10px] uppercase font-bold text-stone-400">Total Tamu Diundang</div>
+            <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 my-6">
+                <div class="p-4 bg-white rounded-2xl border border-stone-200 shadow-xs">
+                    <div class="text-[10px] uppercase font-bold text-stone-400">Total Tamu</div>
                     <div class="font-serif text-2xl font-bold text-stone-900 mt-1">{{ stats.total_guests }}</div>
                 </div>
-                <div class="p-4 bg-white rounded-2xl border border-stone-200">
+                <div class="p-4 bg-white rounded-2xl border border-stone-200 shadow-xs">
                     <div class="text-[10px] uppercase font-bold text-emerald-600">Konfirmasi Hadir</div>
                     <div class="font-serif text-2xl font-bold text-emerald-700 mt-1">{{ stats.total_attending }} org</div>
                 </div>
-                <div class="p-4 bg-white rounded-2xl border border-stone-200">
+                <div class="p-4 bg-white rounded-2xl border border-stone-200 shadow-xs">
                     <div class="text-[10px] uppercase font-bold text-rose-500">Berhalangan</div>
                     <div class="font-serif text-2xl font-bold text-rose-700 mt-1">{{ stats.total_declined }}</div>
                 </div>
-                <div class="p-4 bg-white rounded-2xl border border-stone-200">
-                    <div class="text-[10px] uppercase font-bold text-amber-600">Total Doa & Ucapan</div>
+                <div class="p-4 bg-white rounded-2xl border border-stone-200 shadow-xs">
+                    <div class="text-[10px] uppercase font-bold text-teal-600">Sudah Check-in</div>
+                    <div class="font-serif text-2xl font-bold text-teal-700 mt-1">{{ stats.total_checked_in ?? 0 }} org</div>
+                </div>
+                <div class="p-4 bg-white rounded-2xl border border-stone-200 shadow-xs">
+                    <div class="text-[10px] uppercase font-bold text-amber-600">Doa & Ucapan</div>
                     <div class="font-serif text-2xl font-bold text-amber-700 mt-1">{{ stats.total_messages }}</div>
                 </div>
             </div>
@@ -240,25 +316,36 @@ const moderateMessage = (id: number, status: 'approved' | 'rejected') => {
                                         <div class="font-bold text-stone-900">{{ g.name }}</div>
                                         <div class="text-[11px] text-stone-400">Kuota: {{ g.max_attendees }} org</div>
                                     </td>
-                                    <td class="p-3.5">
-                                        <span
-                                            v-if="g.rsvp && g.rsvp.attendance_status === 'attending'"
-                                            class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800"
-                                        >
-                                            Hadir ({{ g.rsvp.attendee_count }} org)
-                                        </span>
-                                        <span
-                                            v-else-if="g.rsvp && g.rsvp.attendance_status === 'declined'"
-                                            class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800"
-                                        >
-                                            Berhalangan
-                                        </span>
-                                        <span
-                                            v-else
-                                            class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-stone-100 text-stone-500"
-                                        >
-                                            Belum Konfirmasi
-                                        </span>
+                                    <td class="p-3.5 space-y-1">
+                                        <div>
+                                            <span
+                                                v-if="g.rsvp && g.rsvp.attendance_status === 'attending'"
+                                                class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800"
+                                            >
+                                                Hadir ({{ g.rsvp.attendee_count }} org)
+                                            </span>
+                                            <span
+                                                v-else-if="g.rsvp && g.rsvp.attendance_status === 'declined'"
+                                                class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800"
+                                            >
+                                                Berhalangan
+                                            </span>
+                                            <span
+                                                v-else
+                                                class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-stone-100 text-stone-500"
+                                            >
+                                                Belum Konfirmasi
+                                            </span>
+                                        </div>
+                                        <div>
+                                            <span
+                                                v-if="g.checked_in_at"
+                                                class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold bg-teal-100 text-teal-800 border border-teal-200"
+                                                title="Tamu telah hadir di resepsi"
+                                            >
+                                                ✓ Hadir Resepsi
+                                            </span>
+                                        </div>
                                     </td>
                                     <td class="p-3.5">
                                         <div class="flex items-center gap-1.5">
@@ -445,6 +532,102 @@ const moderateMessage = (id: number, status: 'approved' | 'rejected') => {
                     >
                         <span>🚀</span>
                         <span>Buka WhatsApp Sekarang</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Guests Modal (Excel/CSV/Text) -->
+        <div
+            v-if="showImportModal"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+        >
+            <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 space-y-4">
+                <div class="flex items-center justify-between border-b border-stone-100 pb-3">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xl">📥</span>
+                        <h3 class="font-bold text-stone-900 text-base">Import Daftar Tamu Sekaligus</h3>
+                    </div>
+                    <button
+                        @click="showImportModal = false"
+                        class="text-stone-400 hover:text-stone-700 p-1 rounded-lg"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <div class="flex gap-2">
+                    <button
+                        type="button"
+                        @click="importMode = 'file'"
+                        :class="[
+                            'flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all text-center',
+                            importMode === 'file' ? 'bg-rose-50 border-rose-500 text-rose-800' : 'bg-stone-50 border-stone-200 text-stone-600'
+                        ]"
+                    >
+                        📄 Upload File CSV
+                    </button>
+                    <button
+                        type="button"
+                        @click="importMode = 'text'"
+                        :class="[
+                            'flex-1 py-2 px-3 rounded-xl text-xs font-semibold border transition-all text-center',
+                            importMode === 'text' ? 'bg-rose-50 border-rose-500 text-rose-800' : 'bg-stone-50 border-stone-200 text-stone-600'
+                        ]"
+                    >
+                        ✍️ Copy-Paste Teks
+                    </button>
+                </div>
+
+                <div v-if="importMode === 'file'" class="space-y-3">
+                    <div class="p-4 border-2 border-dashed border-stone-300 rounded-2xl bg-stone-50 text-center hover:bg-stone-100/50 transition-colors">
+                        <input
+                            type="file"
+                            accept=".csv,.txt"
+                            @change="onFileChange"
+                            class="block w-full text-xs text-stone-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-stone-900 file:text-white hover:file:bg-stone-800 cursor-pointer"
+                        />
+                        <p class="text-[11px] text-stone-400 mt-2">
+                            Mendukung file .CSV dengan kolom: <strong>Nama Tamu, No HP (opsional), Kuota Pax (opsional)</strong>
+                        </p>
+                    </div>
+                </div>
+
+                <div v-else class="space-y-2">
+                    <label class="block text-xs font-semibold text-stone-700">Tempel / Paste Baris Nama Tamu:</label>
+                    <textarea
+                        v-model="importRawText"
+                        rows="6"
+                        placeholder="Contoh format per baris:
+Budi Santoso, 08123456789, 2
+Siti Aminah, 08567890123, 1
+Keluarga Besar Bpk Rahmat,, 4"
+                        class="w-full text-xs font-mono p-3 rounded-2xl border border-stone-200 bg-stone-50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-500"
+                    ></textarea>
+                    <p class="text-[10px] text-stone-400">
+                        Format: <code class="bg-stone-100 px-1 py-0.5 rounded">Nama, Nomor HP (opsional), Kuota (opsional)</code>
+                    </p>
+                </div>
+
+                <div v-if="importError" class="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs">
+                    {{ importError }}
+                </div>
+
+                <div class="flex items-center justify-end gap-2 pt-2 border-t border-stone-100">
+                    <button
+                        type="button"
+                        @click="showImportModal = false"
+                        class="px-4 py-2 rounded-xl border border-stone-200 text-stone-600 hover:bg-stone-50 text-xs font-semibold"
+                    >
+                        Batal
+                    </button>
+                    <button
+                        type="button"
+                        @click="handleImportSubmit"
+                        :disabled="importSubmitting"
+                        class="px-5 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md shadow-rose-200 transition-colors disabled:opacity-50"
+                    >
+                        {{ importSubmitting ? 'Mengimpor...' : 'Mulai Import' }}
                     </button>
                 </div>
             </div>

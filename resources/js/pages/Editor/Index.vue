@@ -27,14 +27,14 @@ const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('saved');
 const lastSavedTime = ref<string>('Baru saja');
 const previewMode = ref<'canvas' | 'mobile'>('canvas');
 const zoomLevel = ref<number>(1);
-const activeTab = ref<'elements' | 'media' | 'sections' | 'events'>('elements');
+const activeTab = ref<'elements' | 'media' | 'sections' | 'events' | 'features'>('elements');
 
 // Undo / Redo History stack
 const historyStack = ref<string[]>([]);
 const historyIndex = ref<number>(-1);
 let isHistoryUpdating = false;
 
-// Sections state
+// Sections & Features state
 const designData = reactive({
     schemaVersion: 1,
     canvas: {
@@ -44,6 +44,32 @@ const designData = reactive({
         primaryColor: '#5D6B50',
         fontFamily: 'Playfair Display',
     },
+    musicUrl: 'https://actions.google.com/sounds/v1/ambient/relaxing_music.ogg',
+    gift: {
+        enabled: true,
+        title: 'Amplop Digital & Kado Nikah',
+        description: 'Doa restu Anda adalah karunia terindah bagi kami. Namun jika memberi adalah ungkapan kasih, Anda dapat mentransfer melalui rekening berikut:',
+        accounts: [
+            {
+                bank: 'BCA',
+                account_number: '8210984721',
+                account_name: 'Dimas Prasetyo',
+                qr_image: '',
+            },
+            {
+                bank: 'Bank Mandiri',
+                account_number: '1370019283741',
+                account_name: 'Anisa Rahmawati',
+                qr_image: '',
+            },
+        ],
+        physical_gift: {
+            enabled: true,
+            receiver_name: 'Dimas & Anisa',
+            phone: '0812-3456-7890',
+            address: 'Jl. Melati Indah No. 42, RT 03/RW 05, Cilandak, Jakarta Selatan 12430',
+        },
+    },
     sections: [
         { id: 'cover', type: 'cover', title: 'Cover Utama', visible: true },
         { id: 'couple', type: 'couple', title: 'Mempelai Pengantin', visible: true },
@@ -52,6 +78,24 @@ const designData = reactive({
         { id: 'rsvp', type: 'rsvp', title: 'Konfirmasi RSVP & Doa Restu', visible: true },
     ],
 });
+
+const addBankAccount = () => {
+    if (!designData.gift.accounts) {
+        designData.gift.accounts = [];
+    }
+    designData.gift.accounts.push({
+        bank: 'BCA',
+        account_number: '',
+        account_name: '',
+        qr_image: '',
+    });
+    triggerAutosave();
+};
+
+const removeBankAccount = (idx: number) => {
+    designData.gift.accounts.splice(idx, 1);
+    triggerAutosave();
+};
 
 // Selected Element Properties in Canvas
 const selectedObj = ref<any>(null);
@@ -590,6 +634,12 @@ const copyUrl = () => {
                     >
                         Acara
                     </button>
+                    <button
+                        @click="activeTab = 'features'"
+                        :class="['flex-1 py-3 text-center border-b-2', activeTab === 'features' ? 'border-rose-500 text-rose-600' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                    >
+                        Fitur
+                    </button>
                 </div>
 
                 <div class="p-4 flex-1 overflow-y-auto space-y-4">
@@ -713,6 +763,177 @@ const copyUrl = () => {
                             <div>
                                 <label class="text-[10px] font-semibold text-stone-600">Alamat</label>
                                 <textarea v-model="ev.address" @input="triggerAutosave" rows="2" class="w-full text-xs p-1.5 border rounded bg-white"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tab: Features (Musik & Amplop Digital) -->
+                    <div v-if="activeTab === 'features'" class="space-y-6">
+                        <!-- Music Player Settings -->
+                        <div class="space-y-3 pb-4 border-b border-stone-200">
+                            <div class="flex items-center gap-1.5 text-xs font-bold text-stone-900">
+                                <span>🎵</span>
+                                <span>Musik Latar (Background Music)</span>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-semibold text-stone-600 mb-1">Preset Musik Romantis</label>
+                                <select
+                                    @change="(e: any) => { designData.musicUrl = e.target.value; triggerAutosave(); }"
+                                    :value="designData.musicUrl"
+                                    class="w-full text-xs p-2 rounded-xl border border-stone-300 bg-white"
+                                >
+                                    <option value="https://actions.google.com/sounds/v1/ambient/relaxing_music.ogg">🎶 Ambient Relaxing Melody (Default)</option>
+                                    <option value="https://actions.google.com/sounds/v1/ambiences/daytime_forest_bonfire.ogg">🌿 Acoustic Nature Harmony</option>
+                                    <option value="https://actions.google.com/sounds/v1/water/gentle_stream_waterfall.ogg">💧 Serene Soft Harmony</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-semibold text-stone-600 mb-1">Atau Gunakan Custom Audio URL (.mp3 / .ogg)</label>
+                                <input
+                                    v-model="designData.musicUrl"
+                                    @input="triggerAutosave"
+                                    type="url"
+                                    placeholder="https://example.com/audio.mp3"
+                                    class="w-full text-xs p-2 rounded-xl border border-stone-300 bg-white font-mono"
+                                />
+                                <p class="text-[9px] text-stone-400 mt-1">
+                                    Musik akan berputar otomatis dengan pemutar piringan hitam (vinyl) interaktif.
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- Amplop Digital Settings -->
+                        <div class="space-y-3 pb-4 border-b border-stone-200">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5 text-xs font-bold text-stone-900">
+                                    <span>🎁</span>
+                                    <span>Amplop Digital & Rekening</span>
+                                </div>
+                                <input
+                                    v-model="designData.gift.enabled"
+                                    @change="triggerAutosave"
+                                    type="checkbox"
+                                    class="rounded text-rose-600 focus:ring-rose-500"
+                                />
+                            </div>
+
+                            <div v-if="designData.gift.enabled" class="space-y-3">
+                                <div>
+                                    <label class="block text-[10px] font-semibold text-stone-600 mb-1">Judul Bagian</label>
+                                    <input
+                                        v-model="designData.gift.title"
+                                        @input="triggerAutosave"
+                                        type="text"
+                                        class="w-full text-xs p-1.5 border rounded-lg bg-white"
+                                    />
+                                </div>
+
+                                <div class="space-y-2.5">
+                                    <div class="text-[10px] font-bold text-stone-500 uppercase tracking-wider">Daftar Rekening Bank:</div>
+
+                                    <div
+                                        v-for="(acc, idx) in designData.gift.accounts"
+                                        :key="idx"
+                                        class="p-2.5 bg-stone-50 border border-stone-200 rounded-xl space-y-2 relative"
+                                    >
+                                        <button
+                                            type="button"
+                                            @click="removeBankAccount(idx)"
+                                            class="absolute top-2 right-2 text-stone-400 hover:text-rose-600 text-xs font-bold"
+                                        >
+                                            ✕
+                                        </button>
+
+                                        <div>
+                                            <label class="text-[9px] font-semibold text-stone-500">Nama Bank / E-Wallet</label>
+                                            <input
+                                                v-model="acc.bank"
+                                                @input="triggerAutosave"
+                                                type="text"
+                                                placeholder="BCA / Mandiri / BRI / GoPay"
+                                                class="w-full text-xs p-1 border rounded bg-white"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label class="text-[9px] font-semibold text-stone-500">Nomor Rekening</label>
+                                            <input
+                                                v-model="acc.account_number"
+                                                @input="triggerAutosave"
+                                                type="text"
+                                                placeholder="1234567890"
+                                                class="w-full text-xs p-1 border rounded bg-white font-mono"
+                                            />
+                                        </div>
+
+                                        <div>
+                                            <label class="text-[9px] font-semibold text-stone-500">Atas Nama (a.n)</label>
+                                            <input
+                                                v-model="acc.account_name"
+                                                @input="triggerAutosave"
+                                                type="text"
+                                                placeholder="Nama Pemilik Rekening"
+                                                class="w-full text-xs p-1 border rounded bg-white"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        @click="addBankAccount"
+                                        class="w-full py-2 bg-stone-100 hover:bg-stone-200 text-stone-800 text-xs font-semibold rounded-xl border border-stone-200 transition-colors"
+                                    >
+                                        + Tambah Rekening Bank Lain
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Physical Gift Delivery Address -->
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5 text-xs font-bold text-stone-900">
+                                    <span>📦</span>
+                                    <span>Pengiriman Kado Fisik</span>
+                                </div>
+                                <input
+                                    v-model="designData.gift.physical_gift.enabled"
+                                    @change="triggerAutosave"
+                                    type="checkbox"
+                                    class="rounded text-rose-600 focus:ring-rose-500"
+                                />
+                            </div>
+
+                            <div v-if="designData.gift.physical_gift.enabled" class="space-y-2">
+                                <div>
+                                    <label class="text-[10px] font-semibold text-stone-600">Nama Penerima</label>
+                                    <input
+                                        v-model="designData.gift.physical_gift.receiver_name"
+                                        @input="triggerAutosave"
+                                        type="text"
+                                        class="w-full text-xs p-1.5 border rounded-lg bg-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-semibold text-stone-600">Nomor Telepon / WhatsApp</label>
+                                    <input
+                                        v-model="designData.gift.physical_gift.phone"
+                                        @input="triggerAutosave"
+                                        type="text"
+                                        class="w-full text-xs p-1.5 border rounded-lg bg-white"
+                                    />
+                                </div>
+                                <div>
+                                    <label class="text-[10px] font-semibold text-stone-600">Alamat Lengkap Pengiriman</label>
+                                    <textarea
+                                        v-model="designData.gift.physical_gift.address"
+                                        @input="triggerAutosave"
+                                        rows="3"
+                                        class="w-full text-xs p-1.5 border rounded-lg bg-white"
+                                    ></textarea>
+                                </div>
                             </div>
                         </div>
                     </div>
