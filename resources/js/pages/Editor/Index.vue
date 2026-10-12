@@ -26,6 +26,41 @@ const previewKey = ref<number>(0);
 const previewIframeRef = ref<HTMLIFrameElement | null>(null);
 const activeTab = ref<'couple' | 'theme' | 'media' | 'events' | 'features'>('couple');
 
+// Indonesian date formatting helper
+const formatIndonesianDate = (dateStr: string) => {
+    if (!dateStr) return '';
+    try {
+        const d = new Date(dateStr);
+        if (isNaN(d.getTime())) return dateStr;
+        return d.toLocaleDateString('id-ID', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    } catch {
+        return dateStr;
+    }
+};
+
+// Convert string to HTML5 datetime-local format (YYYY-MM-DDTHH:mm)
+const toDatetimeLocal = (val: string) => {
+    if (!val) return '';
+    if (val.includes('T') && val.length === 16) return val;
+    try {
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return '';
+        const year = d.getFullYear();
+        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+        const day = d.getDate().toString().padStart(2, '0');
+        const hours = d.getHours().toString().padStart(2, '0');
+        const minutes = d.getMinutes().toString().padStart(2, '0');
+        return `${year}-${month}-${day}T${hours}:${minutes}`;
+    } catch {
+        return '';
+    }
+};
+
 // Refresh iframe preview manually
 const refreshPreview = () => {
     previewKey.value++;
@@ -111,6 +146,11 @@ const fontOptions = [
     { name: 'Plus Jakarta Sans (Modern Bersih)', value: 'Plus Jakarta Sans' },
 ];
 
+const musicPresets = [
+    { name: 'Ambient Romantic Classical (Default)', url: 'https://actions.google.com/sounds/v1/ambient/relaxing_music.ogg' },
+    { name: 'Gentle Wedding Strings', url: 'https://actions.google.com/sounds/v1/weather/gentle_rain_on_leaves.ogg' },
+];
+
 // Reactive Design State
 const designData = reactive({
     schemaVersion: 1,
@@ -127,6 +167,7 @@ const designData = reactive({
         coverBadge: 'Royal 3D Wax Seal Edition',
         coverSubtitle: "Walimatul 'Ursy",
         weddingTitle: props.invitation?.title || 'Dimas & Anisa',
+        weddingDate: '2026-12-28',
         weddingDateText: 'Minggu, 28 Desember 2026',
         coverImage: 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
         quote: 'Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang.',
@@ -194,6 +235,16 @@ const designData = reactive({
     ],
 });
 
+// Dedicated date input picker state
+const weddingDateOnly = ref<string>('2026-12-28');
+const onWeddingDateOnlyChange = () => {
+    if (!weddingDateOnly.value) return;
+    designData.content.weddingDate = weddingDateOnly.value;
+    designData.content.weddingDateText = formatIndonesianDate(weddingDateOnly.value);
+    syncToPreview();
+    triggerAutosave();
+};
+
 // Watch designData deeply for instant real-time iframe sync
 watch(
     () => designData,
@@ -223,18 +274,20 @@ const addEvent = () => {
     eventsList.value.push({
         id: Date.now(),
         name: 'Resepsi Pernikahan',
-        starts_at: '2026-12-28 11:00:00',
-        ends_at: '2026-12-28 14:00:00',
+        starts_at: '2026-12-28T11:00',
+        ends_at: '2026-12-28T14:00',
         timezone: 'WIB',
         venue_name: 'Grand Ballroom Hotel Arya',
         address: 'Jl. Sudirman No. 123, Jakarta Pusat',
         maps_url: 'https://maps.google.com',
     });
+    syncToPreview();
     triggerAutosave();
 };
 
 const removeEvent = (index: number) => {
     eventsList.value.splice(index, 1);
+    syncToPreview();
     triggerAutosave();
 };
 
@@ -249,18 +302,20 @@ const addBankAccount = () => {
         account_name: '',
         qr_image: '',
     });
+    syncToPreview();
     triggerAutosave();
 };
 
 const removeBankAccount = (idx: number) => {
     designData.gift.accounts.splice(idx, 1);
+    syncToPreview();
     triggerAutosave();
 };
 
-// Upload Photo Handler
+// Upload Handler (Photos, QRIS, and Music Audio)
 const isUploading = ref(false);
 const uploadError = ref('');
-const targetUploadField = ref<string>(''); // 'cover' | 'groom' | 'bride' | 'gallery_0' .. 'gallery_3'
+const targetUploadField = ref<string>(''); // 'cover' | 'groom' | 'bride' | 'gallery_0' .. 'gallery_3' | 'qris_0' .. 'qris_n' | 'music'
 const fileInputRef = ref<HTMLInputElement | null>(null);
 
 const triggerUploadFor = (field: string) => {
@@ -279,7 +334,18 @@ const handleFileUpload = async (event: any) => {
 
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('type', targetUploadField.value.startsWith('gallery') ? 'gallery' : targetUploadField.value);
+
+    let uploadType = 'gallery';
+    if (targetUploadField.value === 'music') {
+        uploadType = 'music';
+    } else if (targetUploadField.value === 'cover') {
+        uploadType = 'cover';
+    } else if (targetUploadField.value === 'groom') {
+        uploadType = 'groom';
+    } else if (targetUploadField.value === 'bride') {
+        uploadType = 'bride';
+    }
+    formData.append('type', uploadType);
 
     try {
         const res = await axios.post(`/api/invitations/${props.invitation.id}/upload`, formData, {
@@ -290,7 +356,9 @@ const handleFileUpload = async (event: any) => {
 
         if (res.data?.success && res.data?.url) {
             const uploadedUrl = res.data.url;
-            if (targetUploadField.value === 'cover') {
+            if (targetUploadField.value === 'music') {
+                designData.musicUrl = uploadedUrl;
+            } else if (targetUploadField.value === 'cover') {
                 designData.content.coverImage = uploadedUrl;
             } else if (targetUploadField.value === 'groom') {
                 designData.content.groom.photo = uploadedUrl;
@@ -301,14 +369,19 @@ const handleFileUpload = async (event: any) => {
                 if (!isNaN(idx) && designData.content.gallery[idx] !== undefined) {
                     designData.content.gallery[idx] = uploadedUrl;
                 }
+            } else if (targetUploadField.value.startsWith('qris_')) {
+                const idx = parseInt(targetUploadField.value.split('_')[1]);
+                if (!isNaN(idx) && designData.gift.accounts[idx] !== undefined) {
+                    designData.gift.accounts[idx].qr_image = uploadedUrl;
+                }
             }
             syncToPreview();
             triggerAutosave();
         } else {
-            uploadError.value = res.data?.message || 'Gagal mengunggah foto.';
+            uploadError.value = res.data?.message || 'Gagal mengunggah file.';
         }
     } catch (e: any) {
-        uploadError.value = e.response?.data?.message || 'Terjadi kesalahan saat mengunggah foto.';
+        uploadError.value = e.response?.data?.message || 'Terjadi kesalahan saat mengunggah file.';
     } finally {
         isUploading.value = false;
         if (event.target) event.target.value = '';
@@ -333,11 +406,33 @@ onMounted(() => {
                 designData.content.gallery = [...loaded.content.gallery];
             }
             Object.assign(designData.content, loaded.content);
+
+            // Initialize date picker value
+            if (loaded.content.weddingDate) {
+                weddingDateOnly.value = loaded.content.weddingDate;
+            } else if (loaded.content.weddingDateText) {
+                const match = loaded.content.weddingDateText.match(/\b(20\d\d-\d\d-\d\d)\b/);
+                if (match) {
+                    weddingDateOnly.value = match[1];
+                }
+            }
         }
         if (loaded.canvas) Object.assign(designData.canvas, loaded.canvas);
         if (loaded.musicUrl) designData.musicUrl = loaded.musicUrl;
         if (loaded.gift) Object.assign(designData.gift, loaded.gift);
         if (loaded.sections) designData.sections = loaded.sections;
+    }
+
+    // Normalize event start dates to datetime-local format
+    if (eventsList.value && eventsList.value.length > 0) {
+        eventsList.value.forEach((ev) => {
+            if (ev.starts_at) {
+                ev.starts_at = toDatetimeLocal(ev.starts_at);
+            }
+            if (ev.ends_at) {
+                ev.ends_at = toDatetimeLocal(ev.ends_at);
+            }
+        });
     }
 
     // Set initial sync after iframe loads
@@ -424,11 +519,11 @@ const copyUrl = () => {
 
 <template>
     <div class="h-screen flex flex-col bg-stone-100 overflow-hidden font-sans">
-        <!-- Hidden file input for direct uploads -->
+        <!-- Hidden file input for direct uploads (Photos, QRIS, & MP3 Audio) -->
         <input
             ref="fileInputRef"
             type="file"
-            accept="image/png,image/jpeg,image/webp,image/jpg"
+            accept="image/png,image/jpeg,image/webp,image/jpg,audio/mp3,audio/mpeg,audio/ogg,audio/wav,.mp3,.ogg,.wav"
             class="hidden"
             @change="handleFileUpload"
         />
@@ -549,7 +644,7 @@ const copyUrl = () => {
                         </div>
 
                         <!-- Info Cover & Judul -->
-                        <div class="space-y-2 border-b pb-4 border-stone-200">
+                        <div class="space-y-2.5 border-b pb-4 border-stone-200">
                             <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Judul & Cover</div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-stone-700 mb-1">Judul Utama Undangan</label>
@@ -557,7 +652,7 @@ const copyUrl = () => {
                                     v-model="designData.content.weddingTitle"
                                     @input="triggerAutosave"
                                     type="text"
-                                    placeholder="Contoh: Dimas & Anisa"
+                                    placeholder="Contoh: Sandi & Dinnda"
                                     class="w-full p-2.5 border rounded-xl bg-stone-50 font-serif font-bold text-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400"
                                 />
                             </div>
@@ -572,14 +667,17 @@ const copyUrl = () => {
                                 />
                             </div>
                             <div>
-                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Tanggal Pernikahan Teks</label>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Pilih Tanggal Pernikahan (Kalender)</label>
                                 <input
-                                    v-model="designData.content.weddingDateText"
-                                    @input="triggerAutosave"
-                                    type="text"
-                                    placeholder="Contoh: Minggu, 28 Desember 2026"
-                                    class="w-full p-2.5 border rounded-xl bg-stone-50 text-stone-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                    type="date"
+                                    v-model="weddingDateOnly"
+                                    @change="onWeddingDateOnlyChange"
+                                    class="w-full p-2.5 border rounded-xl bg-white text-stone-900 font-semibold focus:outline-none focus:ring-2 focus:ring-rose-400 text-xs cursor-pointer shadow-xs"
                                 />
+                                <div class="text-[10px] text-stone-500 mt-1.5 flex items-center gap-1">
+                                    <span>📅 Format tampil:</span>
+                                    <strong class="text-stone-800">{{ designData.content.weddingDateText }}</strong>
+                                </div>
                             </div>
                         </div>
 
@@ -595,7 +693,7 @@ const copyUrl = () => {
                                     v-model="designData.content.groom.nickname"
                                     @input="triggerAutosave"
                                     type="text"
-                                    placeholder="Contoh: Dimas"
+                                    placeholder="Contoh: Sandi"
                                     class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
                                 />
                             </div>
@@ -605,7 +703,7 @@ const copyUrl = () => {
                                     v-model="designData.content.groom.fullName"
                                     @input="triggerAutosave"
                                     type="text"
-                                    placeholder="Contoh: Dimas Prasetyo, S.Kom"
+                                    placeholder="Contoh: Sandi Riady, S.Kom"
                                     class="w-full p-2 border rounded-lg bg-stone-50 font-bold text-stone-900 focus:bg-white"
                                 />
                             </div>
@@ -615,7 +713,7 @@ const copyUrl = () => {
                                     v-model="designData.content.groom.parents"
                                     @input="triggerAutosave"
                                     rows="2"
-                                    placeholder="Putra pertama dari Bpk. Bambang & Ibu Sri"
+                                    placeholder="Putra pertama dari Bpk. ... & Ibu ..."
                                     class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
                                 ></textarea>
                             </div>
@@ -625,7 +723,7 @@ const copyUrl = () => {
                                     v-model="designData.content.groom.instagram"
                                     @input="triggerAutosave"
                                     type="text"
-                                    placeholder="@dimasprasetyo"
+                                    placeholder="@sandiriady"
                                     class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
                                 />
                             </div>
@@ -643,7 +741,7 @@ const copyUrl = () => {
                                     v-model="designData.content.bride.nickname"
                                     @input="triggerAutosave"
                                     type="text"
-                                    placeholder="Contoh: Anisa"
+                                    placeholder="Contoh: Dinnda"
                                     class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
                                 />
                             </div>
@@ -653,7 +751,7 @@ const copyUrl = () => {
                                     v-model="designData.content.bride.fullName"
                                     @input="triggerAutosave"
                                     type="text"
-                                    placeholder="Contoh: Anisa Rahmawati, S.E"
+                                    placeholder="Contoh: Dinnda Ochtaffia, S.E"
                                     class="w-full p-2 border rounded-lg bg-stone-50 font-bold text-stone-900 focus:bg-white"
                                 />
                             </div>
@@ -663,7 +761,7 @@ const copyUrl = () => {
                                     v-model="designData.content.bride.parents"
                                     @input="triggerAutosave"
                                     rows="2"
-                                    placeholder="Putri kedua dari Bpk. H. Rahmat & Ibu Siti"
+                                    placeholder="Putri kedua dari Bpk. ... & Ibu ..."
                                     class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
                                 ></textarea>
                             </div>
@@ -673,7 +771,7 @@ const copyUrl = () => {
                                     v-model="designData.content.bride.instagram"
                                     @input="triggerAutosave"
                                     type="text"
-                                    placeholder="@anisarahmawati"
+                                    placeholder="@dinndaochtaffia"
                                     class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
                                 />
                             </div>
@@ -832,7 +930,7 @@ const copyUrl = () => {
                             {{ uploadError }}
                         </div>
                         <div v-if="isUploading" class="p-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded-xl animate-pulse">
-                            ⏳ Sedang mengunggah dan mengompres foto...
+                            ⏳ Sedang mengunggah file...
                         </div>
 
                         <!-- Foto Cover Hero -->
@@ -983,18 +1081,27 @@ const copyUrl = () => {
                                     @input="triggerAutosave"
                                     type="text"
                                     placeholder="Akad Nikah / Resepsi"
-                                    class="w-full text-xs p-1.5 border rounded-lg bg-white"
+                                    class="w-full text-xs p-1.5 border rounded-lg bg-white font-medium"
                                 />
                             </div>
 
                             <div>
-                                <label class="block text-[10px] font-semibold text-stone-600 mb-0.5">Waktu Mulai</label>
+                                <label class="block text-[10px] font-semibold text-stone-600 mb-0.5">Waktu Mulai Acara (Pilih Kalender & Jam)</label>
                                 <input
+                                    type="datetime-local"
                                     v-model="ev.starts_at"
-                                    @input="triggerAutosave"
-                                    type="text"
-                                    placeholder="2026-12-28 08:00:00"
-                                    class="w-full text-xs p-1.5 border rounded-lg bg-white font-mono"
+                                    @change="triggerAutosave"
+                                    class="w-full text-xs p-2 border rounded-lg bg-white font-medium cursor-pointer shadow-xs"
+                                />
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-semibold text-stone-600 mb-0.5">Waktu Selesai Acara (Opsional)</label>
+                                <input
+                                    type="datetime-local"
+                                    v-model="ev.ends_at"
+                                    @change="triggerAutosave"
+                                    class="w-full text-xs p-2 border rounded-lg bg-white font-medium cursor-pointer shadow-xs"
                                 />
                             </div>
 
@@ -1039,20 +1146,47 @@ const copyUrl = () => {
                     <div v-if="activeTab === 'features'" class="space-y-4">
                         <!-- Musik Latar -->
                         <div class="space-y-2 border-b pb-4 border-stone-200">
-                            <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Musik Latar (Vinyl Player)</div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Musik Latar (Vinyl Player)</span>
+                                <button
+                                    type="button"
+                                    @click="triggerUploadFor('music')"
+                                    class="text-[10px] text-rose-600 font-bold hover:underline flex items-center gap-1"
+                                >
+                                    <span>🎵</span>
+                                    <span>Upload Lagu Sendiri</span>
+                                </button>
+                            </div>
                             <div>
-                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">URL Audio (MP3 / OGG)</label>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">URL File Audio (MP3 / OGG)</label>
                                 <input
                                     v-model="designData.musicUrl"
                                     @input="triggerAutosave"
                                     type="text"
                                     placeholder="https://.../music.mp3"
-                                    class="w-full p-2 border rounded-lg bg-stone-50 text-xs"
+                                    class="w-full p-2 border rounded-lg bg-stone-50 text-xs font-mono"
                                 />
+                            </div>
+
+                            <!-- Pilihan Preset Musik Siap Pakai -->
+                            <div class="space-y-1 pt-1">
+                                <div class="text-[10px] font-medium text-stone-500">Atau pilih lagu pengiring siap pakai:</div>
+                                <div class="grid grid-cols-1 gap-1.5">
+                                    <button
+                                        v-for="m in musicPresets"
+                                        :key="m.url"
+                                        type="button"
+                                        @click="designData.musicUrl = m.url; syncToPreview(); triggerAutosave();"
+                                        :class="['p-2 rounded-lg border text-left flex items-center justify-between transition-colors text-xs', designData.musicUrl === m.url ? 'border-rose-500 bg-rose-50 text-rose-700 font-bold' : 'border-stone-200 hover:bg-stone-50 text-stone-700']"
+                                    >
+                                        <span>🎼 {{ m.name }}</span>
+                                        <span v-if="designData.musicUrl === m.url" class="text-xs">✓</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Amplop Digital -->
+                        <!-- Amplop Digital & QRIS -->
                         <div class="space-y-3">
                             <div class="flex items-center justify-between">
                                 <span class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">🎁 Amplop Digital & QRIS</span>
@@ -1075,11 +1209,11 @@ const copyUrl = () => {
                                     />
                                 </div>
 
-                                <div class="space-y-2">
+                                <div class="space-y-3">
                                     <div
                                         v-for="(acc, idx) in designData.gift.accounts"
                                         :key="idx"
-                                        class="p-2.5 bg-stone-50 border border-stone-200 rounded-xl space-y-2 relative"
+                                        class="p-3 bg-stone-50 border border-stone-200 rounded-xl space-y-2 relative"
                                     >
                                         <button
                                             type="button"
@@ -1095,7 +1229,7 @@ const copyUrl = () => {
                                                 @input="triggerAutosave"
                                                 type="text"
                                                 placeholder="BCA / Mandiri / GoPay"
-                                                class="w-full text-xs p-1 border rounded bg-white"
+                                                class="w-full text-xs p-1.5 border rounded bg-white"
                                             />
                                         </div>
                                         <div>
@@ -1105,7 +1239,7 @@ const copyUrl = () => {
                                                 @input="triggerAutosave"
                                                 type="text"
                                                 placeholder="1234567890"
-                                                class="w-full text-xs p-1 border rounded bg-white font-mono"
+                                                class="w-full text-xs p-1.5 border rounded bg-white font-mono"
                                             />
                                         </div>
                                         <div>
@@ -1114,8 +1248,35 @@ const copyUrl = () => {
                                                 v-model="acc.account_name"
                                                 @input="triggerAutosave"
                                                 type="text"
-                                                class="w-full text-xs p-1 border rounded bg-white"
+                                                class="w-full text-xs p-1.5 border rounded bg-white"
                                             />
+                                        </div>
+
+                                        <!-- QRIS Barcode Image Upload & Preview -->
+                                        <div class="pt-1 border-t border-stone-200">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <label class="text-[9px] font-semibold text-stone-600">Gambar Barcode QRIS</label>
+                                                <button
+                                                    type="button"
+                                                    @click="triggerUploadFor('qris_' + idx)"
+                                                    class="text-[10px] text-rose-600 font-bold hover:underline flex items-center gap-1"
+                                                >
+                                                    <span>📁</span>
+                                                    <span>Upload QRIS</span>
+                                                </button>
+                                            </div>
+                                            <div class="flex gap-2 items-center">
+                                                <div v-if="acc.qr_image" class="w-10 h-10 rounded-lg border bg-white p-0.5 shrink-0 flex items-center justify-center shadow-xs">
+                                                    <img :src="acc.qr_image" class="w-full h-full object-contain" />
+                                                </div>
+                                                <input
+                                                    v-model="acc.qr_image"
+                                                    @input="triggerAutosave"
+                                                    type="text"
+                                                    placeholder="URL barcode QRIS..."
+                                                    class="flex-1 text-xs p-1.5 border rounded bg-white"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
 
@@ -1133,19 +1294,19 @@ const copyUrl = () => {
                 </div>
             </aside>
 
-            <!-- Center: Interactive Smartphone Live Preview (Spacious & Centered) -->
-            <main class="flex-1 overflow-auto flex items-center justify-center p-6 bg-stone-200/70 relative">
-                <div class="flex flex-col items-center gap-3">
+            <!-- Center: Interactive Smartphone Live Preview (Spacious, Perfectly Sized & Never Cut Off) -->
+            <main class="flex-1 overflow-y-auto flex items-center justify-center p-2 sm:p-4 bg-stone-200/70 relative">
+                <div class="flex flex-col items-center gap-2 max-h-[calc(100vh-80px)]">
                     <!-- Real Smartphone Bezel -->
-                    <div class="relative w-[380px] sm:w-[400px] h-[740px] bg-stone-900 rounded-[50px] p-3.5 shadow-2xl border-4 border-stone-800 flex flex-col overflow-hidden ring-1 ring-white/10">
+                    <div class="relative w-[340px] sm:w-[370px] h-[640px] sm:h-[680px] max-h-[calc(100vh-120px)] bg-stone-900 rounded-[44px] p-3 shadow-2xl border-4 border-stone-800 flex flex-col overflow-hidden ring-1 ring-white/10 shrink-0">
                         <!-- Dynamic Island Notch -->
-                        <div class="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-4 bg-stone-950 rounded-full z-30 flex items-center justify-center shadow-inner">
-                            <div class="w-2.5 h-2.5 rounded-full bg-stone-900 mr-2 border border-stone-800"></div>
-                            <div class="w-10 h-1 bg-stone-800 rounded-full"></div>
+                        <div class="absolute top-3.5 left-1/2 -translate-x-1/2 w-24 h-3.5 bg-stone-950 rounded-full z-30 flex items-center justify-center shadow-inner">
+                            <div class="w-2 h-2 rounded-full bg-stone-900 mr-2 border border-stone-800"></div>
+                            <div class="w-8 h-1 bg-stone-800 rounded-full"></div>
                         </div>
 
                         <!-- Live Iframe View of Invitation -->
-                        <div class="w-full h-full rounded-[40px] overflow-hidden bg-stone-950 relative">
+                        <div class="w-full h-full rounded-[34px] overflow-hidden bg-stone-950 relative">
                             <iframe
                                 ref="previewIframeRef"
                                 :key="previewKey"
@@ -1156,10 +1317,10 @@ const copyUrl = () => {
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 text-xs text-stone-600 font-medium">
+                    <div class="flex items-center gap-2 text-[11px] text-stone-600 font-medium">
                         <span>📱 Pratinjau Langsung HP</span>
                         <span>&bull;</span>
-                        <span class="text-stone-500">Tampilan sinkron secara instan saat Anda mengetik</span>
+                        <span class="text-stone-500">Otomatis sinkron saat Anda mengetik</span>
                     </div>
                 </div>
             </main>

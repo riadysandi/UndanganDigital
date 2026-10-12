@@ -63,6 +63,42 @@ const onMessage = (event: MessageEvent) => {
     }
 };
 
+// Formatter to turn any raw ISO date or standard date into elegant Indonesian format
+const formatDisplayDate = (val: string) => {
+    if (!val) return 'Minggu, 28 Desember 2026';
+    if (/[a-zA-Z]{3,}/.test(val) && !val.includes('T') && !val.includes('Z')) {
+        return val;
+    }
+    try {
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return val;
+        return d.toLocaleDateString('id-ID', {
+            weekday: 'long',
+            day: 'numeric',
+            month: 'long',
+            year: 'numeric'
+        });
+    } catch {
+        return val;
+    }
+};
+
+const formatDisplayTime = (val: string) => {
+    if (!val) return '08:00';
+    try {
+        const d = new Date(val);
+        if (isNaN(d.getTime())) {
+            const match = val.match(/(\d{2}:\d{2})/);
+            return match ? match[1] : '08:00';
+        }
+        const h = d.getHours().toString().padStart(2, '0');
+        const m = d.getMinutes().toString().padStart(2, '0');
+        return `${h}:${m}`;
+    } catch {
+        return '08:00';
+    }
+};
+
 // Dynamic Invitation Data resolution (combining props.design with defaults)
 const invitationData = computed(() => {
     const d = liveDesignOverride.value || props.design || {};
@@ -84,7 +120,7 @@ const invitationData = computed(() => {
             coverBadge: content.coverBadge || 'Royal 3D Wax Seal Edition',
             coverSubtitle: content.coverSubtitle || "Walimatul 'Ursy",
             weddingTitle: content.weddingTitle || props.invitation?.title || 'Dimas & Anisa',
-            weddingDateText: content.weddingDateText || (firstEvent ? firstEvent.starts_at : 'Minggu, 28 Desember 2026'),
+            weddingDateText: formatDisplayDate(content.weddingDateText || (firstEvent ? firstEvent.starts_at : '2026-12-28')),
             coverImage: content.coverImage || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
             quote: content.quote || 'Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang.',
             quoteSource: content.quoteSource || 'QS. Ar-Rum: 21',
@@ -1053,13 +1089,13 @@ const digitalGift = computed(() => {
                                         class="font-serif text-xl font-bold"
                                         :style="{ color: invitationData.theme.secondaryColor }"
                                     >
-                                        {{ invitationData.content.weddingDateText }}
+                                        {{ formatDisplayDate(event.starts_at || invitationData.content.weddingDateText) }}
                                     </div>
                                     <div
                                         class="text-xs font-medium"
                                         :style="{ color: invitationData.theme.primaryColor }"
                                     >
-                                        Pukul {{ event.starts_at ? event.starts_at.substring(11, 16) : '08:00' }} - Selesai {{ event.timezone || 'WIB' }}
+                                        Pukul {{ formatDisplayTime(event.starts_at) }} - Selesai {{ event.timezone || 'WIB' }}
                                     </div>
                                     <div class="text-xs text-stone-300 pt-1 font-semibold">
                                         {{ event.venue_name }}
