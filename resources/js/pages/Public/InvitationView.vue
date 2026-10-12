@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
+import { Head } from '@inertiajs/vue3';
 import confetti from 'canvas-confetti';
 
 const props = defineProps<{
@@ -115,6 +116,7 @@ const invitationData = computed(() => {
             cardBgColor: theme.cardBgColor || '#1a1f26',
             textColor: theme.textColor || '#f3f4f6',
             fontFamily: theme.fontFamily || 'Playfair Display',
+            fallingPetals: theme.fallingPetals !== false,
         },
         content: {
             coverBadge: content.coverBadge || 'Royal 3D Wax Seal Edition',
@@ -163,6 +165,18 @@ const waxSealYear = computed(() => {
     const match = dt.match(/\b(20\d\d)\b/);
     return match ? match[1] : '2026';
 });
+
+// Falling Rose Petals effect parameters
+const petalCount = 18;
+const petals = Array.from({ length: petalCount }, (_, i) => ({
+    id: i,
+    left: `${(i * (100 / petalCount) + Math.random() * 4).toFixed(1)}%`,
+    animationDelay: `${(Math.random() * 8).toFixed(1)}s`,
+    animationDuration: `${(8 + Math.random() * 8).toFixed(1)}s`,
+    size: 14 + Math.floor(Math.random() * 16),
+    rotation: Math.floor(Math.random() * 360),
+    opacity: 0.35 + Math.random() * 0.45,
+}));
 
 // RSVP form state
 const rsvpForm = ref({
@@ -219,15 +233,31 @@ onBeforeUnmount(() => {
     }
 });
 
-// Play background music
+// Play background music with smooth volume fade-in
 const startAudio = () => {
+    if (!audioEl.value) return;
     try {
-        if (audioEl.value) {
-            audioEl.value.play().then(() => {
-                isPlayingMusic.value = true;
-            }).catch(() => {
-                isPlayingMusic.value = false;
-            });
+        audioEl.value.volume = 0.2;
+        const playPromise = audioEl.value.play();
+        if (playPromise !== undefined) {
+            playPromise
+                .then(() => {
+                    isPlayingMusic.value = true;
+                    // Smooth volume fade-in up to 0.75
+                    let vol = 0.2;
+                    const fadeTimer = setInterval(() => {
+                        if (!audioEl.value || vol >= 0.75) {
+                            clearInterval(fadeTimer);
+                            return;
+                        }
+                        vol += 0.05;
+                        audioEl.value.volume = Math.min(vol, 0.75);
+                    }, 120);
+                })
+                .catch((err) => {
+                    console.warn('Playback blocked by browser policy:', err);
+                    isPlayingMusic.value = false;
+                });
         }
     } catch (e) {
         // audio handling
@@ -237,6 +267,9 @@ const startAudio = () => {
 // 3D Envelope Opening Sequence
 const handleOpenEnvelope = () => {
     if (isSealBroken.value) return;
+
+    // Trigger audio immediately within user click gesture
+    startAudio();
 
     // Step 1: Break Wax Seal with pop
     isSealBroken.value = true;
@@ -257,7 +290,6 @@ const handleOpenEnvelope = () => {
     // Step 3: Letter slides out with 3D depth
     setTimeout(() => {
         isLetterSlidOut.value = true;
-        startAudio();
     }, 700);
 
     // Step 4: Big celebratory confetti and transition to main invitation
@@ -300,8 +332,12 @@ const toggleMusic = () => {
         audioEl.value.pause();
         isPlayingMusic.value = false;
     } else {
-        audioEl.value.play();
-        isPlayingMusic.value = true;
+        audioEl.value.volume = 0.75;
+        audioEl.value.play().then(() => {
+            isPlayingMusic.value = true;
+        }).catch((err) => {
+            console.error('Play audio error:', err);
+        });
     }
 };
 
@@ -361,7 +397,23 @@ const shareWhatsApp = () => {
 
 // Background Music Source
 const musicSource = computed(() => {
-    return props.design?.musicUrl || 'https://actions.google.com/sounds/v1/ambient/relaxing_music.ogg';
+    const d = liveDesignOverride.value || props.design || {};
+    const url = d.musicUrl || props.design?.musicUrl;
+    if (!url || url.includes('actions.google.com')) {
+        return '/audio/romantic-wedding.mp3';
+    }
+    return url;
+});
+
+watch(musicSource, (newUrl) => {
+    if (audioEl.value && newUrl) {
+        const wasPlaying = isPlayingMusic.value;
+        audioEl.value.src = newUrl;
+        audioEl.value.load();
+        if (wasPlaying) {
+            audioEl.value.play().catch(() => {});
+        }
+    }
 });
 
 // Guest QR Code for Reception Check-in
@@ -456,6 +508,23 @@ const digitalGift = computed(() => {
 </script>
 
 <template>
+    <!-- Dynamic Open Graph & Meta Tags for WhatsApp, Social Media, and Browsers -->
+    <Head>
+        <title>{{ invitationData.content.weddingTitle }} - Undangan Pernikahan Digital</title>
+        <meta name="description" :content="`Undangan Pernikahan ${invitationData.content.weddingTitle}. ${invitationData.content.weddingDateText}`" />
+        <!-- Open Graph for WhatsApp, Telegram, Facebook, and iMessage -->
+        <meta property="og:site_name" content="Undangan Digital" />
+        <meta property="og:type" content="website" />
+        <meta property="og:title" :content="`The Wedding of ${invitationData.content.weddingTitle}`" />
+        <meta property="og:description" :content="`Tanpa mengurangi rasa hormat, kami mengundang Anda untuk hadir di hari bahagia pernikahan ${invitationData.content.weddingTitle} (${invitationData.content.weddingDateText}). Buka tautan untuk melihat undangan digital.`" />
+        <meta property="og:image" :content="invitationData.content.coverImage" />
+        <!-- Twitter Cards -->
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" :content="`The Wedding of ${invitationData.content.weddingTitle}`" />
+        <meta name="twitter:description" :content="`Undangan Pernikahan ${invitationData.content.weddingTitle} - ${invitationData.content.weddingDateText}`" />
+        <meta name="twitter:image" :content="invitationData.content.coverImage" />
+    </Head>
+
     <div
         class="min-h-screen selection:bg-amber-400 selection:text-stone-900 transition-colors duration-500"
         :style="{
@@ -464,12 +533,56 @@ const digitalGift = computed(() => {
             color: invitationData.theme.textColor,
         }"
     >
-        <!-- Audio Element -->
+        <!-- Audio Element (Loop, Preloaded, with Playsinline for iOS/Android) -->
         <audio
             ref="audioEl"
             loop
+            preload="auto"
+            playsinline
             :src="musicSource"
         ></audio>
+
+        <!-- Falling Romantic Rose Petals Layer (Efek Visual Romantis) -->
+        <div 
+            v-if="invitationData.theme.fallingPetals" 
+            class="pointer-events-none fixed inset-0 z-30 overflow-hidden" 
+            aria-hidden="true"
+        >
+            <div
+                v-for="petal in petals"
+                :key="petal.id"
+                class="absolute -top-12 animate-petal"
+                :style="{
+                    left: petal.left,
+                    animationDelay: petal.animationDelay,
+                    animationDuration: petal.animationDuration,
+                }"
+            >
+                <div 
+                    class="sway-petal"
+                    :style="{
+                        width: `${petal.size}px`,
+                        height: `${petal.size * 1.3}px`,
+                        opacity: petal.opacity,
+                        transform: `rotate(${petal.rotation}deg)`
+                    }"
+                >
+                    <svg viewBox="0 0 30 40" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-full h-full drop-shadow-sm">
+                        <path 
+                            d="M15 0 C25 6 30 20 20 34 C16 38 12 38 8 34 C0 20 5 6 15 0 Z" 
+                            fill="url(#petalGradient)" 
+                        />
+                        <defs>
+                            <linearGradient id="petalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#FECDD3" />
+                                <stop offset="50%" stop-color="#FB7185" />
+                                <stop offset="100%" stop-color="#E11D48" />
+                            </linearGradient>
+                        </defs>
+                    </svg>
+                </div>
+            </div>
+        </div>
 
         <!-- Floating Controls (shown after opened) -->
         <div v-if="isOpen" class="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3">
@@ -1756,5 +1869,39 @@ const digitalGift = computed(() => {
 .envelope-fade-enter-from,
 .envelope-fade-leave-to {
     opacity: 0;
+}
+
+/* Falling Rose Petal Keyframe Animations */
+@keyframes petalFall {
+    0% {
+        transform: translateY(-8vh) rotate(0deg) translateX(0);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.85;
+    }
+    90% {
+        opacity: 0.85;
+    }
+    100% {
+        transform: translateY(105vh) rotate(420deg) translateX(60px);
+        opacity: 0;
+    }
+}
+@keyframes petalSway {
+    0%, 100% {
+        transform: translateX(-18px) rotate(-12deg);
+    }
+    50% {
+        transform: translateX(18px) rotate(18deg);
+    }
+}
+.animate-petal {
+    animation-name: petalFall;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+}
+.sway-petal {
+    animation: petalSway 3.2s ease-in-out infinite alternate;
 }
 </style>

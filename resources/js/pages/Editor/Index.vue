@@ -29,6 +29,26 @@ const previewKey = ref<number>(0);
 const previewIframeRef = ref<HTMLIFrameElement | null>(null);
 const activeTab = ref<'couple' | 'theme' | 'media' | 'events' | 'features'>('couple');
 
+// Audio Tester in Editor
+const isTestingMusic = ref(false);
+const editorAudioRef = ref<HTMLAudioElement | null>(null);
+const toggleEditorMusicTest = () => {
+    if (!editorAudioRef.value) return;
+    if (isTestingMusic.value) {
+        editorAudioRef.value.pause();
+        isTestingMusic.value = false;
+    } else {
+        editorAudioRef.value.src = designData.musicUrl || '/audio/romantic-wedding.mp3';
+        editorAudioRef.value.volume = 0.8;
+        editorAudioRef.value.play().then(() => {
+            isTestingMusic.value = true;
+        }).catch(() => {
+            toast.error('Tidak dapat memutar audio. Pastikan format valid dan file dapat diakses.');
+            isTestingMusic.value = false;
+        });
+    }
+};
+
 // Indonesian date formatting helper
 const formatIndonesianDate = (dateStr: string) => {
     if (!dateStr) return '';
@@ -150,8 +170,8 @@ const fontOptions = [
 ];
 
 const musicPresets = [
-    { name: 'Ambient Romantic Classical (Default)', url: 'https://actions.google.com/sounds/v1/ambient/relaxing_music.ogg' },
-    { name: 'Gentle Wedding Strings', url: 'https://actions.google.com/sounds/v1/weather/gentle_rain_on_leaves.ogg' },
+    { name: 'Acoustic Romantic Melodies (Rekomendasi)', url: '/audio/romantic-wedding.mp3' },
+    { name: 'Classic Wedding Romance', url: '/audio/classic-romance.mp3' },
 ];
 
 // Reactive Design State
@@ -165,6 +185,7 @@ const designData = reactive({
         cardBgColor: '#1a1f26',
         textColor: '#f3f4f6',
         fontFamily: 'Playfair Display',
+        fallingPetals: true,
     },
     content: {
         coverBadge: 'Royal 3D Wax Seal Edition',
@@ -203,7 +224,7 @@ const designData = reactive({
         primaryColor: '#D4AF37',
         fontFamily: 'Playfair Display',
     },
-    musicUrl: 'https://actions.google.com/sounds/v1/ambient/relaxing_music.ogg',
+    musicUrl: '/audio/romantic-wedding.mp3',
     gift: {
         enabled: true,
         title: 'Amplop Digital & Kado Nikah',
@@ -421,7 +442,9 @@ onMounted(() => {
             }
         }
         if (loaded.canvas) Object.assign(designData.canvas, loaded.canvas);
-        if (loaded.musicUrl) designData.musicUrl = loaded.musicUrl;
+        if (loaded.musicUrl) {
+            designData.musicUrl = loaded.musicUrl.includes('actions.google.com') ? '/audio/romantic-wedding.mp3' : loaded.musicUrl;
+        }
         if (loaded.gift) Object.assign(designData.gift, loaded.gift);
         if (loaded.sections) designData.sections = loaded.sections;
     }
@@ -1165,18 +1188,31 @@ const copyUrl = () => {
                             </div>
                             <div>
                                 <label class="block text-[11px] font-semibold text-stone-700 mb-1">URL File Audio (MP3 / OGG)</label>
-                                <input
-                                    v-model="designData.musicUrl"
-                                    @input="triggerAutosave"
-                                    type="text"
-                                    placeholder="https://.../music.mp3"
-                                    class="w-full p-2 border rounded-lg bg-stone-50 text-xs font-mono"
-                                />
+                                <div class="flex gap-2 items-center">
+                                    <input
+                                        v-model="designData.musicUrl"
+                                        @input="triggerAutosave"
+                                        type="text"
+                                        placeholder="https://.../music.mp3 atau /audio/..."
+                                        class="flex-1 p-2 border rounded-lg bg-stone-50 text-xs font-mono"
+                                    />
+                                    <button
+                                        type="button"
+                                        @click="toggleEditorMusicTest"
+                                        class="shrink-0 px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm"
+                                        :class="isTestingMusic ? 'bg-amber-500 text-white hover:bg-amber-600 animate-pulse' : 'bg-stone-900 text-white hover:bg-stone-800'"
+                                        :title="isTestingMusic ? 'Jeda Audio' : 'Tes Putar Audio'"
+                                    >
+                                        <span>{{ isTestingMusic ? '⏸ Stop' : '▶ Tes Lagu' }}</span>
+                                    </button>
+                                </div>
+                                <!-- Hidden audio tag for editor playback test -->
+                                <audio ref="editorAudioRef" @ended="isTestingMusic = false"></audio>
                             </div>
 
                             <!-- Pilihan Preset Musik Siap Pakai -->
                             <div class="space-y-1 pt-1">
-                                <div class="text-[10px] font-medium text-stone-500">Atau pilih lagu pengiring siap pakai:</div>
+                                <div class="text-[10px] font-medium text-stone-500">Atau pilih lagu pengiring siap pakai (Lokal Cepat):</div>
                                 <div class="grid grid-cols-1 gap-1.5">
                                     <button
                                         v-for="m in musicPresets"
@@ -1189,6 +1225,25 @@ const copyUrl = () => {
                                         <span v-if="designData.musicUrl === m.url" class="text-xs">✓</span>
                                     </button>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Efek Visual Romantis: Falling Rose Petals -->
+                        <div class="p-3 bg-rose-50/70 border border-rose-100 rounded-xl space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-2">
+                                    <span class="text-base">🌸</span>
+                                    <div>
+                                        <div class="text-xs font-bold text-stone-800">Efek Kelopak Mawar Berjatuhan</div>
+                                        <div class="text-[10px] text-stone-500">Animasi kelopak bunga gugur romantis di latar belakang</div>
+                                    </div>
+                                </div>
+                                <input
+                                    v-model="designData.theme.fallingPetals"
+                                    @change="syncToPreview(); triggerAutosave();"
+                                    type="checkbox"
+                                    class="rounded text-rose-600 focus:ring-rose-500 w-4 h-4 cursor-pointer"
+                                />
                             </div>
                         </div>
 
@@ -1318,6 +1373,7 @@ const copyUrl = () => {
                                 :key="previewKey"
                                 :src="`/i/${invitation.slug}?preview=1`"
                                 class="w-full h-full border-0 select-none"
+                                allow="autoplay"
                                 @load="syncToPreview"
                             ></iframe>
                         </div>

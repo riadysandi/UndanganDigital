@@ -18,8 +18,8 @@ class MediaController extends Controller
         $this->authorize('update', $invitation);
 
         $request->validate([
-            'file' => ['required', 'file', 'mimes:jpeg,jpg,png,webp,gif,mp3,ogg,wav', 'max:10240'], // Max 10MB
-            'type' => ['nullable', 'string', 'in:cover,groom,bride,gallery,music'],
+            'file' => ['required', 'file', 'mimes:jpeg,jpg,png,webp,gif,mp3,ogg,wav,m4a,mpga', 'max:15360'], // Max 15MB
+            'type' => ['nullable', 'string', 'in:cover,groom,bride,gallery,music,qris'],
         ]);
 
         $file = $request->file('file');
