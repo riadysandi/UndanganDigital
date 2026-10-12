@@ -2,6 +2,11 @@
 import { ref } from 'vue';
 import { useForm, Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { useConfirm } from '@/composables/useConfirm';
+import { useToast } from '@/composables/useToast';
+
+const { confirmAction } = useConfirm();
+const { success } = useToast();
 
 const props = defineProps<{
     invitation: {
@@ -101,16 +106,28 @@ const submitGuest = () => {
     });
 };
 
-const deleteGuest = (id: number, name: string) => {
-    if (confirm(`Hapus tamu "${name}" dari daftar?`)) {
-        router.delete(`/api/invitations/${props.invitation.id}/guests/${id}`);
+const deleteGuest = async (id: number, name: string) => {
+    const ok = await confirmAction({
+        title: 'Hapus Tamu?',
+        message: `Yakin ingin menghapus tamu "${name}" dari daftar undangan?`,
+        confirmText: 'Ya, Hapus',
+        cancelText: 'Batal',
+        type: 'danger',
+    });
+
+    if (ok) {
+        router.delete(`/api/invitations/${props.invitation.id}/guests/${id}`, {
+            onSuccess: () => {
+                success(`Tamu "${name}" berhasil dihapus.`);
+            },
+        });
     }
 };
 
 const copyGuestUrl = (name: string, token: string) => {
     const url = `${window.location.origin}/i/${props.invitation.slug}?to=${encodeURIComponent(name)}&t=${token}`;
     navigator.clipboard.writeText(url);
-    alert(`Link khusus untuk "${name}" berhasil disalin!`);
+    success(`Link khusus untuk "${name}" berhasil disalin!`);
 };
 
 // WhatsApp Invitation Generator Modal State

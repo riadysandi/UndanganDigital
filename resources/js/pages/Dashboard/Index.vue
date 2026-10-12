@@ -1,6 +1,11 @@
 <script setup lang="ts">
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { useConfirm } from '@/composables/useConfirm';
+import { useToast } from '@/composables/useToast';
+
+const { confirmAction } = useConfirm();
+const { success } = useToast();
 
 const props = defineProps<{
     invitations: Array<{
@@ -30,9 +35,21 @@ const props = defineProps<{
     isPremium: boolean;
 }>();
 
-const deleteInvitation = (id: number, title: string) => {
-    if (confirm(`Yakin ingin menghapus undangan "${title}"? Tindakan ini tidak dapat dibatalkan.`)) {
-        router.delete(`/invitations/${id}`);
+const deleteInvitation = async (id: number, title: string) => {
+    const ok = await confirmAction({
+        title: 'Hapus Undangan?',
+        message: `Yakin ingin menghapus undangan "${title}"? Seluruh data tamu dan pengaturan akan ikut terhapus.`,
+        confirmText: 'Ya, Hapus Sekarang',
+        cancelText: 'Batal',
+        type: 'danger',
+    });
+
+    if (ok) {
+        router.delete(`/invitations/${id}`, {
+            onSuccess: () => {
+                success(`Undangan "${title}" berhasil dihapus.`);
+            },
+        });
     }
 };
 </script>

@@ -2,6 +2,8 @@
 import { ref, onMounted, reactive, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
 import axios from 'axios';
+import { useToast } from '@/composables/useToast';
+import ToastContainer from '@/components/ToastContainer.vue';
 
 const props = defineProps<{
     invitation: {
@@ -20,6 +22,7 @@ const props = defineProps<{
 }>();
 
 // Editor state
+const toast = useToast();
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('saved');
 const lastSavedTime = ref<string>('Baru saja');
 const previewKey = ref<number>(0);
@@ -501,11 +504,14 @@ const confirmPublish = async () => {
         if (res.data?.success) {
             publishedUrl.value = res.data.public_url;
             publishMessage.value = 'Undangan berhasil diterbitkan ke publik!';
+            toast.success('Undangan berhasil diterbitkan ke publik!');
         } else {
             publishMessage.value = res.data?.message || 'Gagal menerbitkan undangan.';
+            toast.error(res.data?.message || 'Gagal menerbitkan undangan.');
         }
     } catch (e: any) {
         publishMessage.value = e.response?.data?.message || 'Terjadi kesalahan saat mempublikasikan.';
+        toast.error(e.response?.data?.message || 'Terjadi kesalahan saat mempublikasikan.');
     } finally {
         isPublishing.value = false;
     }
@@ -513,7 +519,7 @@ const confirmPublish = async () => {
 
 const copyUrl = () => {
     navigator.clipboard.writeText(publishedUrl.value);
-    alert('URL Undangan berhasil disalin!');
+    toast.success('URL Undangan berhasil disalin ke clipboard!');
 };
 </script>
 
@@ -1397,5 +1403,8 @@ const copyUrl = () => {
                 </div>
             </div>
         </div>
+
+        <!-- Global Toasts -->
+        <ToastContainer />
     </div>
 </template>

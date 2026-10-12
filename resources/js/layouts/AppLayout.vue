@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { Link, usePage, router } from '@inertiajs/vue3';
 import { computed, ref, onMounted, onUnmounted } from 'vue';
+import ToastContainer from '@/components/ToastContainer.vue';
+import ConfirmModal from '@/components/ConfirmModal.vue';
 
 const page = usePage();
 const user = computed(() => (page.props as any).auth?.user);
@@ -760,5 +762,9 @@ const notifications = [
                 </div>
             </div>
         </footer>
+
+        <!-- Global Toast Notifications & Confirmation Dialog -->
+        <ToastContainer />
+        <ConfirmModal />
     </div>
 </template>

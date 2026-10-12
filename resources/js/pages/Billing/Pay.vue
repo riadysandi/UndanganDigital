@@ -2,6 +2,7 @@
 import { ref } from 'vue';
 import { Link, router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { useToast } from '@/composables/useToast';
 
 const props = defineProps<{
     order: {
@@ -23,6 +24,7 @@ const props = defineProps<{
     } | null;
 }>();
 
+const toast = useToast();
 const isPaying = ref(false);
 const orderStatus = ref(props.order.status);
 
@@ -45,11 +47,12 @@ const simulateSuccess = async () => {
         const data = await res.json();
         if (data.success) {
             orderStatus.value = 'paid';
+            toast.success('Pembayaran simulasi berhasil diverifikasi!');
         } else {
-            alert('Simulasi gagal: ' + data.message);
+            toast.error('Simulasi gagal: ' + (data.message || 'Terjadi kesalahan'));
         }
     } catch (e) {
-        alert('Terjadi kesalahan.');
+        toast.error('Terjadi kesalahan saat memproses pembayaran.');
     } finally {
         isPaying.value = false;
     }
