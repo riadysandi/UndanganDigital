@@ -68,6 +68,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/invitations/{invitation}/editor', [EditorController::class, 'show'])->name('invitations.editor');
     Route::get('/api/invitations/{invitation}/design', [EditorController::class, 'getDesign'])->name('api.design.get');
     Route::put('/api/invitations/{invitation}/design', [EditorController::class, 'saveDesign'])->name('api.design.save');
+    Route::post('/api/invitations/{invitation}/upload', [\App\Http\Controllers\MediaController::class, 'upload'])->name('api.invitations.upload');
 
     // Publish & Unpublish
     Route::post('/api/invitations/{invitation}/publish', [\App\Http\Controllers\PublishController::class, 'publish'])->name('api.publish');

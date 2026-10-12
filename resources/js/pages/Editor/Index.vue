@@ -27,7 +27,7 @@ const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('saved');
 const lastSavedTime = ref<string>('Baru saja');
 const previewMode = ref<'canvas' | 'mobile'>('canvas');
 const zoomLevel = ref<number>(1);
-const activeTab = ref<'elements' | 'sections' | 'events'>('elements');
+const activeTab = ref<'elements' | 'media' | 'sections' | 'events'>('elements');
 
 // Undo / Redo History stack
 const historyStack = ref<string[]>([]);
@@ -247,6 +247,74 @@ const addOrnament = () => {
     canvas.setActiveObject(heart);
     canvas.renderAll();
     triggerAutosave();
+};
+
+// Upload Media State & Logic
+const isUploading = ref(false);
+const uploadError = ref('');
+const fileInputRef = ref<HTMLInputElement | null>(null);
+const uploadedMedia = ref<Array<{ url: string; filename: string }>>([]);
+
+const triggerFileInput = () => {
+    fileInputRef.value?.click();
+};
+
+const handleFileUpload = async (event: Event) => {
+    const target = event.target as HTMLInputElement;
+    if (!target.files || target.files.length === 0) return;
+    const file = target.files[0];
+
+    isUploading.value = true;
+    uploadError.value = '';
+
+    try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('type', 'gallery');
+
+        const res = await fetch(`/api/invitations/${props.invitation.id}/upload`, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as any)?.content || '',
+                'Accept': 'application/json',
+            },
+            body: formData,
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+            uploadedMedia.value.unshift({ url: data.url, filename: data.filename });
+            addImageToCanvas(data.url);
+        } else {
+            uploadError.value = data.message || 'Gagal mengunggah foto.';
+        }
+    } catch (err: any) {
+        uploadError.value = 'Terjadi kesalahan saat upload foto.';
+    } finally {
+        isUploading.value = false;
+        if (target) target.value = '';
+    }
+};
+
+const addImageToCanvas = (imageUrl: string) => {
+    if (!canvas) return;
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+        const fabricImg = new fabric.FabricImage(img, {
+            left: 240,
+            top: 300,
+            originX: 'center',
+            originY: 'center',
+        });
+        fabricImg.scaleToWidth(220);
+        canvas!.add(fabricImg);
+        canvas!.setActiveObject(fabricImg);
+        canvas!.renderAll();
+        saveHistoryState();
+        triggerAutosave();
+    };
+    img.src = imageUrl;
 };
 
 const deleteSelected = () => {
@@ -504,6 +572,13 @@ const copyUrl = () => {
                         Elemen
                     </button>
                     <button
+                        @click="activeTab = 'media'"
+                        :class="['flex-1 py-3 text-center border-b-2 flex items-center justify-center gap-1', activeTab === 'media' ? 'border-rose-500 text-rose-600' : 'border-transparent text-stone-500 hover:text-stone-800']"
+                    >
+                        <span>📷</span>
+                        <span>Foto</span>
+                    </button>
+                    <button
                         @click="activeTab = 'sections'"
                         :class="['flex-1 py-3 text-center border-b-2', activeTab === 'sections' ? 'border-rose-500 text-rose-600' : 'border-transparent text-stone-500 hover:text-stone-800']"
                     >
@@ -518,6 +593,60 @@ const copyUrl = () => {
                 </div>
 
                 <div class="p-4 flex-1 overflow-y-auto space-y-4">
+                    <!-- Hidden File Input for Image Upload -->
+                    <input
+                        ref="fileInputRef"
+                        type="file"
+                        accept="image/png,image/jpeg,image/webp,image/jpg"
+                        class="hidden"
+                        @change="handleFileUpload"
+                    />
+
+                    <!-- Tab: Foto & Media -->
+                    <div v-if="activeTab === 'media'" class="space-y-4">
+                        <div>
+                            <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-2">Upload Foto dari Perangkat</div>
+                            <div
+                                @click="triggerFileInput"
+                                class="p-5 border-2 border-dashed border-stone-300 hover:border-rose-400 hover:bg-rose-50/30 rounded-2xl text-center cursor-pointer transition-colors"
+                            >
+                                <div class="text-2xl mb-1">🖼️</div>
+                                <div class="text-xs font-bold text-stone-800">
+                                    {{ isUploading ? 'Sedang Mengunggah...' : 'Pilih Foto dari HP/Laptop' }}
+                                </div>
+                                <div class="text-[10px] text-stone-400 mt-1">
+                                    JPG, PNG, atau WebP (Maks. 10MB)
+                                </div>
+                                <div v-if="isUploading" class="mt-2 text-xs font-semibold text-rose-600 animate-pulse">
+                                    Mengompresi & Menyimpan...
+                                </div>
+                            </div>
+                        </div>
+
+                        <div v-if="uploadError" class="p-2.5 bg-rose-50 border border-rose-200 text-rose-700 text-xs rounded-xl">
+                            {{ uploadError }}
+                        </div>
+
+                        <!-- Gallery of uploaded images -->
+                        <div v-if="uploadedMedia.length > 0" class="space-y-2">
+                            <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider">Foto Tersimpan di Cloud</div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div
+                                    v-for="(item, idx) in uploadedMedia"
+                                    :key="idx"
+                                    class="relative group rounded-xl overflow-hidden border border-stone-200 bg-stone-100 aspect-square"
+                                >
+                                    <img :src="item.url" class="w-full h-full object-cover" />
+                                    <button
+                                        @click="addImageToCanvas(item.url)"
+                                        class="absolute inset-0 bg-black/50 text-white text-[10px] font-bold opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
+                                    >
+                                        + Pasang
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <!-- Tab: Elements -->
                     <div v-if="activeTab === 'elements'" class="space-y-4">
                         <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider">Tambah Teks</div>

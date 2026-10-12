@@ -6,6 +6,7 @@ echo "=== Initializing Undangan Digital SaaS on Railway ==="
 # Ensure storage directories
 mkdir -p /app/storage/framework/sessions /app/storage/framework/views /app/storage/framework/cache /app/storage/logs /app/bootstrap/cache
 chmod -R 775 /app/storage /app/bootstrap/cache
+chown -R www-data:www-data /app/storage /app/bootstrap/cache
 
 # If SQLite fallback is active (when DATABASE_URL is not set)
 if [ "$DB_CONNECTION" = "sqlite" ] || [ -z "$DATABASE_URL" -a -z "$PGHOST" ]; then
@@ -13,6 +14,7 @@ if [ "$DB_CONNECTION" = "sqlite" ] || [ -z "$DATABASE_URL" -a -z "$PGHOST" ]; th
     mkdir -p /app/database
     touch /app/database/database.sqlite
     chmod -R 775 /app/database
+    chown -R www-data:www-data /app/database
 else
     echo "Using Managed PostgreSQL Database..."
 fi
@@ -34,7 +36,16 @@ php artisan config:cache || true
 php artisan route:cache || true
 php artisan view:cache || true
 
-# Start server
+# Configure Nginx port from Railway environment variable $PORT
 PORT="${PORT:-8080}"
-echo "Starting Undangan Digital server on port $PORT..."
-exec php artisan serve --host=0.0.0.0 --port="$PORT"
+echo "Configuring Nginx on port $PORT..."
+sed -i "s/listen [0-9]*;/listen $PORT;/" /etc/nginx/sites-available/default 2>/dev/null || true
+sed -i "s/listen [0-9]*;/listen $PORT;/" /etc/nginx/conf.d/default.conf 2>/dev/null || true
+
+# Start PHP-FPM in background
+echo "Starting PHP-FPM pool..."
+php-fpm -D
+
+# Start Nginx in foreground
+echo "Starting Nginx production web server on port $PORT..."
+exec nginx -g "daemon off;"

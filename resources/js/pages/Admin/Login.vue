@@ -2,29 +2,17 @@
 import { useForm, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
-const form = useForm({
-    email: 'admin@undangan.id',
-    password: 'password123',
-    remember: true,
-});
+const showPassword = ref(false);
 
-const isOneClickLoading = ref(false);
+const form = useForm({
+    email: '',
+    password: '',
+    remember: false,
+});
 
 const submit = () => {
     form.post('/admin/login', {
         onFinish: () => form.reset('password'),
-    });
-};
-
-const oneClickAdminLogin = () => {
-    isOneClickLoading.value = true;
-    form.email = 'admin@undangan.id';
-    form.password = 'password123';
-    form.remember = true;
-    form.post('/admin/login', {
-        onFinish: () => {
-            isOneClickLoading.value = false;
-        },
     });
 };
 </script>
@@ -46,40 +34,13 @@ const oneClickAdminLogin = () => {
                 Panel Kontrol SaaS
             </h1>
             <p class="mt-2 text-xs text-stone-400">
-                Akses manajemen terpusat: template 3D, pesanan jasa, analitik pengguna & billing.
+                Otentikasi terenkripsi untuk manajemen platform, pesanan jasa, dan analitik.
             </p>
         </div>
 
         <div class="mt-8 sm:mx-auto sm:w-full sm:max-w-md relative z-10">
             <div class="bg-[#121824] py-8 px-6 shadow-2xl rounded-3xl border border-stone-800 sm:px-10 space-y-6">
-                
-                <!-- Quick 1-Click Login Button for Admin Demo/Ease -->
-                <div class="p-4 rounded-2xl bg-gradient-to-br from-amber-500/10 to-amber-600/5 border border-amber-500/30 text-center space-y-2">
-                    <div class="text-xs font-semibold text-amber-300">
-                        ⚡ Akses Instan Administrator:
-                    </div>
-                    <p class="text-[11px] text-stone-400">
-                        Klik tombol di bawah untuk langsung login tanpa perlu mengetik kredensial.
-                    </p>
-                    <button
-                        type="button"
-                        @click="oneClickAdminLogin"
-                        :disabled="isOneClickLoading || form.processing"
-                        class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-                    >
-                        <span v-if="isOneClickLoading" class="animate-spin">⏳</span>
-                        <span v-else>🚀</span>
-                        <span>{{ isOneClickLoading ? 'Mengautentikasi...' : 'Masuk Otomatis Sebagai Admin (1-Click)' }}</span>
-                    </button>
-                </div>
-
-                <div class="relative flex py-1 items-center">
-                    <div class="flex-grow border-t border-stone-800"></div>
-                    <span class="flex-shrink mx-4 text-[10px] uppercase font-mono tracking-widest text-stone-500">atau login manual</span>
-                    <div class="flex-grow border-t border-stone-800"></div>
-                </div>
-
-                <!-- Manual Login Form -->
+                <!-- Admin Login Form -->
                 <form @submit.prevent="submit" class="space-y-4">
                     <div>
                         <label class="block text-xs font-medium text-stone-300 mb-1">Email Administrator</label>
@@ -87,6 +48,7 @@ const oneClickAdminLogin = () => {
                             v-model="form.email"
                             type="email"
                             required
+                            autocomplete="username"
                             class="w-full px-3.5 py-2.5 bg-[#0b0f17] border border-stone-700 rounded-xl text-sm text-white placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
                             placeholder="admin@undangan.id"
                         />
@@ -97,16 +59,26 @@ const oneClickAdminLogin = () => {
 
                     <div>
                         <div class="flex items-center justify-between mb-1">
-                            <label class="block text-xs font-medium text-stone-300">Password</label>
-                            <span class="text-[10px] text-stone-500">Default: password / password123</span>
+                            <label class="block text-xs font-medium text-stone-300">Kata Sandi</label>
                         </div>
-                        <input
-                            v-model="form.password"
-                            type="password"
-                            required
-                            class="w-full px-3.5 py-2.5 bg-[#0b0f17] border border-stone-700 rounded-xl text-sm text-white placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-colors"
-                            placeholder="••••••••"
-                        />
+                        <div class="relative">
+                            <input
+                                v-model="form.password"
+                                :type="showPassword ? 'text' : 'password'"
+                                required
+                                autocomplete="current-password"
+                                class="w-full px-3.5 py-2.5 bg-[#0b0f17] border border-stone-700 rounded-xl text-sm text-white placeholder-stone-600 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 pr-10 transition-colors"
+                                placeholder="Masukkan kata sandi administrator"
+                            />
+                            <button
+                                type="button"
+                                @click="showPassword = !showPassword"
+                                class="absolute inset-y-0 right-0 pr-3 flex items-center text-stone-500 hover:text-stone-300"
+                            >
+                                <svg v-if="showPassword" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l18 18" /></svg>
+                                <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                            </button>
+                        </div>
                         <div v-if="form.errors.password" class="text-xs text-rose-400 mt-1">
                             {{ form.errors.password }}
                         </div>
@@ -127,9 +99,9 @@ const oneClickAdminLogin = () => {
                         <button
                             type="submit"
                             :disabled="form.processing"
-                            class="w-full py-3 px-4 rounded-xl bg-stone-800 hover:bg-stone-700 border border-stone-700 text-amber-200 text-xs font-bold uppercase tracking-wider shadow-md hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                            class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-stone-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-amber-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
                         >
-                            <span>{{ form.processing ? 'Memverifikasi...' : 'Verifikasi & Buka Panel Admin' }}</span>
+                            <span>{{ form.processing ? 'Memverifikasi...' : 'Otentikasi & Buka Portal' }}</span>
                             <span>→</span>
                         </button>
                     </div>
@@ -152,7 +124,6 @@ const oneClickAdminLogin = () => {
                         </Link>
                     </div>
                 </div>
-
             </div>
         </div>
     </div>

@@ -65,11 +65,48 @@ const copyGuestUrl = (name: string, token: string) => {
     alert(`Link khusus untuk "${name}" berhasil disalin!`);
 };
 
-const sendWhatsApp = (guest: any) => {
+// WhatsApp Invitation Generator Modal State
+const showWaModal = ref(false);
+const selectedGuest = ref<any>(null);
+const waTemplateType = ref<'formal' | 'casual'>('formal');
+const customWaMessage = ref('');
+const copiedWaToast = ref(false);
+
+const generateWaMessage = (guest: any, templateType: 'formal' | 'casual') => {
     const url = `${window.location.origin}/i/${props.invitation.slug}?to=${encodeURIComponent(guest.name)}&t=${guest.token}`;
-    const text = `Halo ${guest.name}, kami mengundang Anda untuk menghadiri acara kami: ${url}`;
-    const phone = guest.phone_number ? guest.phone_number.replace(/^0/, '62') : '';
-    window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encodeURIComponent(text)}`, '_blank');
+    if (templateType === 'formal') {
+        return `Assalamu'alaikum Wr. Wb.\n\nKepada Yth.\nBpk/Ibu/Saudara/i: *${guest.name}*\n\nTanpa mengurangi rasa hormat, perkenankan kami mengundang Bapak/Ibu/Saudara/i untuk menghadiri acara pernikahan kami:\n\n*${props.invitation.title}*\n\nUntuk detail agenda acara, lokasi Google Maps, dan konfirmasi kehadiran (RSVP), silakan buka link undangan berikut:\n${url}\n\nMerupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.\n\nTerima kasih.\nWassalamu'alaikum Wr. Wb.`;
+    } else {
+        return `Halo *${guest.name}*! ✨\n\nKabar bahagia dari kami! Kami ingin mengundang kamu untuk hadir dan berbagi kebahagiaan di momen pernikahan kami:\n\n*${props.invitation.title}*\n\nBuka undangan dan isi konfirmasi kehadiranmu di link berikut ya:\n${url}\n\nSampai jumpa di hari bahagia kami! 🎉`;
+    }
+};
+
+const openWaModal = (guest: any) => {
+    selectedGuest.value = guest;
+    customWaMessage.value = generateWaMessage(guest, waTemplateType.value);
+    showWaModal.value = true;
+};
+
+const switchTemplate = (type: 'formal' | 'casual') => {
+    waTemplateType.value = type;
+    if (selectedGuest.value) {
+        customWaMessage.value = generateWaMessage(selectedGuest.value, type);
+    }
+};
+
+const sendViaWhatsApp = () => {
+    if (!selectedGuest.value) return;
+    const phone = selectedGuest.value.phone_number ? selectedGuest.value.phone_number.replace(/^0/, '62').replace(/[^0-9]/g, '') : '';
+    const encoded = encodeURIComponent(customWaMessage.value);
+    window.open(`https://api.whatsapp.com/send?phone=${phone}&text=${encoded}`, '_blank');
+};
+
+const copyWaMessage = () => {
+    navigator.clipboard.writeText(customWaMessage.value);
+    copiedWaToast.value = true;
+    setTimeout(() => {
+        copiedWaToast.value = false;
+    }, 2000);
 };
 
 const moderateMessage = (id: number, status: 'approved' | 'rejected') => {
@@ -233,11 +270,12 @@ const moderateMessage = (id: number, status: 'approved' | 'rejected') => {
                                                 📋 Salin Link
                                             </button>
                                             <button
-                                                @click="sendWhatsApp(g)"
-                                                class="px-2 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded text-[11px] font-medium transition-colors"
-                                                title="Kirim Pesan WA"
+                                                @click="openWaModal(g)"
+                                                class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-[11px] font-semibold transition-colors flex items-center gap-1 border border-emerald-200"
+                                                title="Kirim Undangan WhatsApp"
                                             >
-                                                💬 WA
+                                                <span>💬</span>
+                                                <span>Kirim WA</span>
                                             </button>
                                         </div>
                                     </td>
@@ -317,6 +355,97 @@ const moderateMessage = (id: number, status: 'approved' | 'rejected') => {
                     <div v-if="guestbooks.length === 0" class="text-center text-xs text-stone-400 py-8">
                         Belum ada pesan ucapan masuk dari tamu.
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- WhatsApp Invitation Generator Modal -->
+        <div
+            v-if="showWaModal"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
+        >
+            <div class="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-stone-200 space-y-5">
+                <div class="flex items-center justify-between border-b border-stone-100 pb-4">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-2xl bg-emerald-100 text-emerald-600 flex items-center justify-center font-bold text-lg">
+                            💬
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-stone-900 text-base">Kirim Undangan WhatsApp</h3>
+                            <p class="text-xs text-stone-400">Kepada: <span class="font-semibold text-stone-700">{{ selectedGuest?.name }}</span></p>
+                        </div>
+                    </div>
+                    <button
+                        @click="showWaModal = false"
+                        class="text-stone-400 hover:text-stone-700 p-1 rounded-lg"
+                    >
+                        ✕
+                    </button>
+                </div>
+
+                <!-- Template Selector -->
+                <div>
+                    <label class="block text-xs font-semibold text-stone-700 mb-1.5">Pilihan Gaya Pesan:</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button
+                            type="button"
+                            @click="switchTemplate('formal')"
+                            :class="[
+                                'py-2 px-3 rounded-xl text-xs font-semibold border transition-all text-center',
+                                waTemplateType === 'formal' ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs' : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100'
+                            ]"
+                        >
+                            📜 Formal / Islami (Baku)
+                        </button>
+                        <button
+                            type="button"
+                            @click="switchTemplate('casual')"
+                            :class="[
+                                'py-2 px-3 rounded-xl text-xs font-semibold border transition-all text-center',
+                                waTemplateType === 'casual' ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs' : 'bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100'
+                            ]"
+                        >
+                            ✨ Santai / Modern (Teman)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Message Preview & Editor -->
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-semibold text-stone-700">Teks Pesan (Dapat Disesuaikan):</label>
+                        <span v-if="copiedWaToast" class="text-[11px] font-bold text-emerald-600 animate-pulse">
+                            ✓ Berhasil disalin!
+                        </span>
+                    </div>
+                    <textarea
+                        v-model="customWaMessage"
+                        rows="7"
+                        class="w-full text-xs font-sans p-3 rounded-2xl border border-stone-200 bg-stone-50 focus:bg-white focus:border-emerald-500 focus:ring-emerald-500 leading-relaxed text-stone-800"
+                    ></textarea>
+                    <p class="text-[10px] text-stone-400 mt-1">
+                        Nomor tujuan: <span class="font-mono text-stone-600">{{ selectedGuest?.phone_number || '(Belum ada nomor, akan membuka WA Web)' }}</span>
+                    </p>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex items-center justify-end gap-2.5 pt-3 border-t border-stone-100">
+                    <button
+                        type="button"
+                        @click="copyWaMessage"
+                        class="px-4 py-2.5 rounded-xl border border-stone-200 bg-stone-50 hover:bg-stone-100 text-stone-700 font-semibold text-xs transition-colors flex items-center gap-1.5"
+                    >
+                        <span>📋</span>
+                        <span>Salin Teks Pesan</span>
+                    </button>
+                    <button
+                        type="button"
+                        @click="sendViaWhatsApp"
+                        class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-md shadow-emerald-200 transition-colors flex items-center gap-1.5"
+                    >
+                        <span>🚀</span>
+                        <span>Buka WhatsApp Sekarang</span>
+                    </button>
                 </div>
             </div>
         </div>

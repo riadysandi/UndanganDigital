@@ -104,4 +104,25 @@ class InvitationManagementTest extends TestCase
 
         $this->assertEquals('Updated Wedding Title', $invitation->fresh()->design->design_json['sections'][0]['elements'][0]['text']);
     }
+
+    public function test_customer_can_upload_photo_for_invitation(): void
+    {
+        \Illuminate\Support\Facades\Storage::fake('public');
+
+        $user = User::where('email', 'pengantin@undangan.id')->first();
+        $invitation = Invitation::where('slug', 'dimas-anisa')->first();
+
+        $file = \Illuminate\Http\UploadedFile::fake()->image('prewedding.jpg', 800, 600);
+
+        $response = $this->actingAs($user)->postJson(route('api.invitations.upload', $invitation->id), [
+            'file' => $file,
+            'type' => 'gallery',
+        ]);
+
+        $response->assertOk();
+        $response->assertJson(['success' => true]);
+        $this->assertNotNull($response->json('url'));
+
+        \Illuminate\Support\Facades\Storage::disk('public')->assertExists($response->json('path'));
+    }
 }
