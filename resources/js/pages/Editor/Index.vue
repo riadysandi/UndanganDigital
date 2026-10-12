@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, reactive } from 'vue';
+import { ref, onMounted, reactive, watch } from 'vue';
 import { Link } from '@inertiajs/vue3';
-import * as fabric from 'fabric';
+import axios from 'axios';
 
 const props = defineProps<{
     invitation: {
@@ -20,24 +20,30 @@ const props = defineProps<{
 }>();
 
 // Editor state
-const canvasEl = ref<HTMLCanvasElement | null>(null);
-let canvas: fabric.Canvas | null = null;
-
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('saved');
 const lastSavedTime = ref<string>('Baru saja');
-const previewMode = ref<'mobile' | 'canvas'>('mobile');
 const previewKey = ref<number>(0);
-const zoomLevel = ref<number>(1);
-const activeTab = ref<'couple' | 'theme' | 'media' | 'events' | 'features' | 'canvas'>('couple');
+const previewIframeRef = ref<HTMLIFrameElement | null>(null);
+const activeTab = ref<'couple' | 'theme' | 'media' | 'events' | 'features'>('couple');
 
+// Refresh iframe preview manually
 const refreshPreview = () => {
     previewKey.value++;
 };
 
-// Undo / Redo History stack
-const historyStack = ref<string[]>([]);
-const historyIndex = ref<number>(-1);
-let isHistoryUpdating = false;
+// Send live real-time design state to iframe for 0ms delay sync
+const syncToPreview = () => {
+    if (previewIframeRef.value && previewIframeRef.value.contentWindow) {
+        try {
+            previewIframeRef.value.contentWindow.postMessage({
+                type: 'LIVE_UPDATE_DESIGN',
+                design: JSON.parse(JSON.stringify(designData))
+            }, '*');
+        } catch (e) {
+            // iframe cross-origin or loading
+        }
+    }
+};
 
 // Color Palette Presets
 const colorPalettes = [
@@ -188,6 +194,15 @@ const designData = reactive({
     ],
 });
 
+// Watch designData deeply for instant real-time iframe sync
+watch(
+    () => designData,
+    () => {
+        syncToPreview();
+    },
+    { deep: true }
+);
+
 // Apply Color Palette Preset
 const applyPalette = (palette: typeof colorPalettes[0]) => {
     designData.theme.palette = palette.id;
@@ -197,6 +212,7 @@ const applyPalette = (palette: typeof colorPalettes[0]) => {
     designData.theme.cardBgColor = palette.card;
     designData.canvas.background = palette.bg;
     designData.canvas.primaryColor = palette.primary;
+    syncToPreview();
     triggerAutosave();
 };
 
@@ -266,18 +282,14 @@ const handleFileUpload = async (event: any) => {
     formData.append('type', targetUploadField.value.startsWith('gallery') ? 'gallery' : targetUploadField.value);
 
     try {
-        const res = await fetch(`/api/invitations/${props.invitation.id}/upload`, {
-            method: 'POST',
+        const res = await axios.post(`/api/invitations/${props.invitation.id}/upload`, formData, {
             headers: {
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as any)?.content || '',
-                'Accept': 'application/json',
+                'Content-Type': 'multipart/form-data',
             },
-            body: formData,
         });
 
-        const data = await res.json();
-        if (res.ok && data.success && data.url) {
-            const uploadedUrl = data.url;
+        if (res.data?.success && res.data?.url) {
+            const uploadedUrl = res.data.url;
             if (targetUploadField.value === 'cover') {
                 designData.content.coverImage = uploadedUrl;
             } else if (targetUploadField.value === 'groom') {
@@ -290,28 +302,18 @@ const handleFileUpload = async (event: any) => {
                     designData.content.gallery[idx] = uploadedUrl;
                 }
             }
+            syncToPreview();
             triggerAutosave();
         } else {
-            uploadError.value = data.message || 'Gagal mengunggah foto.';
+            uploadError.value = res.data?.message || 'Gagal mengunggah foto.';
         }
     } catch (e: any) {
-        uploadError.value = 'Terjadi kesalahan saat mengunggah foto.';
+        uploadError.value = e.response?.data?.message || 'Terjadi kesalahan saat mengunggah foto.';
     } finally {
         isUploading.value = false;
         if (event.target) event.target.value = '';
     }
 };
-
-// Selected Element Properties in Canvas
-const selectedObj = ref<any>(null);
-const objProps = reactive({
-    text: '',
-    fontSize: 24,
-    fill: '#D4AF37',
-    fontFamily: 'Playfair Display',
-    textAlign: 'center',
-    opacity: 1,
-});
 
 // Publish Modal State
 const showPublishModal = ref(false);
@@ -319,9 +321,8 @@ const isPublishing = ref(false);
 const publishMessage = ref('');
 const publishedUrl = ref('');
 
-// Initialize Fabric.js Canvas
+// Initialize from backend
 onMounted(() => {
-    // Load initial design JSON if exists
     if (props.invitation.design?.design_json) {
         const loaded = props.invitation.design.design_json;
         if (loaded.theme) Object.assign(designData.theme, loaded.theme);
@@ -339,234 +340,26 @@ onMounted(() => {
         if (loaded.sections) designData.sections = loaded.sections;
     }
 
-    if (canvasEl.value) {
-        canvas = new fabric.Canvas(canvasEl.value, {
-            width: 380,
-            height: 620,
-            backgroundColor: designData.theme.bgColor || '#14171c',
-            selection: true,
-            preserveObjectStacking: true,
-        });
-
-        loadCanvasContent();
-
-        canvas.on('selection:created', onObjectSelected);
-        canvas.on('selection:updated', onObjectSelected);
-        canvas.on('selection:cleared', () => {
-            selectedObj.value = null;
-        });
-
-        canvas.on('object:modified', () => {
-            saveHistoryState();
-            triggerAutosave();
-        });
-
-        canvas.on('object:added', () => {
-            if (!isHistoryUpdating) {
-                saveHistoryState();
-            }
-        });
-
-        saveHistoryState();
-    }
+    // Set initial sync after iframe loads
+    setTimeout(() => {
+        syncToPreview();
+    }, 1500);
 });
-
-onBeforeUnmount(() => {
-    if (canvas) {
-        canvas.dispose();
-    }
-});
-
-const loadCanvasContent = () => {
-    if (!canvas) return;
-
-    const primaryColor = designData.theme.primaryColor || '#D4AF37';
-    const textColor = designData.theme.secondaryColor || '#F3E5AB';
-
-    const subTitle = new fabric.IText(designData.content.coverSubtitle || "WALIMATUL 'URSY", {
-        left: 190,
-        top: 100,
-        fontSize: 12,
-        fontFamily: designData.theme.fontFamily || 'Playfair Display',
-        fill: primaryColor,
-        originX: 'center',
-    });
-
-    const coupleNames = new fabric.IText(designData.content.weddingTitle || 'Dimas & Anisa', {
-        left: 190,
-        top: 135,
-        fontSize: 32,
-        fontFamily: designData.theme.fontFamily || 'Playfair Display',
-        fontWeight: 'bold',
-        fill: textColor,
-        originX: 'center',
-    });
-
-    const dateText = new fabric.IText(designData.content.weddingDateText || 'Minggu, 28 Desember 2026', {
-        left: 190,
-        top: 185,
-        fontSize: 12,
-        fontFamily: designData.theme.fontFamily || 'Playfair Display',
-        fill: primaryColor,
-        originX: 'center',
-    });
-
-    canvas.add(subTitle);
-    canvas.add(coupleNames);
-    canvas.add(dateText);
-    canvas.renderAll();
-};
-
-const onObjectSelected = (e: any) => {
-    const obj = e.selected?.[0] || canvas?.getActiveObject();
-    if (!obj) return;
-    selectedObj.value = obj;
-
-    if (obj.type === 'i-text' || obj.type === 'text') {
-        objProps.text = obj.text || '';
-        objProps.fontSize = obj.fontSize || 24;
-        objProps.fill = (obj.fill as string) || '#D4AF37';
-        objProps.fontFamily = obj.fontFamily || 'Playfair Display';
-        objProps.textAlign = obj.textAlign || 'center';
-        objProps.opacity = obj.opacity || 1;
-    }
-};
-
-const updateTextProp = (prop: string, val: any) => {
-    if (!selectedObj.value || !canvas) return;
-    selectedObj.value.set(prop, val);
-    canvas.renderAll();
-    saveHistoryState();
-    triggerAutosave();
-};
-
-const addText = (type: 'title' | 'names' | 'subtext') => {
-    if (!canvas) return;
-    let textObj: fabric.IText;
-
-    if (type === 'title') {
-        textObj = new fabric.IText('The Wedding Celebration', {
-            left: 190,
-            top: 250,
-            fontSize: 14,
-            fontFamily: designData.theme.fontFamily,
-            fill: designData.theme.primaryColor,
-            originX: 'center',
-        });
-    } else if (type === 'names') {
-        textObj = new fabric.IText(designData.content.weddingTitle, {
-            left: 190,
-            top: 290,
-            fontSize: 34,
-            fontFamily: designData.theme.fontFamily,
-            fontWeight: 'bold',
-            fill: designData.theme.secondaryColor,
-            originX: 'center',
-        });
-    } else {
-        textObj = new fabric.IText('Doa restu Anda adalah kehormatan bagi kami.', {
-            left: 190,
-            top: 360,
-            fontSize: 12,
-            fontFamily: designData.theme.fontFamily,
-            fill: '#d1d5db',
-            originX: 'center',
-        });
-    }
-
-    canvas.add(textObj);
-    canvas.setActiveObject(textObj);
-    canvas.renderAll();
-    saveHistoryState();
-    triggerAutosave();
-};
-
-const addOrnament = () => {
-    if (!canvas) return;
-    const textObj = new fabric.IText('♥', {
-        left: 190,
-        top: 220,
-        fontSize: 26,
-        fill: designData.theme.primaryColor,
-        originX: 'center',
-    });
-    canvas.add(textObj);
-    canvas.setActiveObject(textObj);
-    canvas.renderAll();
-    saveHistoryState();
-    triggerAutosave();
-};
-
-const deleteSelected = () => {
-    if (!canvas || !selectedObj.value) return;
-    canvas.remove(selectedObj.value);
-    selectedObj.value = null;
-    canvas.renderAll();
-    triggerAutosave();
-};
-
-const duplicateSelected = async () => {
-    if (!canvas || !selectedObj.value) return;
-    const cloned = await selectedObj.value.clone();
-    cloned.set({
-        left: (cloned.left || 0) + 20,
-        top: (cloned.top || 0) + 20,
-    });
-    canvas.add(cloned);
-    canvas.setActiveObject(cloned);
-    canvas.renderAll();
-    triggerAutosave();
-};
-
-// Undo / Redo
-const saveHistoryState = () => {
-    if (!canvas || isHistoryUpdating) return;
-    const json = JSON.stringify(canvas.toJSON());
-    if (historyIndex.value < historyStack.value.length - 1) {
-        historyStack.value = historyStack.value.slice(0, historyIndex.value + 1);
-    }
-    historyStack.value.push(json);
-    historyIndex.value = historyStack.value.length - 1;
-};
-
-const undo = async () => {
-    if (historyIndex.value > 0 && canvas) {
-        isHistoryUpdating = true;
-        historyIndex.value--;
-        const state = historyStack.value[historyIndex.value];
-        await canvas.loadFromJSON(JSON.parse(state));
-        canvas.renderAll();
-        isHistoryUpdating = false;
-        triggerAutosave();
-    }
-};
-
-const redo = async () => {
-    if (historyIndex.value < historyStack.value.length - 1 && canvas) {
-        isHistoryUpdating = true;
-        historyIndex.value++;
-        const state = historyStack.value[historyIndex.value];
-        await canvas.loadFromJSON(JSON.parse(state));
-        canvas.renderAll();
-        isHistoryUpdating = false;
-        triggerAutosave();
-    }
-};
 
 // Autosave with Debounce
 let autosaveTimeout: any = null;
 const triggerAutosave = () => {
+    syncToPreview();
     saveStatus.value = 'saving';
     clearTimeout(autosaveTimeout);
     autosaveTimeout = setTimeout(async () => {
         await executeSave();
-    }, 1000);
+    }, 800);
 };
 
 const executeSave = async () => {
     try {
         saveStatus.value = 'saving';
-        const canvasObjects = canvas ? canvas.toJSON() : null;
 
         const payload = {
             design: {
@@ -577,27 +370,17 @@ const executeSave = async () => {
                 musicUrl: designData.musicUrl,
                 gift: designData.gift,
                 sections: designData.sections,
-                canvasObjects: canvasObjects,
             },
             events: eventsList.value,
         };
 
-        const res = await fetch(`/api/invitations/${props.invitation.id}/design`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as any)?.content || '',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify(payload),
-        });
+        const res = await axios.put(`/api/invitations/${props.invitation.id}/design`, payload);
 
-        if (res.ok) {
+        if (res.status === 200 && res.data?.success) {
             saveStatus.value = 'saved';
             const now = new Date();
             lastSavedTime.value = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
-            // Refresh preview iframe to show new edits
-            refreshPreview();
+            syncToPreview();
         } else {
             saveStatus.value = 'error';
         }
@@ -619,24 +402,15 @@ const confirmPublish = async () => {
     await executeSave();
 
     try {
-        const res = await fetch(`/api/invitations/${props.invitation.id}/publish`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': (document.querySelector('meta[name="csrf-token"]') as any)?.content || '',
-                'Accept': 'application/json',
-            },
-        });
-
-        const data = await res.json();
-        if (res.ok && data.success) {
-            publishedUrl.value = data.public_url;
+        const res = await axios.post(`/api/invitations/${props.invitation.id}/publish`);
+        if (res.data?.success) {
+            publishedUrl.value = res.data.public_url;
             publishMessage.value = 'Undangan berhasil diterbitkan ke publik!';
         } else {
-            publishMessage.value = data.message || 'Gagal menerbitkan undangan.';
+            publishMessage.value = res.data?.message || 'Gagal menerbitkan undangan.';
         }
     } catch (e: any) {
-        publishMessage.value = 'Terjadi kesalahan saat mempublikasikan.';
+        publishMessage.value = e.response?.data?.message || 'Terjadi kesalahan saat mempublikasikan.';
     } finally {
         isPublishing.value = false;
     }
@@ -671,7 +445,7 @@ const copyUrl = () => {
                 </Link>
                 <div class="h-4 w-px bg-stone-200"></div>
                 <div class="flex items-center gap-2">
-                    <span class="font-serif font-bold text-stone-800 text-sm truncate max-w-[200px]">
+                    <span class="font-serif font-bold text-stone-800 text-sm truncate max-w-[220px]">
                         {{ designData.content.weddingTitle }}
                     </span>
                     <span
@@ -688,32 +462,10 @@ const copyUrl = () => {
                     </span>
                     <span
                         v-else-if="saveStatus === 'error'"
-                        class="text-[10px] text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full font-medium"
+                        class="text-[10px] text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full font-medium flex items-center gap-1"
                     >
-                        Gagal Menyimpan
+                        <span>✕</span> Gagal Menyimpan
                     </span>
-                </div>
-            </div>
-
-            <!-- Center Mode Switcher -->
-            <div class="flex items-center gap-2">
-                <div class="flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200 text-xs">
-                    <button
-                        type="button"
-                        @click="previewMode = 'mobile'"
-                        :class="['px-3 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-all', previewMode === 'mobile' ? 'bg-white shadow-xs text-rose-600 font-bold' : 'text-stone-600 hover:text-stone-900']"
-                    >
-                        <span>📱</span>
-                        <span>Preview Mobile Live</span>
-                    </button>
-                    <button
-                        type="button"
-                        @click="previewMode = 'canvas'"
-                        :class="['px-3 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-all', previewMode === 'canvas' ? 'bg-white shadow-xs text-rose-600 font-bold' : 'text-stone-600 hover:text-stone-900']"
-                    >
-                        <span>🎨</span>
-                        <span>Kanvas Cover</span>
-                    </button>
                 </div>
             </div>
 
@@ -746,56 +498,43 @@ const copyUrl = () => {
         <!-- Main Workspace -->
         <div class="flex-1 flex overflow-hidden">
             <!-- Left Sidebar: Dedicated Editing Tabs -->
-            <aside class="w-80 bg-white border-r border-stone-200 flex flex-col shrink-0">
+            <aside class="w-88 sm:w-96 bg-white border-r border-stone-200 flex flex-col shrink-0 shadow-sm z-10">
                 <!-- Navigation Tabs -->
-                <div class="grid grid-cols-6 border-b border-stone-200 text-[11px] font-semibold text-center bg-stone-50/50">
+                <div class="grid grid-cols-5 border-b border-stone-200 text-xs font-semibold text-center bg-stone-50/60">
                     <button
                         @click="activeTab = 'couple'"
                         :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'couple' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
-                        title="Teks & Mempelai"
                     >
                         <span>✍️</span>
-                        <span class="text-[9px]">Mempelai</span>
+                        <span class="text-[10px]">Mempelai</span>
                     </button>
                     <button
                         @click="activeTab = 'theme'"
                         :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'theme' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
-                        title="Warna & Gaya"
                     >
                         <span>🎨</span>
-                        <span class="text-[9px]">Warna</span>
+                        <span class="text-[10px]">Warna</span>
                     </button>
                     <button
                         @click="activeTab = 'media'"
                         :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'media' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
-                        title="Foto & Galeri"
                     >
                         <span>📷</span>
-                        <span class="text-[9px]">Foto</span>
+                        <span class="text-[10px]">Foto</span>
                     </button>
                     <button
                         @click="activeTab = 'events'"
                         :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'events' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
-                        title="Jadwal Acara"
                     >
                         <span>📅</span>
-                        <span class="text-[9px]">Acara</span>
+                        <span class="text-[10px]">Acara</span>
                     </button>
                     <button
                         @click="activeTab = 'features'"
                         :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'features' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
-                        title="Musik & Kado"
                     >
                         <span>🎁</span>
-                        <span class="text-[9px]">Fitur</span>
-                    </button>
-                    <button
-                        @click="activeTab = 'canvas'"
-                        :class="['py-3 border-b-2 transition-colors flex flex-col items-center gap-1', activeTab === 'canvas' ? 'border-rose-500 text-rose-600 font-bold bg-white' : 'border-transparent text-stone-500 hover:text-stone-800']"
-                        title="Kanvas Cover"
-                    >
-                        <span>🖌️</span>
-                        <span class="text-[9px]">Kanvas</span>
+                        <span class="text-[10px]">Fitur</span>
                     </button>
                 </div>
 
@@ -805,8 +544,8 @@ const copyUrl = () => {
                     <!-- TAB 1: TEKS & PROFIL MEMPELAI                  -->
                     <!-- ============================================== -->
                     <div v-if="activeTab === 'couple'" class="space-y-4">
-                        <div class="p-3 bg-rose-50/50 rounded-xl border border-rose-100 text-stone-600 text-[11px] leading-relaxed">
-                            💡 Ubah nama mempelai, orang tua, dan kutipan ayat. Perubahan otomatis tersimpan dan tampil langsung di pratinjau mobile.
+                        <div class="p-3 bg-rose-50/60 rounded-xl border border-rose-100 text-stone-700 text-[11px] leading-relaxed">
+                            💡 <strong>Pratinjau Langsung (Real-time):</strong> Setiap ketikan teks mempelai langsung tampil seketika di layar smartphone di samping tanpa jeda.
                         </div>
 
                         <!-- Info Cover & Judul -->
@@ -819,7 +558,7 @@ const copyUrl = () => {
                                     @input="triggerAutosave"
                                     type="text"
                                     placeholder="Contoh: Dimas & Anisa"
-                                    class="w-full p-2 border rounded-lg bg-stone-50 font-serif font-bold text-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400"
+                                    class="w-full p-2.5 border rounded-xl bg-stone-50 font-serif font-bold text-stone-900 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400"
                                 />
                             </div>
                             <div>
@@ -829,7 +568,7 @@ const copyUrl = () => {
                                     @input="triggerAutosave"
                                     type="text"
                                     placeholder="Contoh: Walimatul 'Ursy / The Wedding Celebration"
-                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
+                                    class="w-full p-2.5 border rounded-xl bg-stone-50 text-stone-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400"
                                 />
                             </div>
                             <div>
@@ -839,7 +578,7 @@ const copyUrl = () => {
                                     @input="triggerAutosave"
                                     type="text"
                                     placeholder="Contoh: Minggu, 28 Desember 2026"
-                                    class="w-full p-2 border rounded-lg bg-stone-50 text-stone-800 focus:bg-white"
+                                    class="w-full p-2.5 border rounded-xl bg-stone-50 text-stone-800 focus:bg-white focus:outline-none focus:ring-2 focus:ring-rose-400"
                                 />
                             </div>
                         </div>
@@ -851,7 +590,7 @@ const copyUrl = () => {
                                 <span class="text-[10px] text-stone-500 font-mono">Groom</span>
                             </div>
                             <div>
-                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Nama Panggilan (Monogram)</label>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Nama Panggilan (Inisial Segel Wax Seal)</label>
                                 <input
                                     v-model="designData.content.groom.nickname"
                                     @input="triggerAutosave"
@@ -899,7 +638,7 @@ const copyUrl = () => {
                                 <span class="text-[10px] text-stone-500 font-mono">Bride</span>
                             </div>
                             <div>
-                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Nama Panggilan (Monogram)</label>
+                                <label class="block text-[11px] font-semibold text-stone-700 mb-1">Nama Panggilan (Inisial Segel Wax Seal)</label>
                                 <input
                                     v-model="designData.content.bride.nickname"
                                     @input="triggerAutosave"
@@ -969,7 +708,7 @@ const copyUrl = () => {
                     <!-- ============================================== -->
                     <div v-if="activeTab === 'theme'" class="space-y-4">
                         <div class="p-3 bg-stone-50 rounded-xl border border-stone-200 text-stone-600 text-[11px] leading-relaxed">
-                            🎨 Pilih salah satu preset palet warna di bawah, atau tentukan kode warna heksadesimal kustom Anda sendiri.
+                            🎨 Klik salah satu preset palet warna di bawah untuk mengubah nuansa tema undangan secara menyeluruh.
                         </div>
 
                         <!-- Preset Palettes -->
@@ -1391,62 +1130,14 @@ const copyUrl = () => {
                             </div>
                         </div>
                     </div>
-
-                    <!-- ============================================== -->
-                    <!-- TAB 6: KANVAS COVER FABRIC.JS                   -->
-                    <!-- ============================================== -->
-                    <div v-if="activeTab === 'canvas'" class="space-y-4">
-                        <div class="text-[10px] font-bold text-stone-400 uppercase tracking-wider">Tambah Teks ke Kanvas</div>
-                        <div class="grid grid-cols-1 gap-2">
-                            <button
-                                @click="addText('title')"
-                                class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-xs font-bold text-stone-800 transition-colors"
-                            >
-                                + Judul Acara
-                            </button>
-                            <button
-                                @click="addText('names')"
-                                class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-xs font-bold text-stone-800 transition-colors"
-                            >
-                                + Nama Pasangan
-                            </button>
-                            <button
-                                @click="addText('subtext')"
-                                class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-xs text-stone-600 transition-colors"
-                            >
-                                + Paragraf / Doa
-                            </button>
-                            <button
-                                @click="addOrnament"
-                                class="w-full text-left p-2.5 rounded-xl border border-stone-200 hover:border-rose-300 hover:bg-rose-50/50 text-xs text-stone-700 transition-colors flex items-center gap-2"
-                            >
-                                <span class="text-rose-500">♥</span> Simbol Cinta (Heart)
-                            </button>
-                        </div>
-
-                        <div class="flex items-center gap-2 pt-2 border-t border-stone-200">
-                            <button
-                                @click="undo"
-                                class="flex-1 py-1.5 border rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-50"
-                            >
-                                ↺ Undo
-                            </button>
-                            <button
-                                @click="redo"
-                                class="flex-1 py-1.5 border rounded-lg text-xs font-semibold text-stone-600 hover:bg-stone-50"
-                            >
-                                ↻ Redo
-                            </button>
-                        </div>
-                    </div>
                 </div>
             </aside>
 
-            <!-- Center: Interactive Workspace (Live Mobile Preview & Canvas Editor) -->
-            <main class="flex-1 overflow-auto flex items-center justify-center p-6 bg-stone-200/60 relative">
-                <!-- MODE 1: Interactive Live Mobile Phone Mockup -->
-                <div v-show="previewMode === 'mobile'" class="flex flex-col items-center gap-3">
-                    <div class="relative w-[380px] h-[720px] bg-stone-900 rounded-[50px] p-3 shadow-2xl border-4 border-stone-800 flex flex-col overflow-hidden ring-1 ring-white/10">
+            <!-- Center: Interactive Smartphone Live Preview (Spacious & Centered) -->
+            <main class="flex-1 overflow-auto flex items-center justify-center p-6 bg-stone-200/70 relative">
+                <div class="flex flex-col items-center gap-3">
+                    <!-- Real Smartphone Bezel -->
+                    <div class="relative w-[380px] sm:w-[400px] h-[740px] bg-stone-900 rounded-[50px] p-3.5 shadow-2xl border-4 border-stone-800 flex flex-col overflow-hidden ring-1 ring-white/10">
                         <!-- Dynamic Island Notch -->
                         <div class="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-4 bg-stone-950 rounded-full z-30 flex items-center justify-center shadow-inner">
                             <div class="w-2.5 h-2.5 rounded-full bg-stone-900 mr-2 border border-stone-800"></div>
@@ -1456,133 +1147,22 @@ const copyUrl = () => {
                         <!-- Live Iframe View of Invitation -->
                         <div class="w-full h-full rounded-[40px] overflow-hidden bg-stone-950 relative">
                             <iframe
+                                ref="previewIframeRef"
                                 :key="previewKey"
                                 :src="`/i/${invitation.slug}?preview=1`"
                                 class="w-full h-full border-0 select-none"
+                                @load="syncToPreview"
                             ></iframe>
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 text-xs text-stone-500 font-medium">
-                        <span>📱 Pratinjau Tampilan Undangan Asli</span>
+                    <div class="flex items-center gap-2 text-xs text-stone-600 font-medium">
+                        <span>📱 Pratinjau Langsung HP</span>
                         <span>&bull;</span>
-                        <button
-                            type="button"
-                            @click="refreshPreview"
-                            class="text-rose-600 hover:text-rose-700 font-bold underline flex items-center gap-1"
-                        >
-                            <span>🔄 Segarkan Tampilan</span>
-                        </button>
-                    </div>
-                </div>
-
-                <!-- MODE 2: Fabric Canvas Cover Designer -->
-                <div v-show="previewMode === 'canvas'" class="flex flex-col items-center gap-3">
-                    <div class="relative bg-white shadow-2xl rounded-2xl overflow-hidden border border-stone-300">
-                        <canvas ref="canvasEl"></canvas>
-                    </div>
-                    <div class="text-xs text-stone-500 font-medium">
-                        🎨 Kanvas Desain Cover &bull; Klik teks di atas untuk mengedit di panel kanan
+                        <span class="text-stone-500">Tampilan sinkron secara instan saat Anda mengetik</span>
                     </div>
                 </div>
             </main>
-
-            <!-- Right Sidebar: Properties Inspector (Canvas Object) -->
-            <aside class="w-64 bg-white border-l border-stone-200 p-4 flex flex-col shrink-0 overflow-y-auto">
-                <div class="text-xs font-bold text-stone-800 uppercase tracking-wider mb-4 pb-2 border-b border-stone-100">
-                    Inspektor Properti
-                </div>
-
-                <div v-if="selectedObj" class="space-y-4 text-xs">
-                    <!-- Typography settings -->
-                    <div v-if="selectedObj.type === 'i-text' || selectedObj.type === 'text'" class="space-y-3">
-                        <div>
-                            <label class="block text-[11px] font-semibold text-stone-600 mb-1">Font Family</label>
-                            <select
-                                v-model="objProps.fontFamily"
-                                @change="updateTextProp('fontFamily', objProps.fontFamily)"
-                                class="w-full p-2 border rounded-xl bg-stone-50 text-xs"
-                            >
-                                <option v-for="f in fontOptions" :key="f.value" :value="f.value">
-                                    {{ f.name }}
-                                </option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-semibold text-stone-600 mb-1">Ukuran Font ({{ objProps.fontSize }}px)</label>
-                            <input
-                                type="range"
-                                min="10"
-                                max="100"
-                                v-model.number="objProps.fontSize"
-                                @input="updateTextProp('fontSize', objProps.fontSize)"
-                                class="w-full"
-                            />
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-semibold text-stone-600 mb-1">Warna Teks</label>
-                            <div class="flex gap-2 items-center">
-                                <input
-                                    type="color"
-                                    v-model="objProps.fill"
-                                    @input="updateTextProp('fill', objProps.fill)"
-                                    class="w-8 h-8 rounded border p-0 cursor-pointer"
-                                />
-                                <span class="font-mono text-stone-600 text-xs">{{ objProps.fill }}</span>
-                            </div>
-                        </div>
-
-                        <div>
-                            <label class="block text-[11px] font-semibold text-stone-600 mb-1">Perataan Teks</label>
-                            <div class="grid grid-cols-3 gap-1">
-                                <button
-                                    @click="updateTextProp('textAlign', 'left')"
-                                    :class="['py-1 border rounded text-xs', objProps.textAlign === 'left' ? 'bg-stone-900 text-white' : 'bg-stone-50']"
-                                >
-                                    Kiri
-                                </button>
-                                <button
-                                    @click="updateTextProp('textAlign', 'center')"
-                                    :class="['py-1 border rounded text-xs', objProps.textAlign === 'center' ? 'bg-stone-900 text-white' : 'bg-stone-50']"
-                                >
-                                    Tengah
-                                </button>
-                                <button
-                                    @click="updateTextProp('textAlign', 'right')"
-                                    :class="['py-1 border rounded text-xs', objProps.textAlign === 'right' ? 'bg-stone-900 text-white' : 'bg-stone-50']"
-                                >
-                                    Kanan
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Layer & Object Actions -->
-                    <div class="pt-4 border-t border-stone-100 space-y-2">
-                        <div class="text-[11px] font-bold text-stone-400 uppercase tracking-wider mb-2">Aksi Objek</div>
-                        <div class="grid grid-cols-2 gap-2">
-                            <button
-                                @click="duplicateSelected"
-                                class="p-2 border border-stone-200 rounded-lg hover:bg-stone-50 text-[11px] font-medium"
-                            >
-                                Duplikasi ⧉
-                            </button>
-                            <button
-                                @click="deleteSelected"
-                                class="p-2 border border-rose-200 text-rose-600 rounded-lg hover:bg-rose-50 text-[11px] font-medium"
-                            >
-                                Hapus ✕
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <div v-else class="text-center py-12 text-stone-400 text-xs leading-relaxed">
-                    Pilih tab di sebelah kiri untuk mengedit mempelai, warna tema, foto, acara, atau fitur.
-                </div>
-            </aside>
         </div>
 
         <!-- Publish Modal -->

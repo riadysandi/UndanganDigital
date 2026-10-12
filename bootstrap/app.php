@@ -23,6 +23,8 @@ return Application::configure(basePath: dirname(__DIR__))
         
         $middleware->validateCsrfTokens(except: [
             'api/webhooks/*',
+            'api/invitations/*',
+            'api/public/*',
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {

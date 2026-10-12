@@ -55,9 +55,17 @@ const toggleFlip = (eventId: number) => {
 const timeLeft = ref({ days: 0, hours: 0, minutes: 0, seconds: 0 });
 let timerInterval: any = null;
 
+const liveDesignOverride = ref<any>(null);
+
+const onMessage = (event: MessageEvent) => {
+    if (event.data && event.data.type === 'LIVE_UPDATE_DESIGN') {
+        liveDesignOverride.value = event.data.design;
+    }
+};
+
 // Dynamic Invitation Data resolution (combining props.design with defaults)
 const invitationData = computed(() => {
-    const d = props.design || {};
+    const d = liveDesignOverride.value || props.design || {};
     const content = d.content || {};
     const theme = d.theme || {};
     const firstEvent = props.events && props.events.length > 0 ? props.events[0] : null;
@@ -162,11 +170,13 @@ const updateCountdown = () => {
 };
 
 onMounted(() => {
+    window.addEventListener('message', onMessage);
     updateCountdown();
     timerInterval = setInterval(updateCountdown, 1000);
 });
 
 onBeforeUnmount(() => {
+    window.removeEventListener('message', onMessage);
     if (timerInterval) clearInterval(timerInterval);
     if (audioEl.value) {
         audioEl.value.pause();
