@@ -754,11 +754,9 @@ const notifications = [
                 <div class="flex gap-4">
                     <Link href="/pricing" class="hover:text-stone-800">Paket Harga</Link>
                     <span class="text-stone-300">•</span>
-                    <Link href="/bantu-buat" class="hover:text-stone-800">Jasa Buat</Link>
+                    <Link href="/bantu-buat" class="hover:text-stone-800">Jasa Terima Beres</Link>
                     <span class="text-stone-300">•</span>
-                    <Link href="/admin/login" class="hover:text-amber-600 font-medium flex items-center gap-1">
-                        <span>🛡️</span> Portal Admin
-                    </Link>
+                    <Link href="/login" class="hover:text-stone-800 font-medium">Masuk Akun</Link>
                 </div>
             </div>
         </footer>

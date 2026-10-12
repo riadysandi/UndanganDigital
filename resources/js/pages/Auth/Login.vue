@@ -89,10 +89,6 @@ const submit = () => {
                                 />
                                 <label for="remember" class="ml-2 block text-xs text-stone-600 cursor-pointer">Ingat saya</label>
                             </div>
-
-                            <Link href="/admin/login" class="text-xs text-stone-400 hover:text-stone-600 transition-colors">
-                                Portal Staf / Admin →
-                            </Link>
                         </div>
 
                         <div>

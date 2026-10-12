@@ -12,7 +12,7 @@ use Inertia\Response;
 
 class AuthController extends Controller
 {
-    public function showLogin(): Response
+    public function showLogin(): Response|\Illuminate\Http\RedirectResponse
     {
         if (Auth::check()) {
             return Auth::user()->isAdmin() 
