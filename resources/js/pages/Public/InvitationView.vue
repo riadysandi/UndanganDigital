@@ -219,10 +219,44 @@ const updateCountdown = () => {
     }
 };
 
+// Cinematic Scroll Reveal Intersection Observer
+let scrollObserver: IntersectionObserver | null = null;
+
+const initScrollObserver = () => {
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return;
+    
+    if (scrollObserver) scrollObserver.disconnect();
+
+    scrollObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-revealed');
+            }
+        });
+    }, {
+        threshold: 0.08,
+        rootMargin: '0px 0px -30px 0px',
+    });
+
+    const elements = document.querySelectorAll('.reveal-on-scroll');
+    elements.forEach((el) => scrollObserver?.observe(el));
+};
+
+watch(isOpen, (newVal) => {
+    if (newVal) {
+        setTimeout(() => {
+            initScrollObserver();
+        }, 200);
+    }
+});
+
 onMounted(() => {
     window.addEventListener('message', onMessage);
     updateCountdown();
     timerInterval = setInterval(updateCountdown, 1000);
+    setTimeout(() => {
+        initScrollObserver();
+    }, 400);
 });
 
 onBeforeUnmount(() => {
@@ -230,6 +264,9 @@ onBeforeUnmount(() => {
     if (timerInterval) clearInterval(timerInterval);
     if (audioEl.value) {
         audioEl.value.pause();
+    }
+    if (scrollObserver) {
+        scrollObserver.disconnect();
     }
 });
 
@@ -896,20 +933,20 @@ const digitalGift = computed(() => {
                 ></div>
 
                 <div
-                    class="text-[11px] font-serif tracking-[0.35em] uppercase mb-3 font-semibold"
+                    class="reveal-on-scroll reveal-fade-up text-[11px] font-serif tracking-[0.35em] uppercase mb-3 font-semibold"
                     :style="{ color: invitationData.theme.primaryColor }"
                 >
                     {{ invitationData.content.coverSubtitle }}
                 </div>
                 
                 <h1
-                    class="font-serif text-5xl sm:text-6xl my-3 leading-tight tracking-tight drop-shadow-md font-bold"
+                    class="reveal-on-scroll reveal-fade-up reveal-delay-1 font-serif text-5xl sm:text-6xl my-3 leading-tight tracking-tight drop-shadow-md font-bold"
                     :style="{ color: invitationData.theme.secondaryColor }"
                 >
                     {{ invitationData.content.weddingTitle }}
                 </h1>
 
-                <div class="flex items-center justify-center gap-3 my-4">
+                <div class="reveal-on-scroll reveal-fade-up reveal-delay-2 flex items-center justify-center gap-3 my-4">
                     <div
                         class="w-12 h-px"
                         :style="{ background: `linear-gradient(to right, transparent, ${invitationData.theme.primaryColor}99)` }"
@@ -922,7 +959,7 @@ const digitalGift = computed(() => {
                 </div>
 
                 <p
-                    class="font-serif text-xs tracking-widest mb-8 uppercase"
+                    class="reveal-on-scroll reveal-fade-up reveal-delay-2 font-serif text-xs tracking-widest mb-8 uppercase"
                     :style="{ color: invitationData.theme.secondaryColor + 'cc' }"
                 >
                     {{ invitationData.content.weddingDateText }}
@@ -930,7 +967,7 @@ const digitalGift = computed(() => {
 
                 <!-- Hero Photo with 3D Border Glow -->
                 <div
-                    class="relative w-64 h-80 rounded-t-full rounded-b-3xl overflow-hidden border-2 shadow-[0_20px_50px_rgba(0,0,0,0.8)] mx-auto mb-6 transform hover:scale-[1.02] transition-transform duration-500"
+                    class="reveal-on-scroll reveal-zoom-in reveal-delay-3 relative w-64 h-80 rounded-t-full rounded-b-3xl overflow-hidden border-2 shadow-[0_20px_50px_rgba(0,0,0,0.8)] mx-auto mb-6 transform hover:scale-[1.02] transition-transform duration-500"
                     :style="{ borderColor: invitationData.theme.primaryColor + '66' }"
                 >
                     <img
@@ -941,12 +978,12 @@ const digitalGift = computed(() => {
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                 </div>
 
-                <div class="text-xs text-stone-300 font-serif italic max-w-xs leading-relaxed">
+                <div class="reveal-on-scroll reveal-fade-up reveal-delay-4 text-xs text-stone-300 font-serif italic max-w-xs leading-relaxed">
                     "{{ invitationData.content.quote }}"
                 </div>
                 <div
                     v-if="invitationData.content.quoteSource"
-                    class="text-[11px] font-serif font-semibold mt-2"
+                    class="reveal-on-scroll reveal-fade-up reveal-delay-4 text-[11px] font-serif font-semibold mt-2"
                     :style="{ color: invitationData.theme.primaryColor }"
                 >
                     — {{ invitationData.content.quoteSource }}
@@ -961,29 +998,31 @@ const digitalGift = computed(() => {
                     borderColor: invitationData.theme.primaryColor + '33'
                 }"
             >
-                <div
-                    class="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase border mb-3"
-                    :style="{
-                        backgroundColor: invitationData.theme.primaryColor + '1a',
-                        borderColor: invitationData.theme.primaryColor + '40',
-                        color: invitationData.theme.primaryColor
-                    }"
-                >
-                    Mempelai Pengantin
+                <div class="reveal-on-scroll reveal-fade-up">
+                    <div
+                        class="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase border mb-3"
+                        :style="{
+                            backgroundColor: invitationData.theme.primaryColor + '1a',
+                            borderColor: invitationData.theme.primaryColor + '40',
+                            color: invitationData.theme.primaryColor
+                        }"
+                    >
+                        Mempelai Pengantin
+                    </div>
+                    <h2
+                        class="font-serif text-2xl font-bold mb-2"
+                        :style="{ color: invitationData.theme.secondaryColor }"
+                    >
+                        Pasangan Bahagia
+                    </h2>
+                    <p class="text-xs text-stone-400 max-w-sm mx-auto mb-10 leading-relaxed">
+                        Dengan memohon rahmat dan ridho Allah SWT, kami bermaksud menyelenggarakan pernikahan kami:
+                    </p>
                 </div>
-                <h2
-                    class="font-serif text-2xl font-bold mb-2"
-                    :style="{ color: invitationData.theme.secondaryColor }"
-                >
-                    Pasangan Bahagia
-                </h2>
-                <p class="text-xs text-stone-400 max-w-sm mx-auto mb-10 leading-relaxed">
-                    Dengan memohon rahmat dan ridho Allah SWT, kami bermaksud menyelenggarakan pernikahan kami:
-                </p>
 
                 <div class="space-y-10">
-                    <!-- Groom -->
-                    <div class="flex flex-col items-center">
+                    <!-- Groom (Slide In From Left) -->
+                    <div class="reveal-on-scroll reveal-slide-left flex flex-col items-center">
                         <div
                             class="w-32 h-32 rounded-full overflow-hidden border-2 shadow-xl mb-4 p-1"
                             :style="{
@@ -1014,14 +1053,14 @@ const digitalGift = computed(() => {
                     </div>
 
                     <div
-                        class="font-serif text-3xl font-light"
+                        class="reveal-on-scroll reveal-zoom-in reveal-delay-1 font-serif text-3xl font-light"
                         :style="{ color: invitationData.theme.primaryColor }"
                     >
                         &
                     </div>
 
-                    <!-- Bride -->
-                    <div class="flex flex-col items-center">
+                    <!-- Bride (Slide In From Right) -->
+                    <div class="reveal-on-scroll reveal-slide-right reveal-delay-2 flex flex-col items-center">
                         <div
                             class="w-32 h-32 rounded-full overflow-hidden border-2 shadow-xl mb-4 p-1"
                             :style="{
@@ -1062,14 +1101,14 @@ const digitalGift = computed(() => {
                 }"
             >
                 <h3
-                    class="text-xs uppercase tracking-widest font-serif mb-6"
+                    class="reveal-on-scroll reveal-fade-up text-xs uppercase tracking-widest font-serif mb-6"
                     :style="{ color: invitationData.theme.primaryColor }"
                 >
                     Menghitung Hari Bahagia
                 </h3>
                 <div class="grid grid-cols-4 gap-3 max-w-xs mx-auto">
                     <div
-                        class="p-3 rounded-2xl border shadow-lg"
+                        class="reveal-on-scroll reveal-zoom-in reveal-delay-1 p-3 rounded-2xl border shadow-lg"
                         :style="{
                             backgroundColor: invitationData.theme.cardBgColor,
                             borderColor: invitationData.theme.primaryColor + '33'
@@ -1084,7 +1123,7 @@ const digitalGift = computed(() => {
                         <div class="text-[9px] uppercase tracking-wider text-stone-400 mt-1">Hari</div>
                     </div>
                     <div
-                        class="p-3 rounded-2xl border shadow-lg"
+                        class="reveal-on-scroll reveal-zoom-in reveal-delay-2 p-3 rounded-2xl border shadow-lg"
                         :style="{
                             backgroundColor: invitationData.theme.cardBgColor,
                             borderColor: invitationData.theme.primaryColor + '33'
@@ -1099,7 +1138,7 @@ const digitalGift = computed(() => {
                         <div class="text-[9px] uppercase tracking-wider text-stone-400 mt-1">Jam</div>
                     </div>
                     <div
-                        class="p-3 rounded-2xl border shadow-lg"
+                        class="reveal-on-scroll reveal-zoom-in reveal-delay-3 p-3 rounded-2xl border shadow-lg"
                         :style="{
                             backgroundColor: invitationData.theme.cardBgColor,
                             borderColor: invitationData.theme.primaryColor + '33'
@@ -1114,7 +1153,7 @@ const digitalGift = computed(() => {
                         <div class="text-[9px] uppercase tracking-wider text-stone-400 mt-1">Menit</div>
                     </div>
                     <div
-                        class="p-3 rounded-2xl border shadow-lg"
+                        class="reveal-on-scroll reveal-zoom-in reveal-delay-4 p-3 rounded-2xl border shadow-lg"
                         :style="{
                             backgroundColor: invitationData.theme.cardBgColor,
                             borderColor: invitationData.theme.primaryColor + '33'
@@ -1135,7 +1174,7 @@ const digitalGift = computed(() => {
             <!-- 3. AGENDA ACARA DENGAN 3D INTERACTIVE FLIP CARDS          -->
             <!-- ======================================================== -->
             <section class="py-16 px-6 space-y-6">
-                <div class="text-center mb-8">
+                <div class="reveal-on-scroll reveal-fade-up text-center mb-8">
                     <div
                         class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase border mb-2"
                         :style="{
@@ -1162,7 +1201,7 @@ const digitalGift = computed(() => {
                     <div
                         v-for="event in events"
                         :key="event.id"
-                        class="flip-card-wrapper w-full h-[290px] cursor-pointer select-none"
+                        class="reveal-on-scroll reveal-fade-up flip-card-wrapper w-full h-[290px] cursor-pointer select-none"
                         @click="toggleFlip(event.id)"
                     >
                         <div
@@ -1328,24 +1367,29 @@ const digitalGift = computed(() => {
                     borderColor: invitationData.theme.primaryColor + '33'
                 }"
             >
-                <h2
-                    class="font-serif text-2xl font-bold mb-2"
-                    :style="{ color: invitationData.theme.secondaryColor }"
-                >
-                    Galeri Momen
-                </h2>
-                <p class="text-xs text-stone-400 mb-8">Potret cinta dan kebahagiaan perjalanan kami.</p>
+                <div class="reveal-on-scroll reveal-fade-up">
+                    <h2
+                        class="font-serif text-2xl font-bold mb-2"
+                        :style="{ color: invitationData.theme.secondaryColor }"
+                    >
+                        Galeri Momen
+                    </h2>
+                    <p class="text-xs text-stone-400 mb-8">Potret cinta dan kebahagiaan perjalanan kami.</p>
+                </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div
                         v-for="(photoUrl, pIdx) in invitationData.content.gallery"
                         :key="pIdx"
-                        class="rounded-2xl overflow-hidden shadow-lg h-48 border border-stone-800 group"
+                        :class="[
+                            'reveal-on-scroll reveal-zoom-in rounded-2xl overflow-hidden shadow-lg h-48 border border-stone-800 group',
+                            pIdx === 0 ? '' : pIdx === 1 ? 'reveal-delay-1' : pIdx === 2 ? 'reveal-delay-2' : 'reveal-delay-3'
+                        ]"
                     >
                         <img
                             :src="photoUrl"
                             :alt="'Galeri ' + (pIdx + 1)"
-                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
                         />
                     </div>
                 </div>
@@ -1359,7 +1403,7 @@ const digitalGift = computed(() => {
                     borderColor: invitationData.theme.primaryColor + '26'
                 }"
             >
-                <div class="text-center mb-8">
+                <div class="reveal-on-scroll reveal-fade-up text-center mb-8">
                     <h2
                         class="font-serif text-2xl font-bold"
                         :style="{ color: invitationData.theme.secondaryColor }"
@@ -1389,7 +1433,7 @@ const digitalGift = computed(() => {
                     </p>
                 </div>
 
-                <form v-else @submit.prevent="submitRsvp" class="space-y-4 max-w-sm mx-auto">
+                <form v-else @submit.prevent="submitRsvp" class="reveal-on-scroll reveal-fade-up space-y-4 max-w-sm mx-auto">
                     <div>
                         <label class="block text-xs font-semibold text-stone-300 mb-1">Nama Lengkap *</label>
                         <input
@@ -1465,7 +1509,7 @@ const digitalGift = computed(() => {
                 }"
             >
                 <div
-                    class="max-w-sm mx-auto p-6 rounded-3xl border shadow-2xl relative overflow-hidden"
+                    class="reveal-on-scroll reveal-zoom-in max-w-sm mx-auto p-6 rounded-3xl border shadow-2xl relative overflow-hidden"
                     :style="{
                         backgroundColor: invitationData.theme.bgColor,
                         borderColor: invitationData.theme.primaryColor + '40'
@@ -1534,7 +1578,7 @@ const digitalGift = computed(() => {
                 }"
             >
                 <div class="max-w-sm mx-auto space-y-8">
-                    <div>
+                    <div class="reveal-on-scroll reveal-fade-up">
                         <div
                             class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border text-[10px] font-bold tracking-widest uppercase mb-2"
                             :style="{
@@ -1562,7 +1606,10 @@ const digitalGift = computed(() => {
                         <div
                             v-for="(acc, idx) in digitalGift.accounts"
                             :key="idx"
-                            class="p-5 rounded-2xl border shadow-lg text-left relative overflow-hidden"
+                            :class="[
+                                'reveal-on-scroll reveal-fade-up p-5 rounded-2xl border shadow-lg text-left relative overflow-hidden',
+                                idx === 0 ? '' : idx === 1 ? 'reveal-delay-1' : 'reveal-delay-2'
+                            ]"
                             :style="{
                                 backgroundColor: invitationData.theme.cardBgColor,
                                 borderColor: invitationData.theme.primaryColor + '40'
@@ -1626,7 +1673,7 @@ const digitalGift = computed(() => {
                     <!-- Physical Gift Address -->
                     <div
                         v-if="digitalGift.physical_gift && digitalGift.physical_gift.enabled"
-                        class="p-5 rounded-2xl border border-stone-700/80 shadow-lg text-left space-y-2.5"
+                        class="reveal-on-scroll reveal-fade-up p-5 rounded-2xl border border-stone-700/80 shadow-lg text-left space-y-2.5"
                         :style="{ backgroundColor: invitationData.theme.cardBgColor }"
                     >
                         <div class="flex items-center gap-2">
@@ -1667,7 +1714,7 @@ const digitalGift = computed(() => {
                     borderColor: invitationData.theme.primaryColor + '26'
                 }"
             >
-                <div class="text-center mb-8">
+                <div class="reveal-on-scroll reveal-fade-up text-center mb-8">
                     <h2
                         class="font-serif text-2xl font-bold"
                         :style="{ color: invitationData.theme.secondaryColor }"
@@ -1679,9 +1726,12 @@ const digitalGift = computed(() => {
 
                 <div class="space-y-3 max-w-sm mx-auto">
                     <div
-                        v-for="entry in localGuestbook"
+                        v-for="(entry, eIdx) in localGuestbook"
                         :key="entry.id"
-                        class="p-4 rounded-2xl border shadow-md text-left"
+                        :class="[
+                            'reveal-on-scroll reveal-fade-up p-4 rounded-2xl border shadow-md text-left',
+                            eIdx % 2 === 1 ? 'reveal-delay-1' : ''
+                        ]"
                         :style="{
                             backgroundColor: invitationData.theme.bgColor,
                             borderColor: invitationData.theme.primaryColor + '30'
@@ -1707,7 +1757,7 @@ const digitalGift = computed(() => {
 
             <!-- WhatsApp Share & Footer -->
             <footer
-                class="py-12 px-6 text-center space-y-4 border-t"
+                class="reveal-on-scroll reveal-fade-up py-12 px-6 text-center space-y-4 border-t"
                 :style="{
                     backgroundColor: invitationData.theme.bgColor,
                     borderColor: invitationData.theme.primaryColor + '33'
@@ -1903,5 +1953,60 @@ const digitalGift = computed(() => {
 }
 .sway-petal {
     animation: petalSway 3.2s ease-in-out infinite alternate;
+}
+
+/* ========================================================= */
+/* CINEMATIC LUXURY SCROLL REVEAL ANIMATIONS                */
+/* ========================================================= */
+.reveal-on-scroll {
+    opacity: 0;
+    will-change: transform, opacity;
+    transition: opacity 1.1s cubic-bezier(0.16, 1, 0.3, 1), transform 1.1s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-fade-up {
+    transform: translateY(35px);
+}
+.reveal-fade-up.is-revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.reveal-slide-left {
+    transform: translateX(-45px);
+}
+.reveal-slide-left.is-revealed {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.reveal-slide-right {
+    transform: translateX(45px);
+}
+.reveal-slide-right.is-revealed {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.reveal-zoom-in {
+    transform: scale(0.92);
+}
+.reveal-zoom-in.is-revealed {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Staggered Delay Utilities */
+.reveal-delay-1 {
+    transition-delay: 150ms;
+}
+.reveal-delay-2 {
+    transition-delay: 300ms;
+}
+.reveal-delay-3 {
+    transition-delay: 450ms;
+}
+.reveal-delay-4 {
+    transition-delay: 600ms;
 }
 </style>
