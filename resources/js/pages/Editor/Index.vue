@@ -25,9 +25,14 @@ let canvas: fabric.Canvas | null = null;
 
 const saveStatus = ref<'idle' | 'saving' | 'saved' | 'error'>('saved');
 const lastSavedTime = ref<string>('Baru saja');
-const previewMode = ref<'canvas' | 'mobile'>('canvas');
+const previewMode = ref<'mobile' | 'canvas'>('mobile');
+const previewKey = ref<number>(0);
 const zoomLevel = ref<number>(1);
 const activeTab = ref<'elements' | 'media' | 'sections' | 'events' | 'features'>('elements');
+
+const refreshPreview = () => {
+    previewKey.value++;
+};
 
 // Undo / Redo History stack
 const historyStack = ref<string[]>([]);
@@ -127,9 +132,9 @@ onMounted(() => {
     }
 
     canvas = new fabric.Canvas(canvasEl.value, {
-        width: designData.canvas.width || 480,
-        height: designData.canvas.height || 720,
-        backgroundColor: designData.canvas.background || '#FDFBF7',
+        width: 380,
+        height: 620,
+        backgroundColor: designData.canvas.background || '#16191E',
         selection: true,
         preserveObjectStacking: true,
     });
@@ -168,41 +173,47 @@ onBeforeUnmount(() => {
 const loadCanvasContent = () => {
     if (!canvas) return;
 
-    // Default decorative elements if empty
+    const bg = (designData.canvas.background || '#16191E').toLowerCase();
+    const isDark = bg.startsWith('#1') || bg.startsWith('#2') || bg.startsWith('#0') || bg.includes('black');
+
+    const primaryColor = isDark ? '#D4AF37' : '#5D6B50';
+    const textColor = isDark ? '#FDFBF7' : '#1E293B';
+    const subColor = isDark ? '#E5C07B' : '#64748B';
+
+    // Default decorative elements
     const titleText = new fabric.IText('The Wedding Of', {
-        left: 240,
-        top: 120,
+        left: 190,
+        top: 150,
         originX: 'center',
         originY: 'center',
         fontFamily: 'Playfair Display',
-        fontSize: 24,
-        fill: '#7D8C71',
+        fontSize: 18,
+        fill: primaryColor,
     });
 
     const coupleText = new fabric.IText('Dimas & Anisa', {
-        left: 240,
-        top: 220,
+        left: 190,
+        top: 240,
         originX: 'center',
         originY: 'center',
         fontFamily: 'Great Vibes',
-        fontSize: 54,
-        fill: '#2C3E50',
+        fontSize: 48,
+        fill: textColor,
+    });
+
+    const line = new fabric.Line([100, 290, 280, 290], {
+        stroke: primaryColor,
+        strokeWidth: 1.5,
     });
 
     const dateText = new fabric.IText('Minggu, 28 Desember 2026', {
-        left: 240,
-        top: 310,
+        left: 190,
+        top: 340,
         originX: 'center',
         originY: 'center',
         fontFamily: 'Playfair Display',
-        fontSize: 16,
-        fill: '#666666',
-    });
-
-    // Decorative shape (line)
-    const line = new fabric.Line([140, 260, 340, 260], {
-        stroke: '#D4AF37',
-        strokeWidth: 2,
+        fontSize: 14,
+        fill: subColor,
     });
 
     canvas.add(titleText);
@@ -579,21 +590,50 @@ const copyUrl = () => {
                     </button>
                 </div>
 
-                <div class="flex items-center bg-stone-100 rounded-lg p-0.5 border border-stone-200 text-xs">
+                <div v-if="previewMode === 'canvas'" class="flex items-center bg-stone-100 rounded-lg p-0.5 border border-stone-200 text-xs">
                     <button @click="setZoom(-0.1)" class="px-2 py-1 hover:bg-white rounded">-</button>
                     <span class="px-1 text-[11px] font-mono text-stone-600">{{ Math.round(zoomLevel * 100) }}%</span>
                     <button @click="setZoom(0.1)" class="px-2 py-1 hover:bg-white rounded">+</button>
+                </div>
+
+                <!-- Mode View Switcher: Mobile Live vs Canvas Cover -->
+                <div class="flex items-center bg-stone-100 rounded-xl p-0.5 border border-stone-200 text-xs">
+                    <button
+                        type="button"
+                        @click="previewMode = 'mobile'"
+                        :class="['px-3 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-all', previewMode === 'mobile' ? 'bg-white shadow-xs text-rose-600 font-bold' : 'text-stone-600 hover:text-stone-900']"
+                    >
+                        <span>📱</span>
+                        <span>Preview Mobile Live</span>
+                    </button>
+                    <button
+                        type="button"
+                        @click="previewMode = 'canvas'"
+                        :class="['px-3 py-1 rounded-lg font-semibold flex items-center gap-1.5 transition-all', previewMode === 'canvas' ? 'bg-white shadow-xs text-rose-600 font-bold' : 'text-stone-600 hover:text-stone-900']"
+                    >
+                        <span>🎨</span>
+                        <span>Kanvas Cover</span>
+                    </button>
                 </div>
             </div>
 
             <!-- Right Controls: Preview & Publish -->
             <div class="flex items-center gap-3">
+                <button
+                    v-if="previewMode === 'mobile'"
+                    type="button"
+                    @click="refreshPreview"
+                    class="px-2.5 py-1.5 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors flex items-center gap-1"
+                    title="Segarkan iframe tampilan mobile"
+                >
+                    <span>🔄 Refresh</span>
+                </button>
                 <a
                     :href="`/i/${invitation.slug}`"
                     target="_blank"
                     class="px-3 py-1.5 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-lg transition-colors flex items-center gap-1"
                 >
-                    Lihat Publik ↗
+                    Tab Baru ↗
                 </a>
                 <button
                     @click="openPublishModal"
@@ -940,10 +980,48 @@ const copyUrl = () => {
                 </div>
             </aside>
 
-            <!-- Center: Interactive Canvas Editor -->
-            <main class="flex-1 overflow-auto flex items-center justify-center p-8 bg-stone-200/70">
-                <div class="relative bg-white shadow-2xl rounded-2xl overflow-hidden border border-stone-300">
-                    <canvas ref="canvasEl"></canvas>
+            <!-- Center: Interactive Workspace (Live Mobile Preview & Canvas Editor) -->
+            <main class="flex-1 overflow-auto flex items-center justify-center p-6 bg-stone-200/60 relative">
+                <!-- MODE 1: Interactive Live Mobile Phone Mockup -->
+                <div v-show="previewMode === 'mobile'" class="flex flex-col items-center gap-3">
+                    <div class="relative w-[380px] h-[720px] bg-stone-900 rounded-[50px] p-3 shadow-2xl border-4 border-stone-800 flex flex-col overflow-hidden ring-1 ring-white/10">
+                        <!-- Smartphone Speaker & Dynamic Island Notch -->
+                        <div class="absolute top-4 left-1/2 -translate-x-1/2 w-28 h-4 bg-stone-950 rounded-full z-30 flex items-center justify-center shadow-inner">
+                            <div class="w-2.5 h-2.5 rounded-full bg-stone-900 mr-2 border border-stone-800"></div>
+                            <div class="w-10 h-1 bg-stone-800 rounded-full"></div>
+                        </div>
+
+                        <!-- Live Iframe View of Invitation -->
+                        <div class="w-full h-full rounded-[40px] overflow-hidden bg-stone-950 relative">
+                            <iframe
+                                :key="previewKey"
+                                :src="`/i/${invitation.slug}`"
+                                class="w-full h-full border-0 select-none"
+                            ></iframe>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 text-xs text-stone-500 font-medium">
+                        <span>📱 Pratinjau Tampilan Undangan Asli</span>
+                        <span>&bull;</span>
+                        <button
+                            type="button"
+                            @click="refreshPreview"
+                            class="text-rose-600 hover:text-rose-700 font-bold underline flex items-center gap-1"
+                        >
+                            <span>🔄 Segarkan Tampilan</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- MODE 2: Fabric Canvas Cover Designer -->
+                <div v-show="previewMode === 'canvas'" class="flex flex-col items-center gap-3">
+                    <div class="relative bg-white shadow-2xl rounded-2xl overflow-hidden border border-stone-300">
+                        <canvas ref="canvasEl"></canvas>
+                    </div>
+                    <div class="text-xs text-stone-500 font-medium">
+                        🎨 Kanvas Desain Cover &bull; Klik teks di atas untuk mengedit di panel kanan
+                    </div>
                 </div>
             </main>
 
