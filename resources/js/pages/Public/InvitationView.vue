@@ -105,19 +105,32 @@ const formatDisplayTime = (val: string) => {
 const invitationData = computed(() => {
     const d = liveDesignOverride.value || props.design || {};
     const content = d.content || {};
-    const theme = d.theme || {};
+    const theme = (typeof d.theme === 'object' && d.theme !== null) ? d.theme : {};
     const firstEvent = props.events && props.events.length > 0 ? props.events[0] : null;
+
+    const isLight = theme.isLight === true || theme.mode === 'light';
 
     return {
         theme: {
             palette: theme.palette || 'gold',
-            primaryColor: theme.primaryColor || '#D4AF37',
-            secondaryColor: theme.secondaryColor || '#F3E5AB',
-            bgColor: theme.bgColor || '#14171c',
-            cardBgColor: theme.cardBgColor || '#1a1f26',
-            textColor: theme.textColor || '#f3f4f6',
+            isLight: isLight,
+            primaryColor: theme.primaryColor || (isLight ? '#2D5A43' : '#D4AF37'),
+            secondaryColor: theme.secondaryColor || (isLight ? '#1B2E24' : '#F3E5AB'),
+            bgColor: theme.bgColor || (isLight ? '#F4F7F4' : '#14171c'),
+            cardBgColor: theme.cardBgColor || (isLight ? '#FFFFFF' : '#1a1f26'),
+            envelopeBg: theme.envelopeBg || (isLight ? '#E2ECE5' : '#1e1814'),
+            envelopePocketL: theme.envelopePocketL || (isLight ? '#D6E4DB' : '#1e1814'),
+            envelopePocketR: theme.envelopePocketR || (isLight ? '#CDE0D4' : '#18130f'),
+            envelopePocketB: theme.envelopePocketB || (isLight ? '#DFEAE3' : '#241c16'),
+            envelopeFlap: theme.envelopeFlap || (isLight ? '#CFE1D6' : '#2b201a'),
+            sealColor: theme.sealColor || theme.primaryColor || '#8A1C3C',
+            sealSecondary: theme.sealSecondary || theme.secondaryColor || '#D4AF37',
+            textColor: theme.textColor || (isLight ? '#192820' : '#f3f4f6'),
             fontFamily: theme.fontFamily || 'Playfair Display',
             fallingPetals: theme.fallingPetals !== false,
+            petalColor1: theme.petalColors?.[0] || theme.petalColor1 || (isLight ? '#D1FAE5' : '#FECDD3'),
+            petalColor2: theme.petalColors?.[1] || theme.petalColor2 || (isLight ? '#6EE7B7' : '#FB7185'),
+            petalColor3: theme.petalColors?.[2] || theme.petalColor3 || (isLight ? '#059669' : '#E11D48'),
         },
         content: {
             coverBadge: content.coverBadge || 'Royal 3D Wax Seal Edition',
@@ -638,9 +651,9 @@ const digitalGift = computed(() => {
                         />
                         <defs>
                             <linearGradient id="petalGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#FECDD3" />
-                                <stop offset="50%" stop-color="#FB7185" />
-                                <stop offset="100%" stop-color="#E11D48" />
+                                <stop offset="0%" :stop-color="invitationData.theme.petalColor1" />
+                                <stop offset="50%" :stop-color="invitationData.theme.petalColor2" />
+                                <stop offset="100%" :stop-color="invitationData.theme.petalColor3" />
                             </linearGradient>
                         </defs>
                     </svg>
@@ -832,11 +845,11 @@ const digitalGift = computed(() => {
                             <!-- Envelope Pocket (Front Facade) -->
                             <div class="absolute inset-0 pointer-events-none rounded-2xl overflow-hidden z-20">
                                 <svg viewBox="0 0 390 240" class="w-full h-full preserve-3d">
-                                    <polygon points="0,0 0,240 195,145" fill="#1e1814" opacity="0.95" />
-                                    <polygon points="390,0 390,240 195,145" fill="#18130f" opacity="0.95" />
-                                    <polygon points="0,240 390,240 195,115" fill="#241c16" />
-                                    <line x1="0" y1="240" x2="195" y2="115" :stroke="invitationData.theme.primaryColor" stroke-width="1" stroke-opacity="0.35" />
-                                    <line x1="390" y1="240" x2="195" y2="115" :stroke="invitationData.theme.primaryColor" stroke-width="1" stroke-opacity="0.35" />
+                                    <polygon points="0,0 0,240 195,145" :fill="invitationData.theme.envelopePocketL" opacity="0.95" />
+                                    <polygon points="390,0 390,240 195,145" :fill="invitationData.theme.envelopePocketR" opacity="0.95" />
+                                    <polygon points="0,240 390,240 195,115" :fill="invitationData.theme.envelopePocketB" />
+                                    <line x1="0" y1="240" x2="195" y2="115" :stroke="invitationData.theme.primaryColor" stroke-width="1.2" stroke-opacity="0.4" />
+                                    <line x1="390" y1="240" x2="195" y2="115" :stroke="invitationData.theme.primaryColor" stroke-width="1.2" stroke-opacity="0.4" />
                                 </svg>
                             </div>
 
@@ -846,9 +859,9 @@ const digitalGift = computed(() => {
                                 :class="{ 'flap-open': isEnvelopeFlapOpen }"
                             >
                                 <svg viewBox="0 0 390 135" class="w-full h-full drop-shadow-xl">
-                                    <polygon points="0,0 390,0 195,135" fill="#2b201a" />
-                                    <line x1="0" y1="0" x2="195" y2="135" :stroke="invitationData.theme.primaryColor" stroke-width="1.2" stroke-opacity="0.45" />
-                                    <line x1="390" y1="0" x2="195" y2="135" :stroke="invitationData.theme.primaryColor" stroke-width="1.2" stroke-opacity="0.45" />
+                                    <polygon points="0,0 390,0 195,135" :fill="invitationData.theme.envelopeFlap" />
+                                    <line x1="0" y1="0" x2="195" y2="135" :stroke="invitationData.theme.primaryColor" stroke-width="1.5" stroke-opacity="0.5" />
+                                    <line x1="390" y1="0" x2="195" y2="135" :stroke="invitationData.theme.primaryColor" stroke-width="1.5" stroke-opacity="0.5" />
                                 </svg>
                             </div>
 
@@ -876,7 +889,7 @@ const digitalGift = computed(() => {
                                     <div
                                         class="relative w-16 h-16 rounded-full border-2 shadow-[0_10px_25px_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.4)] flex items-center justify-center font-serif"
                                         :style="{
-                                            background: `linear-gradient(135deg, ${invitationData.theme.primaryColor}, #881337, #450a0a)`,
+                                            background: `linear-gradient(135deg, ${invitationData.theme.sealColor}, ${invitationData.theme.sealSecondary})`,
                                             borderColor: invitationData.theme.secondaryColor
                                         }"
                                     >
@@ -1005,7 +1018,10 @@ const digitalGift = computed(() => {
                     <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
                 </div>
 
-                <div class="reveal-on-scroll reveal-fade-up reveal-delay-4 text-xs text-stone-300 font-serif italic max-w-xs leading-relaxed">
+                <div 
+                    class="reveal-on-scroll reveal-fade-up reveal-delay-4 text-xs font-serif italic max-w-xs leading-relaxed"
+                    :style="{ color: invitationData.theme.isLight ? '#374151' : '#d6d3d1' }"
+                >
                     "{{ invitationData.content.quote }}"
                 </div>
                 <div
@@ -1042,7 +1058,10 @@ const digitalGift = computed(() => {
                     >
                         Pasangan Bahagia
                     </h2>
-                    <p class="text-xs text-stone-400 max-w-sm mx-auto mb-10 leading-relaxed">
+                    <p 
+                        class="text-xs max-w-sm mx-auto mb-10 leading-relaxed"
+                        :style="{ color: invitationData.theme.isLight ? '#4B5563' : '#a8a29e' }"
+                    >
                         Dengan memohon rahmat dan ridho Allah SWT, kami bermaksud menyelenggarakan pernikahan kami:
                     </p>
                 </div>
@@ -1069,11 +1088,20 @@ const digitalGift = computed(() => {
                         >
                             {{ invitationData.content.groom.fullName }}
                         </h3>
-                        <p class="text-xs text-stone-400 mt-1 max-w-xs">
+                        <p 
+                            class="text-xs mt-1 max-w-xs"
+                            :style="{ color: invitationData.theme.isLight ? '#4B5563' : '#a8a29e' }"
+                        >
                             {{ invitationData.content.groom.parents }}
                         </p>
                         <div v-if="invitationData.content.groom.instagram" class="mt-2">
-                            <span class="text-[11px] px-2.5 py-0.5 rounded-full border border-stone-700 text-stone-400">
+                            <span 
+                                class="text-[11px] px-2.5 py-0.5 rounded-full border"
+                                :style="{
+                                    borderColor: invitationData.theme.isLight ? '#E5E7EB' : '#44403c',
+                                    color: invitationData.theme.isLight ? '#4B5563' : '#a8a29e'
+                                }"
+                            >
                                 📷 {{ invitationData.content.groom.instagram }}
                             </span>
                         </div>
@@ -1107,7 +1135,10 @@ const digitalGift = computed(() => {
                         >
                             {{ invitationData.content.bride.fullName }}
                         </h3>
-                        <p class="text-xs text-stone-400 mt-1 max-w-xs">
+                        <p 
+                            class="text-xs mt-1 max-w-xs"
+                            :style="{ color: invitationData.theme.isLight ? '#4B5563' : '#a8a29e' }"
+                        >
                             {{ invitationData.content.bride.parents }}
                         </p>
                         <div v-if="invitationData.content.bride.instagram" class="mt-2">

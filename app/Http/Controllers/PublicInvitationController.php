@@ -87,8 +87,12 @@ class PublicInvitationController extends Controller
     public function demo(Request $request, Template $template)
     {
         $guestName = $request->query('to', 'Tamu Undangan Spesial');
+        $design = $template->default_design_json ?? [];
+        $content = $design['content'] ?? [];
 
-        $events = [
+        $title = $content['weddingTitle'] ?? $template->name;
+
+        $events = $design['events'] ?? [
             [
                 'id' => 1,
                 'name' => 'Akad Nikah',
@@ -111,7 +115,7 @@ class PublicInvitationController extends Controller
             ],
         ];
 
-        $guestbookEntries = [
+        $guestbookEntries = $design['guestbook'] ?? [
             [
                 'id' => 1,
                 'guest_name' => 'Keluarga Besar Bpk. Hendra',
@@ -135,12 +139,12 @@ class PublicInvitationController extends Controller
         return Inertia::render('Public/InvitationView', [
             'invitation' => [
                 'id' => 0,
-                'title' => 'Dimas & Anisa',
+                'title' => $title,
                 'slug' => 'demo-' . $template->slug,
                 'published_at' => now()->toIso8601String(),
             ],
             'template' => $template,
-            'design' => $template->default_design_json,
+            'design' => $design,
             'events' => $events,
             'guestbook' => $guestbookEntries,
             'guestName' => $guestName,
