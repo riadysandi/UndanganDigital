@@ -46,6 +46,7 @@ const isSealBroken = ref(false);
 const isLetterSlidOut = ref(false);
 const isPlayingMusic = ref(false);
 const audioEl = ref<HTMLAudioElement | null>(null);
+const envelopeMode = ref(false);
 
 // 3D Flip Card state for Agenda Acara
 const flippedEvents = ref<Record<number, boolean>>({});
@@ -162,9 +163,60 @@ const invitationData = computed(() => {
                     'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=600&q=80',
                     'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?auto=format&fit=crop&w=600&q=80',
                 ],
-        }
+        },
+        musicUrl: d.musicUrl || '/audio/romantic-wedding.mp3'
     };
 });
+
+// Authentic Katsudoto Assets Resolution
+const templateAssets = computed(() => {
+    const slug = props.template?.slug || '';
+    if (slug.includes('victoria')) {
+        return {
+            isKatsudoto: true,
+            frameFf: '/images/templates/victoria/frame-ff.png',
+            frameCover: '/images/templates/victoria/frame-tc.png',
+            frameCouple: '/images/templates/victoria/frame-dc.png',
+            chandelier: '/images/templates/victoria/Orn-06.png',
+            cornerVines: '/images/templates/victoria/Orn-01.png',
+            incenseUrn: '/images/templates/victoria/Orn-04.png',
+            crest: '/images/templates/victoria/Orn-02.png',
+            pediment: '/images/templates/victoria/Orn-03.png',
+            texture: '/images/templates/ningrum/texture-sd.png',
+        };
+    }
+    // Default to Ningrum (Fairytale Royal 3D)
+    return {
+        isKatsudoto: true,
+        frameFf: '/images/templates/ningrum/frame-ff.png',
+        frameCover: '/images/templates/ningrum/frame-cover.png',
+        frameCouple: '/images/templates/ningrum/frame-couple.png',
+        chandelier: '/images/templates/ningrum/Orn-07.png',
+        cornerVines: '/images/templates/ningrum/Orn-06.png',
+        incenseUrn: '/images/templates/ningrum/Orn-17.png',
+        crest: '/images/templates/ningrum/Orn-51.png',
+        pediment: '/images/templates/ningrum/Orn-50.png',
+        sideBranch: '/images/templates/ningrum/Orn-22.png',
+        texture: '/images/templates/ningrum/texture-sd.png',
+    };
+});
+
+const openInvitation = () => {
+    isOpen.value = true;
+    startAudio();
+    confetti({
+        particleCount: 60,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: [invitationData.value.theme.primaryColor, invitationData.value.theme.secondaryColor, '#AA771C']
+    });
+    setTimeout(() => {
+        const el = document.getElementById('invitation-content-start');
+        if (el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, 150);
+};
 
 // Dynamic Wax Seal monogram letters (e.g. "D & A")
 const waxSealMonogram = computed(() => {
@@ -412,8 +464,15 @@ const openDirectly = () => {
     });
 };
 
+// Reopen Top Cover
+const reopenTopCover = () => {
+    isOpen.value = false;
+    envelopeMode.value = false;
+};
+
 // Reopen 3D envelope modal
 const reopenEnvelope = () => {
+    envelopeMode.value = true;
     isOpen.value = false;
     isSealBroken.value = false;
     isEnvelopeFlapOpen.value = false;
@@ -631,14 +690,101 @@ const digitalGift = computed(() => {
     </Head>
 
     <div
-        class="min-h-screen selection:bg-amber-400 selection:text-stone-900 transition-colors duration-500"
+        class="kat-page__side-to-side min-h-screen w-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-x-hidden selection:bg-amber-400 selection:text-stone-900"
         :style="{
             backgroundColor: invitationData.theme.bgColor,
-            fontFamily: invitationData.theme.fontFamily,
+            fontFamily: invitationData.theme.fontFamily + ', serif',
             color: invitationData.theme.textColor,
         }"
     >
-        <!-- Top Demo Mode Banner -->
+        <!-- Background Vintage Canvas Texture Overlay (Authentic Katsudoto) -->
+        <div class="fixed inset-0 pointer-events-none z-10 opacity-20 bg-texture-sd"></div>
+
+        <!-- ======================================================== -->
+        <!-- DESKTOP PRIMARY PANE (Fixed Left 50% on Desktop)         -->
+        <!-- ======================================================== -->
+        <aside
+            class="hidden lg:flex lg:w-1/2 lg:fixed lg:inset-y-0 lg:left-0 z-30 flex-col items-center justify-center p-8 xl:p-12 overflow-hidden border-r border-amber-900/30 select-none"
+            :style="{ backgroundColor: invitationData.theme.cardBgColor }"
+        >
+            <!-- Top Chandelier Swinging (Pendulum Effect) -->
+            <div class="absolute -top-3 inset-x-0 flex justify-center pointer-events-none z-20">
+                <div class="w-36 animate-goyang-top">
+                    <img :src="templateAssets.chandelier" alt="Chandelier" class="w-full drop-shadow-2xl" />
+                </div>
+            </div>
+
+            <!-- Corner Vines Left & Right -->
+            <div class="absolute top-0 left-0 w-32 xl:w-40 pointer-events-none z-10">
+                <img :src="templateAssets.cornerVines" alt="Vines" class="w-full opacity-85" />
+            </div>
+            <div class="absolute top-0 right-0 w-32 xl:w-40 pointer-events-none z-10 scale-x-[-1]">
+                <img :src="templateAssets.cornerVines" alt="Vines" class="w-full opacity-85" />
+            </div>
+
+            <!-- Arch Crest Top -->
+            <div class="w-64 xl:w-72 mb-2 pointer-events-none drop-shadow-md">
+                <img :src="templateAssets.crest" alt="Crest" class="w-full object-contain" />
+            </div>
+
+            <!-- VIP Badge -->
+            <div
+                class="mb-3 px-4 py-1 rounded-full text-xs font-serif uppercase tracking-widest border shadow-md flex items-center gap-2"
+                :style="{
+                    borderColor: invitationData.theme.primaryColor,
+                    color: invitationData.theme.secondaryColor,
+                    backgroundColor: invitationData.theme.primaryColor + '25'
+                }"
+            >
+                <span>👑</span>
+                <span>VIP EXCLUSIVE INVITATION</span>
+            </div>
+
+            <!-- Couple Title -->
+            <h1
+                class="font-serif text-3xl xl:text-5xl font-bold text-center tracking-tight mb-4 drop-shadow"
+                :style="{ color: invitationData.theme.secondaryColor }"
+            >
+                {{ invitationData.content.weddingTitle }}
+            </h1>
+
+            <!-- Arched Baroque Frame with Couple Photo -->
+            <div
+                class="card-tilt-3d relative w-72 xl:w-80 h-96 xl:h-[420px] select-none cursor-pointer my-2"
+                @mousemove="handleCardTilt"
+                @mouseleave="resetCardTilt"
+            >
+                <div class="absolute inset-0 rounded-t-full overflow-hidden">
+                    <img
+                        :src="invitationData.content.coverImage"
+                        :alt="invitationData.content.weddingTitle"
+                        class="w-full h-full object-cover"
+                    />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent"></div>
+                </div>
+                <!-- Baroque Frame overlay -->
+                <img
+                    :src="templateAssets.frameFf"
+                    alt="Frame"
+                    class="absolute inset-0 w-full h-full pointer-events-none drop-shadow-2xl z-20 object-contain"
+                />
+            </div>
+
+            <!-- Bottom Pediment -->
+            <div class="w-64 xl:w-72 mt-2 pointer-events-none drop-shadow-md">
+                <img :src="templateAssets.pediment" alt="Pediment" class="w-full object-contain" />
+            </div>
+
+            <p class="font-serif text-xs text-stone-400 mt-3 tracking-widest uppercase">
+                {{ invitationData.content.weddingDateText }}
+            </p>
+        </aside>
+
+        <!-- ======================================================== -->
+        <!-- SECONDARY PANE (Right on Desktop, Full-Width on Mobile)  -->
+        <!-- ======================================================== -->
+        <main class="w-full lg:w-1/2 lg:ml-auto min-h-screen relative z-20 flex flex-col">
+            <!-- Top Demo Mode Banner -->
         <div v-if="props.isDemo" class="fixed top-0 inset-x-0 z-[100] bg-stone-900/95 backdrop-blur-md text-white py-2.5 px-4 flex items-center justify-between text-xs shadow-xl border-b border-white/10">
             <div class="flex items-center gap-2">
                 <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-stone-900">DEMO MODE</span>
@@ -836,11 +982,133 @@ const digitalGift = computed(() => {
         </div>
 
         <!-- ======================================================== -->
-        <!-- 1. FULLSCREEN 3D INTERACTIVE ENVELOPE & WAX SEAL COVER    -->
+        <!-- 1. AUTHENTIC KATSUDOTO TOP COVER WELCOME SCREEN           -->
+        <!-- ======================================================== -->
+        <div
+            v-if="!isOpen && !envelopeMode"
+            class="min-h-screen flex flex-col items-center justify-center p-6 text-center relative overflow-hidden select-none"
+        >
+            <!-- Top Chandelier Swinging (Pendulum) -->
+            <div class="absolute -top-3 inset-x-0 flex justify-center pointer-events-none z-20">
+                <div class="w-32 sm:w-40 animate-goyang-top">
+                    <img :src="templateAssets.chandelier" alt="Chandelier" class="w-full drop-shadow-xl" />
+                </div>
+            </div>
+
+            <!-- Corner Vines Left & Right -->
+            <div class="absolute top-0 left-0 w-24 sm:w-32 pointer-events-none z-10">
+                <img :src="templateAssets.cornerVines" alt="Vines" class="w-full opacity-80" />
+            </div>
+            <div class="absolute top-0 right-0 w-24 sm:w-32 pointer-events-none z-10 scale-x-[-1]">
+                <img :src="templateAssets.cornerVines" alt="Vines" class="w-full opacity-80" />
+            </div>
+
+            <!-- Category VIP Badge -->
+            <div
+                class="mb-3 px-3.5 py-1 rounded-full text-[10px] font-serif uppercase tracking-widest border shadow-sm flex items-center gap-1.5"
+                :style="{
+                    borderColor: invitationData.theme.primaryColor,
+                    color: invitationData.theme.secondaryColor,
+                    backgroundColor: invitationData.theme.primaryColor + '20'
+                }"
+            >
+                <span>✨</span>
+                <span>{{ invitationData.content.coverBadge || 'Exclusive Wedding' }}</span>
+            </div>
+
+            <!-- Wedding Subtitle -->
+            <div class="text-xs uppercase tracking-[0.25em] font-serif text-stone-400 mb-1">
+                {{ invitationData.content.coverSubtitle }}
+            </div>
+
+            <!-- Wedding Title -->
+            <h1
+                class="font-serif text-3xl sm:text-4xl font-bold tracking-tight mb-5"
+                :style="{ color: invitationData.theme.secondaryColor }"
+            >
+                {{ invitationData.content.weddingTitle }}
+            </h1>
+
+            <!-- Baroque Framed Portrait with 3D Tilt -->
+            <div
+                class="card-tilt-3d relative w-64 h-80 my-2 select-none cursor-pointer"
+                @mousemove="handleCardTilt"
+                @mouseleave="resetCardTilt"
+            >
+                <div class="absolute inset-0 rounded-t-full overflow-hidden">
+                    <img
+                        :src="invitationData.content.coverImage"
+                        :alt="invitationData.content.weddingTitle"
+                        class="w-full h-full object-cover"
+                    />
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                </div>
+                <img
+                    :src="templateAssets.frameFf"
+                    alt="Frame"
+                    class="absolute inset-0 w-full h-full pointer-events-none drop-shadow-2xl z-20 object-contain"
+                />
+            </div>
+
+            <!-- Smoking Incense Urn (Authentic Katsudoto Effect!) -->
+            <div class="relative w-28 my-3 flex items-center justify-center">
+                <div class="smoke-wrap">
+                    <span v-for="s in 12" :key="s" :class="'smoke s' + s"></span>
+                </div>
+                <img :src="templateAssets.incenseUrn" alt="Incense Urn" class="w-full object-contain drop-shadow-lg" />
+            </div>
+
+            <!-- Guest Greeting Box -->
+            <div
+                class="my-4 max-w-sm w-full p-4 rounded-2xl border backdrop-blur-md"
+                :style="{
+                    backgroundColor: invitationData.theme.cardBgColor + 'd0',
+                    borderColor: invitationData.theme.primaryColor + '40'
+                }"
+            >
+                <p class="text-[11px] text-stone-400 uppercase tracking-widest mb-1">Kepada Yth. Bpk/Ibu/Saudara/i:</p>
+                <div
+                    class="font-serif font-bold text-base sm:text-lg"
+                    :style="{ color: invitationData.theme.secondaryColor }"
+                >
+                    {{ guestName || 'Tamu Undangan Yang Berbahagia' }}
+                </div>
+                <div v-if="guestToken" class="text-[10px] font-mono text-stone-500 mt-1">
+                    Kode Tamu: <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">{{ guestToken.substring(0, 8) }}</span>
+                </div>
+            </div>
+
+            <!-- Open Invitation Button -->
+            <button
+                @click="openInvitation"
+                class="px-8 py-3.5 rounded-full font-serif font-bold text-xs uppercase tracking-widest shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-3 border cursor-pointer"
+                :style="{
+                    backgroundColor: invitationData.theme.primaryColor,
+                    color: '#111827',
+                    borderColor: invitationData.theme.secondaryColor,
+                    boxShadow: `0 15px 35px ${invitationData.theme.primaryColor}50`
+                }"
+            >
+                <span>💌</span>
+                <span>Open Invitation</span>
+                <span>✨</span>
+            </button>
+
+            <!-- Alternate Envelope trigger -->
+            <button
+                @click="envelopeMode = true"
+                class="mt-4 text-[11px] text-stone-400 hover:text-stone-200 underline font-serif transition-colors cursor-pointer"
+            >
+                Atau Buka dengan Amplop 3D Wax Seal →
+            </button>
+        </div>
+
+        <!-- ======================================================== -->
+        <!-- 2. FULLSCREEN 3D ENVELOPE MODAL (When envelopeMode is on) -->
         <!-- ======================================================== -->
         <transition name="envelope-fade">
             <div
-                v-if="!isOpen"
+                v-if="!isOpen && envelopeMode"
                 class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-stone-950/95 backdrop-blur-xl p-4 overflow-y-auto"
             >
                 <!-- Subtle Ambient Glow with theme color -->
@@ -1060,9 +1328,11 @@ const digitalGift = computed(() => {
         </transition>
 
         <!-- ======================================================== -->
-        <!-- 2. MAIN INVITATION CONTENT (Scrollable, mobile-optimized) -->
+        <!-- 3. MAIN INVITATION CONTENT (Scrollable, revealed on open) -->
         <!-- ======================================================== -->
         <div
+            v-if="isOpen"
+            id="invitation-content-start"
             class="max-w-xl mx-auto min-h-screen shadow-2xl flex flex-col relative border-x transition-colors duration-500"
             :style="{
                 backgroundColor: invitationData.theme.bgColor,
@@ -1071,6 +1341,20 @@ const digitalGift = computed(() => {
         >
             <!-- Hero Cover Header with 3D Depth Card -->
             <header class="relative min-h-[90vh] flex flex-col items-center justify-center text-center p-8 overflow-hidden">
+                <!-- Top Chandelier Swinging (Pendulum) -->
+                <div class="absolute -top-3 inset-x-0 flex justify-center pointer-events-none z-20">
+                    <div class="w-28 sm:w-36 animate-goyang-top">
+                        <img :src="templateAssets.chandelier" alt="Chandelier" class="w-full drop-shadow-xl" />
+                    </div>
+                </div>
+
+                <!-- Corner Vines Left & Right -->
+                <div class="absolute top-0 left-0 w-20 sm:w-28 pointer-events-none z-10">
+                    <img :src="templateAssets.cornerVines" alt="Vines" class="w-full opacity-60" />
+                </div>
+                <div class="absolute top-0 right-0 w-20 sm:w-28 pointer-events-none z-10 scale-x-[-1]">
+                    <img :src="templateAssets.cornerVines" alt="Vines" class="w-full opacity-60" />
+                </div>
                 <!-- Background decorative rings -->
                 <div
                     class="absolute w-96 h-96 rounded-full border pointer-events-none animate-pulse"
@@ -1198,6 +1482,11 @@ const digitalGift = computed(() => {
                 }"
             >
                 <div class="reveal-on-scroll reveal-fade-up">
+                    <!-- Top Pediment / Chandelier Ornament -->
+                    <div class="w-24 sm:w-32 mx-auto mb-3 animate-goyang-top pointer-events-none">
+                        <img :src="templateAssets.pediment || templateAssets.chandelier" alt="Ornament" class="w-full drop-shadow-md" />
+                    </div>
+
                     <div
                         class="inline-block px-3 py-1 rounded-full text-[10px] font-bold tracking-widest uppercase border mb-3"
                         :style="{
@@ -1226,19 +1515,22 @@ const digitalGift = computed(() => {
                     <!-- Groom (Slide In From Left) -->
                     <div class="reveal-on-scroll reveal-slide-left flex flex-col items-center">
                         <div
-                            class="card-tilt-3d relative w-36 h-36 rounded-full overflow-hidden border-2 shadow-2xl mb-4 p-1 cursor-pointer transition-transform duration-300"
+                            class="card-tilt-3d relative w-52 sm:w-60 h-64 sm:h-72 mx-auto mb-4 select-none cursor-pointer transition-transform duration-300"
                             @mousemove="handleCardTilt"
                             @mouseleave="resetCardTilt"
-                            :style="{
-                                borderColor: invitationData.theme.primaryColor,
-                                backgroundColor: invitationData.theme.primaryColor + '20',
-                                boxShadow: `0 15px 35px -5px ${invitationData.theme.primaryColor}50`
-                            }"
                         >
+                            <div class="absolute inset-x-3.5 inset-y-3.5 rounded-t-full overflow-hidden">
+                                <img
+                                    :src="invitationData.content.groom.photo"
+                                    :alt="invitationData.content.groom.nickname"
+                                    class="w-full h-full object-cover"
+                                />
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                            </div>
                             <img
-                                :src="invitationData.content.groom.photo"
-                                :alt="invitationData.content.groom.nickname"
-                                class="w-full h-full object-cover rounded-full"
+                                :src="templateAssets.frameCouple"
+                                alt="Baroque Frame"
+                                class="absolute inset-0 w-full h-full pointer-events-none drop-shadow-2xl z-10 object-contain"
                             />
                         </div>
                         <h3
@@ -1276,19 +1568,22 @@ const digitalGift = computed(() => {
                     <!-- Bride (Slide In From Right) -->
                     <div class="reveal-on-scroll reveal-slide-right reveal-delay-2 flex flex-col items-center">
                         <div
-                            class="card-tilt-3d relative w-36 h-36 rounded-full overflow-hidden border-2 shadow-2xl mb-4 p-1 cursor-pointer transition-transform duration-300"
+                            class="card-tilt-3d relative w-52 sm:w-60 h-64 sm:h-72 mx-auto mb-4 select-none cursor-pointer transition-transform duration-300"
                             @mousemove="handleCardTilt"
                             @mouseleave="resetCardTilt"
-                            :style="{
-                                borderColor: invitationData.theme.primaryColor,
-                                backgroundColor: invitationData.theme.primaryColor + '20',
-                                boxShadow: `0 15px 35px -5px ${invitationData.theme.primaryColor}50`
-                            }"
                         >
+                            <div class="absolute inset-x-3.5 inset-y-3.5 rounded-t-full overflow-hidden">
+                                <img
+                                    :src="invitationData.content.bride.photo"
+                                    :alt="invitationData.content.bride.nickname"
+                                    class="w-full h-full object-cover"
+                                />
+                                <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent"></div>
+                            </div>
                             <img
-                                :src="invitationData.content.bride.photo"
-                                :alt="invitationData.content.bride.nickname"
-                                class="w-full h-full object-cover rounded-full"
+                                :src="templateAssets.frameCouple"
+                                alt="Baroque Frame"
+                                class="absolute inset-0 w-full h-full pointer-events-none drop-shadow-2xl z-10 object-contain"
                             />
                         </div>
                         <h3
@@ -2014,6 +2309,7 @@ const digitalGift = computed(() => {
                 </div>
             </footer>
         </div>
+        </main>
 
         <!-- QRIS Preview Modal Popup -->
         <div
@@ -2084,7 +2380,7 @@ const digitalGift = computed(() => {
 
         <!-- 3D Photo Lightbox Modal -->
         <div
-            v-if="lightboxActive && lightboxPhoto"
+            v-if="activeLightboxPhoto"
             class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg animate-in fade-in duration-300"
             @click.self="closeLightbox"
         >
@@ -2104,7 +2400,7 @@ const digitalGift = computed(() => {
                 </button>
                 <div class="relative w-full h-full max-h-[80vh] flex items-center justify-center overflow-hidden rounded-2xl">
                     <img
-                        :src="lightboxPhoto"
+                        :src="activeLightboxPhoto"
                         alt="Preview Foto"
                         class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl transition-transform duration-500 hover:scale-105"
                     />
@@ -2386,5 +2682,98 @@ const digitalGift = computed(() => {
         transform: translateY(-48px) scale(0.95);
         opacity: 0.4;
     }
+}
+
+/* ========================================================= */
+/* KATSUDOTO SIGNATURE SWAYING PENDULUM ANIMATIONS (GOYANG)   */
+/* ========================================================= */
+@keyframes goyang {
+    0% {
+        transform: rotate(-3.5deg);
+    }
+    100% {
+        transform: rotate(3.5deg);
+    }
+}
+
+.animate-goyang-top {
+    animation: goyang 4.2s ease-in-out infinite alternate;
+    transform-origin: 50% 0%;
+    will-change: transform;
+}
+
+.animate-goyang-bottom {
+    animation: goyang 4.8s ease-in-out infinite alternate;
+    transform-origin: 50% 90%;
+    will-change: transform;
+}
+
+/* ========================================================= */
+/* KATSUDOTO RISING MYSTICAL INCENSE SMOKE PARTICLES         */
+/* ========================================================= */
+.smoke-wrap {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    z-index: 10;
+}
+
+.smoke {
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 50%;
+    background: rgba(245, 235, 220, 0.65);
+    filter: blur(5px);
+    opacity: 0;
+    animation: smokeRise 4.5s ease-out infinite;
+    will-change: transform, opacity;
+}
+
+.smoke.s1 { width: 10px; height: 10px; animation-delay: 0s; animation-duration: 5s; }
+.smoke.s2 { width: 14px; height: 14px; animation-delay: 0.35s; animation-duration: 5.5s; }
+.smoke.s3 { width: 9px; height: 9px; animation-delay: 0.7s; animation-duration: 4.8s; }
+.smoke.s4 { width: 13px; height: 13px; animation-delay: 1.05s; animation-duration: 5.2s; }
+.smoke.s5 { width: 11px; height: 11px; animation-delay: 1.4s; animation-duration: 4.6s; }
+.smoke.s6 { width: 15px; height: 15px; animation-delay: 1.75s; animation-duration: 5.8s; }
+.smoke.s7 { width: 10px; height: 10px; animation-delay: 2.1s; animation-duration: 5s; }
+.smoke.s8 { width: 14px; height: 14px; animation-delay: 2.45s; animation-duration: 5.3s; }
+.smoke.s9 { width: 12px; height: 12px; animation-delay: 2.8s; animation-duration: 4.7s; }
+.smoke.s10 { width: 16px; height: 16px; animation-delay: 3.15s; animation-duration: 5.7s; }
+.smoke.s11 { width: 9px; height: 9px; animation-delay: 3.5s; animation-duration: 4.9s; }
+.smoke.s12 { width: 13px; height: 13px; animation-delay: 3.85s; animation-duration: 5.4s; }
+
+@keyframes smokeRise {
+    0% {
+        opacity: 0;
+        transform: translate(0, 0) scale(0.4);
+    }
+    12% {
+        opacity: 0.7;
+    }
+    30% {
+        opacity: 0.5;
+        transform: translate(-10px, -28px) scale(1.4);
+    }
+    60% {
+        opacity: 0.25;
+        transform: translate(6px, -65px) scale(2.2);
+    }
+    85% {
+        opacity: 0.1;
+    }
+    100% {
+        opacity: 0;
+        transform: translate(-12px, -110px) scale(3.2);
+    }
+}
+
+.bg-texture-sd {
+    background-image: url('/images/templates/ningrum/texture-sd.png');
+    background-repeat: repeat;
+    background-size: 320px;
 }
 </style>
