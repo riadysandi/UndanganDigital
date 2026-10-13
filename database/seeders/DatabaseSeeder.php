@@ -328,7 +328,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Ningrum (Fairytale & Vintage 3D)',
                 'category' => 'fairytale',
-                'thumbnail_path' => 'https://katsudoto.id/media/template/preview/thumbnail/ningrum-original.jpeg',
+                'thumbnail_path' => '/images/templates/ningrum-original.jpeg',
                 'default_design_json' => $designNingrum,
                 'schema_version' => 1,
                 'is_premium' => true,
@@ -358,7 +358,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Victoria (Minimalist Luxury 3D)',
                 'category' => 'minimalist',
-                'thumbnail_path' => 'https://katsudoto.id/media/template/preview/thumbnail/victoria-original.png',
+                'thumbnail_path' => '/images/templates/victoria-original.png',
                 'default_design_json' => $designVictoria,
                 'schema_version' => 1,
                 'is_premium' => true,
@@ -388,7 +388,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Bianca (Modern Botanical Serenity)',
                 'category' => 'nature',
-                'thumbnail_path' => 'https://katsudoto.id/media/template/preview/thumbnail/bianca-original.png',
+                'thumbnail_path' => '/images/templates/bianca-original.png',
                 'default_design_json' => $designBianca,
                 'schema_version' => 1,
                 'is_premium' => false,
@@ -418,7 +418,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Eloise (Floral Romance & Fairy Dust)',
                 'category' => 'floral',
-                'thumbnail_path' => 'https://katsudoto.id/media/template/preview/thumbnail/eloise-original.png',
+                'thumbnail_path' => '/images/templates/eloise-original.png',
                 'default_design_json' => $designEloise,
                 'schema_version' => 1,
                 'is_premium' => true,
@@ -448,7 +448,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Alsa (Royal Adat & Songket Gold)',
                 'category' => 'adat',
-                'thumbnail_path' => 'https://katsudoto.id/media/template/preview/thumbnail/alsa-original.png',
+                'thumbnail_path' => '/images/templates/alsa-original.png',
                 'default_design_json' => $designAlsa,
                 'schema_version' => 1,
                 'is_premium' => true,

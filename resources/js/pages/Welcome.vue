@@ -135,12 +135,19 @@ defineProps<{
                             <div class="text-[11px] text-stone-400 capitalize">{{ tpl.category }}</div>
                             <h3 class="font-serif font-bold text-stone-800 text-base mt-0.5">{{ tpl.name }}</h3>
                         </div>
-                        <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between">
-                            <Link
-                                href="/register"
-                                class="text-xs font-semibold text-rose-600 hover:text-rose-700"
+                        <div class="mt-4 pt-3 border-t border-stone-100 flex items-center justify-between gap-2">
+                            <a
+                                :href="'/demo/' + tpl.slug"
+                                target="_blank"
+                                class="inline-flex items-center gap-1 text-xs font-semibold text-stone-600 hover:text-rose-600 transition-colors"
                             >
-                                Pakai Desain Ini →
+                                <span>👁️</span> Lihat Demo
+                            </a>
+                            <Link
+                                :href="'/register?template=' + tpl.id"
+                                class="text-xs font-bold text-rose-600 hover:text-rose-700"
+                            >
+                                Pakai Desain →
                             </Link>
                         </div>
                     </div>

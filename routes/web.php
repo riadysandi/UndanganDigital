@@ -40,6 +40,8 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth')->name('logout');
 
 // Public Invitation Views & Interactivity (No Auth Required)
+Route::get('/demo/{template:slug}', [PublicInvitationController::class, 'demo'])->name('templates.demo');
+
 Route::prefix('i')->group(function () {
     Route::get('/{slug}', [PublicInvitationController::class, 'show'])->name('public.invitation');
 });

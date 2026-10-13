@@ -36,6 +36,7 @@ const props = defineProps<{
     }>;
     guestName?: string | null;
     guestToken?: string | null;
+    isDemo?: boolean;
 }>();
 
 // State
@@ -388,6 +389,25 @@ const submitRsvp = async () => {
     rsvpSubmitting.value = true;
     rsvpErrorMessage.value = '';
 
+    if (props.isDemo) {
+        setTimeout(() => {
+            rsvpSubmitting.value = false;
+            rsvpSuccess.value = true;
+            localGuestbook.value.unshift({
+                id: Date.now(),
+                guest_name: rsvpForm.value.guest_name,
+                message: rsvpForm.value.message || 'Selamat berbahagia untuk kedua mempelai!',
+                created_at: 'Baru saja'
+            });
+            confetti({
+                particleCount: 120,
+                spread: 80,
+                origin: { y: 0.6 },
+            });
+        }, 500);
+        return;
+    }
+
     try {
         const res = await fetch(`/api/public/${props.invitation.slug}/rsvp`, {
             method: 'POST',
@@ -562,6 +582,21 @@ const digitalGift = computed(() => {
             color: invitationData.theme.textColor,
         }"
     >
+        <!-- Top Demo Mode Banner -->
+        <div v-if="props.isDemo" class="fixed top-0 inset-x-0 z-[100] bg-stone-900/95 backdrop-blur-md text-white py-2.5 px-4 flex items-center justify-between text-xs shadow-xl border-b border-white/10">
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-stone-900">DEMO MODE</span>
+                <span class="font-medium text-stone-200 hidden sm:inline">Pratinjau Desain: <strong>{{ template?.name || 'Template' }}</strong></span>
+            </div>
+            <div class="flex items-center gap-2">
+                <a href="/" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white transition-colors">
+                    ← Beranda
+                </a>
+                <a :href="'/register?template=' + (template?.id || '')" class="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold shadow transition-colors">
+                    Gunakan Desain Ini
+                </a>
+            </div>
+        </div>
         <!-- Audio Element (Loop, Preloaded, with Playsinline for iOS/Android) -->
         <audio
             ref="audioEl"

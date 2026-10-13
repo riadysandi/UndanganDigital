@@ -76,8 +76,18 @@ const submit = () => {
                                 </div>
                             </div>
                             <div class="p-3 bg-white">
-                                <div class="text-[10px] text-stone-400 capitalize">{{ tpl.category }}</div>
-                                <div class="font-bold text-stone-800 text-xs truncate">{{ tpl.name }}</div>
+                                <div class="flex items-center justify-between">
+                                    <div class="text-[10px] text-stone-400 capitalize">{{ tpl.category }}</div>
+                                    <a
+                                        :href="'/demo/' + tpl.slug"
+                                        target="_blank"
+                                        @click.stop
+                                        class="text-[10px] font-semibold text-rose-600 hover:text-rose-700 hover:underline flex items-center gap-0.5"
+                                    >
+                                        Demo ↗
+                                    </a>
+                                </div>
+                                <div class="font-bold text-stone-800 text-xs truncate mt-0.5">{{ tpl.name }}</div>
                             </div>
                         </div>
                     </div>

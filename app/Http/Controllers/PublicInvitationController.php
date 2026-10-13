@@ -6,6 +6,7 @@ use App\Models\Guest;
 use App\Models\GuestbookEntry;
 use App\Models\Invitation;
 use App\Models\Rsvp;
+use App\Models\Template;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -80,6 +81,72 @@ class PublicInvitationController extends Controller
             'guestName' => $guestName,
             'guestToken' => $guestToken,
             'guest' => $guest,
+        ]);
+    }
+
+    public function demo(Request $request, Template $template)
+    {
+        $guestName = $request->query('to', 'Tamu Undangan Spesial');
+
+        $events = [
+            [
+                'id' => 1,
+                'name' => 'Akad Nikah',
+                'starts_at' => now()->addDays(45)->setTime(8, 0)->toIso8601String(),
+                'ends_at' => now()->addDays(45)->setTime(10, 0)->toIso8601String(),
+                'timezone' => 'WIB',
+                'venue_name' => 'Masjid Raya Al-Barkah',
+                'address' => 'Jl. Veteran No. 45, Kebayoran Baru, Jakarta Selatan',
+                'maps_url' => 'https://maps.google.com',
+            ],
+            [
+                'id' => 2,
+                'name' => 'Resepsi Pernikahan',
+                'starts_at' => now()->addDays(45)->setTime(11, 0)->toIso8601String(),
+                'ends_at' => now()->addDays(45)->setTime(14, 0)->toIso8601String(),
+                'timezone' => 'WIB',
+                'venue_name' => 'Grand Ballroom Hotel Mulia',
+                'address' => 'Jl. Asia Afrika No. 1, Senayan, Jakarta Pusat',
+                'maps_url' => 'https://maps.google.com',
+            ],
+        ];
+
+        $guestbookEntries = [
+            [
+                'id' => 1,
+                'guest_name' => 'Keluarga Besar Bpk. Hendra',
+                'message' => 'Barakallahu lakuma wa baraka alaikuma wa jama\'a bainakuma fii khair. Selamat menempuh hidup baru!',
+                'created_at' => '2 jam yang lalu',
+            ],
+            [
+                'id' => 2,
+                'guest_name' => 'Sarah & Dimas',
+                'message' => 'Happy wedding! Semoga menjadi keluarga yang sakinah, mawaddah, wa rahmah. Aamiin ya rabbal alamin.',
+                'created_at' => '5 jam yang lalu',
+            ],
+            [
+                'id' => 3,
+                'guest_name' => 'Rian Pratama',
+                'message' => 'Selamat berbahagia sahabatku! Lancar sampai hari H ya.',
+                'created_at' => '1 hari yang lalu',
+            ],
+        ];
+
+        return Inertia::render('Public/InvitationView', [
+            'invitation' => [
+                'id' => 0,
+                'title' => 'Dimas & Anisa',
+                'slug' => 'demo-' . $template->slug,
+                'published_at' => now()->toIso8601String(),
+            ],
+            'template' => $template,
+            'design' => $template->default_design_json,
+            'events' => $events,
+            'guestbook' => $guestbookEntries,
+            'guestName' => $guestName,
+            'guestToken' => null,
+            'guest' => null,
+            'isDemo' => true,
         ]);
     }
 
