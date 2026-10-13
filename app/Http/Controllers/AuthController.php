@@ -23,15 +23,6 @@ class AuthController extends Controller
         return Inertia::render('Auth/Login');
     }
 
-    public function showAdminLogin(): Response
-    {
-        if (Auth::check() && Auth::user()->isAdmin()) {
-            return redirect()->route('admin.dashboard');
-        }
-
-        return Inertia::render('Admin/Login');
-    }
-
     public function login(Request $request)
     {
         $credentials = $request->validate([
@@ -39,17 +30,15 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
-        // Flexible password fallback for admin demo & convenience
-        if ($credentials['email'] === 'admin@undangan.id' && in_array($credentials['password'], ['password', 'password123', 'admin', 'admin123'])) {
-            $adminUser = User::where('email', 'admin@undangan.id')->first();
-            if ($adminUser) {
-                Auth::login($adminUser, $request->boolean('remember'));
-                $request->session()->regenerate();
-                return redirect()->intended(route('admin.dashboard'));
-            }
+        if (app()->isProduction()
+            && in_array($credentials['email'], ['admin@undangan.id', 'pengantin@undangan.id'], true)
+            && in_array($credentials['password'], ['password', 'password123', 'admin', 'admin123'], true)) {
+            return back()->withErrors([
+                'email' => 'Kombinasi email dan password tidak sesuai.',
+            ])->onlyInput('email');
         }
 
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
+        if (Auth::attempt([...$credentials, 'is_active' => true], $request->boolean('remember'))) {
             $request->session()->regenerate();
 
             if (Auth::user()->isAdmin()) {
@@ -61,41 +50,6 @@ class AuthController extends Controller
 
         return back()->withErrors([
             'email' => 'Kombinasi email dan password tidak sesuai.',
-        ])->onlyInput('email');
-    }
-
-    public function adminLogin(Request $request)
-    {
-        $credentials = $request->validate([
-            'email' => ['required', 'string', 'email'],
-            'password' => ['required', 'string'],
-        ]);
-
-        // Flexible password fallback for admin demo & convenience
-        if ($credentials['email'] === 'admin@undangan.id' && in_array($credentials['password'], ['password', 'password123', 'admin', 'admin123'])) {
-            $adminUser = User::where('email', 'admin@undangan.id')->first();
-            if ($adminUser) {
-                Auth::login($adminUser, $request->boolean('remember'));
-                $request->session()->regenerate();
-                return redirect()->intended(route('admin.dashboard'));
-            }
-        }
-
-        if (Auth::attempt($credentials, $request->boolean('remember'))) {
-            $request->session()->regenerate();
-
-            if (!Auth::user()->isAdmin()) {
-                Auth::logout();
-                return back()->withErrors([
-                    'email' => 'Akun ini terdaftar sebagai Customer. Halaman ini khusus untuk Administrator.',
-                ])->onlyInput('email');
-            }
-
-            return redirect()->intended(route('admin.dashboard'));
-        }
-
-        return back()->withErrors([
-            'email' => 'Kombinasi email dan password administrator tidak sesuai.',
         ])->onlyInput('email');
     }
 

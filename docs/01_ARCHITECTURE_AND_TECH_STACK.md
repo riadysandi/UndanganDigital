@@ -9,11 +9,11 @@ Dokumen ini menjelaskan fondasi arsitektur sistem, struktur folder, pola autenti
 | Layer | Teknologi | Catatan & Versi |
 |---|---|---|
 | **Backend Framework** | Laravel 11.x | PHP 8.2+, MVC pattern, Eloquent ORM |
-| **Fullstack Bridge** | Inertia.js v2 | Menghubungkan Laravel & Vue tanpa perlu REST API terpisah untuk page rendering |
+| **Fullstack Bridge** | Inertia Laravel adapter 1.x + Vue adapter 3.x | Menghubungkan Laravel & Vue untuk page rendering |
 | **Frontend Framework** | Vue 3 (Composition API) | `<script setup lang="ts">`, Strict Typing |
 | **CSS & Styling** | Tailwind CSS v3.4 | Utilitas styling modern, kustom animasi, glassmorphism |
 | **Database** | PostgreSQL 16 | Relasi terindeks, JSONB support untuk `design_json` |
-| **Bundler & Compiler** | Vite 6.x | Fast HMR, TypeScript compiling, chunk optimization |
+| **Bundler & Compiler** | Vite 6.x + TypeScript | Build frontend assets dan validasi template Vue |
 | **Container & Hosting** | Docker + Railway | Multi-stage build (Node build -> PHP-FPM + Nginx) |
 
 ---
@@ -28,13 +28,13 @@ flowchart TD
     B --> C["Laravel AuthenticatedSessionController"]
     C --> D{"Cek role user di database"}
     D -->|role == 'admin'| E["Redirect ke /admin/dashboard"]
-    D -->|role == 'user'| F["Redirect ke /dashboard"]
+    D -->|role == 'customer'| F["Redirect ke /dashboard"]
 ```
 
 ### Aturan Baku Autentikasi:
 1. **Rute Login Utama**: `/login` (Menangani otentikasi Admin dan User biasa sekaligus).
 2. **Rute `/admin/login`**: Disediakan sebagai shortcut/alias yang me-redirect ke `/login`.
-3. **Penyimpanan Role**: Disimpan di kolom `role` pada tabel `users` dengan enum/string: `'admin'` dan `'user'`.
+3. **Penyimpanan Role**: Disimpan di kolom `role` pada tabel `users`; implementasi menggunakan nilai `'admin'` dan `'customer'`.
 4. **Middleware Proteksi**:
    - `auth`: Melindungi rute pengguna umum (`/dashboard`, `/invitations/*`, `/guests/*`, `/billing/*`).
    - `role:admin` / Middleware Admin: Melindungi seluruh rute operasional admin (`/admin/*`).
@@ -97,7 +97,8 @@ Deployment dilakukan secara otomatis menggunakan Git Push ke repository GitHub y
    - Menginstal ekstensi database `pdo_pgsql`, `pdo_mysql`, `gd`, `zip`, dsb.
 3. **Startup Script (`docker-entrypoint.sh`)**:
    - Menjalankan migrasi database otomatis: `php artisan migrate --force`.
-   - Menjalankan seeder awal jika tabel masih kosong (menjamin akun admin & user selalu tersedia).
+   - Menjalankan seeder idempoten untuk paket dan template. Akun demo hanya dibuat pada environment `local`/`testing`.
+   - Pada produksi, atur `ADMIN_EMAIL` dan `ADMIN_PASSWORD` untuk membuat atau merotasi akun admin saat seeder berjalan. Jangan memakai kredensial demo.
    - Melakukan `php artisan storage:link` untuk penyimpanan file foto, audio, dan QRIS.
    - Mengoptimalkan cache: `php artisan config:cache`, `route:cache`, `view:cache`.
    - Menjalankan proses Nginx dan PHP-FPM di latar belakang.

@@ -19,6 +19,7 @@ defineProps<{
                 role: string;
             } | null;
         }>;
+        links:Array<{url:string|null;label:string;active:boolean}>;
     };
 }>();
 </script>
@@ -104,6 +105,7 @@ defineProps<{
                     </table>
                 </div>
             </div>
+            <nav class="flex gap-2 mt-4"><Link v-for="link in logs.links" :key="link.label" :href="link.url || '/admin/audit-logs'" preserve-scroll class="px-3 py-1 rounded border text-xs" :class="link.active?'bg-stone-900 text-white':'bg-white'" v-html="link.label"/></nav>
         </div>
     </AppLayout>
 </template>

@@ -9,6 +9,8 @@ defineProps<{
         published_invitations: number;
         total_revenue: number;
         total_orders: number;
+        pending_service_requests: number;
+        inactive_users: number;
     };
     recentOrders: Array<any>;
     recentUsers: Array<any>;
@@ -42,11 +44,19 @@ const formatRupiah = (val: string | number) => {
             </div>
 
             <!-- Metrics Cards -->
-            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 my-8">
+            <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 my-8">
                 <div class="p-5 bg-white rounded-2xl border border-stone-200">
                     <div class="text-[10px] uppercase font-bold text-stone-400">Total Pengguna</div>
                     <div class="font-serif text-3xl font-bold text-stone-900 mt-2">{{ stats.total_users }}</div>
                 </div>
+                <Link href="/admin/service-requests" class="p-5 bg-white rounded-2xl border border-stone-200 hover:border-rose-300">
+                    <div class="text-[10px] uppercase font-bold text-stone-400">Permintaan perlu ditindaklanjuti</div>
+                    <div class="font-serif text-3xl font-bold text-amber-700 mt-2">{{ stats.pending_service_requests }}</div>
+                </Link>
+                <Link href="/admin/users?status=inactive" class="p-5 bg-white rounded-2xl border border-stone-200 hover:border-rose-300">
+                    <div class="text-[10px] uppercase font-bold text-stone-400">Akun nonaktif</div>
+                    <div class="font-serif text-3xl font-bold text-stone-900 mt-2">{{ stats.inactive_users }}</div>
+                </Link>
                 <div class="p-5 bg-white rounded-2xl border border-stone-200">
                     <div class="text-[10px] uppercase font-bold text-stone-400">Undangan Dibuat</div>
                     <div class="font-serif text-3xl font-bold text-stone-900 mt-2">{{ stats.total_invitations }}</div>

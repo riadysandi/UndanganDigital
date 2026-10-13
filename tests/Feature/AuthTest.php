@@ -59,4 +59,21 @@ class AuthTest extends TestCase
         $response->assertSessionHasErrors('email');
         $this->assertGuest();
     }
+
+    public function test_admin_must_use_the_password_saved_for_the_account(): void
+    {
+        User::factory()->create([
+            'email' => 'admin@undangan.id',
+            'password' => bcrypt('a-real-admin-password'),
+            'role' => 'admin',
+        ]);
+
+        $response = $this->post('/login', [
+            'email' => 'admin@undangan.id',
+            'password' => 'password123',
+        ]);
+
+        $response->assertSessionHasErrors('email');
+        $this->assertGuest();
+    }
 }

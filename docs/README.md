@@ -34,12 +34,21 @@ Dokumentasi ini dibuat khusus sebagai **Single Source of Truth (SSOT)** arsitekt
    - Aturan baku instruksi (prompting) untuk AI eksternal agar tidak merusak kode yang ada.
    - Checklist verifikasi & build sebelum melakukan commit atau deployment.
 
+## Dokumen Referensi
+
+- [Spesifikasi route/API](./reference/API_SPEC.md)
+- [Arsitektur teknis](./reference/ARCHITECTURE.md)
+- [Diagram relasi database](./reference/ERD.md)
+- [Roadmap implementasi](./reference/IMPLEMENTATION_PLAN.md)
+- [PRD sumber](./source/PRD_Platform_Undangan_Digital_Final.docx) dan [teks hasil ekstraksi](./source/PRD_extracted.txt)
+
 ---
 
 ## 🚀 Ringkasan Akses Cepat Platform
 
 - **URL Produksi**: `https://undangan-digital-production-e6fd.up.railway.app`
 - **Port Lokal Default**: `http://localhost:8000` (atau `http://localhost:8080` via Docker)
-- **Akun Default**:
-  - **Admin**: `admin@undangan.id` / `password`
-  - **User**: `user@undangan.id` / `password`
+- **Akun Demo Lokal/Test** (hanya dibuat oleh seeder pada environment `local`/`testing`):
+  - **Admin**: `admin@undangan.id` / `password123`
+  - **Customer**: `pengantin@undangan.id` / `password123`
+- **Produksi**: atur `ADMIN_EMAIL` dan `ADMIN_PASSWORD` sebelum menjalankan seeder untuk membuat atau merotasi akun admin. Kredensial demo ditolak pada login produksi.

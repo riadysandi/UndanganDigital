@@ -21,7 +21,7 @@ Berikut adalah daftar kesalahan umum yang sering dibuat AI jika tidak dipandu:
 | 1 | Membuat form login terpisah `/admin/login` dengan tabel user baru | Gunakan **satu pintu** di `/login` dengan kolom `role` pada tabel `users`. Controller akan otomatis me-redirect ke dashboard yang tepat. |
 | 2 | Menggunakan `window.alert()` atau `window.confirm()` | Gunakan composable modern `@/composables/useToast` dan `@/composables/useConfirm`. |
 | 3 | Mengganti nama atau menghapus key di `design_json` | Skema bersifat **aditif**. Jika ada fitur baru, tambahkan key baru dengan nilai default tanpa menghapus key lama. |
-| 4 | Me-refresh seluruh iframe preview saat pengguna mengetik di editor | Gunakan komunikasi instan `postMessage({ type: 'UPDATE_DESIGN', ... })` untuk update 0ms tanpa refresh. |
+| 4 | Me-refresh seluruh iframe preview saat pengguna mengetik di editor | Gunakan komunikasi instan `postMessage({ type: 'LIVE_UPDATE_DESIGN', ... })` untuk update langsung tanpa refresh. |
 | 5 | Menggunakan textfield biasa untuk input tanggal/waktu | Gunakan visual picker bawaan browser: `<input type="date">` dan `<input type="datetime-local">`. |
 | 6 | Memasang dependensi CSS raksasa baru (Bootstrap/Element UI) | Tetap gunakan utilitas **Tailwind CSS v3** yang sudah terkonfigurasi. |
 | 7 | Mengabaikan kompilasi aset saat deploy | Selalu jalankan `npm run build` untuk memverifikasi bahwa TypeScript & Vue template valid sebelum commit. |
@@ -34,7 +34,7 @@ Setiap kali menyelesaikan sebuah fitur atau perbaikan tema:
 
 - [ ] **Verifikasi Notifikasi**: Pastikan tidak ada satupun panggilan `alert(` atau `confirm(` yang tertinggal (`grep_search` pada `resources/`).
 - [ ] **Verifikasi Skema Desain**: Pastikan data `design_json` tetap dapat dibaca oleh editor maupun tampilan publik.
-- [ ] **Verifikasi Iframe Preview**: Buka editor, pastikan perubahan teks/warna langsung terpantul di layar HP sebelah kanan secara instan.
+- [ ] **Verifikasi Iframe Preview**: Buka editor, pastikan perubahan teks/warna langsung terpantul di layar HP sebelah kanan melalui `LIVE_UPDATE_DESIGN`.
 - [ ] **Kompilasi Aset**: Jalankan perintah `npm run build` di terminal untuk memastikan tidak ada error TypeScript atau syntax template.
 - [ ] **Cek Status Deploy Railway**: Setelah push ke GitHub (`origin master`), pastikan container Railway berstatus `● Online`.
 

@@ -23,14 +23,21 @@ const props = defineProps<{
             status: string;
             created_invitation_url: string | null;
             created_at: string;
+            admin_notes: string | null;
         }>;
+        links: Array<{url:string|null;label:string;active:boolean}>;
     };
+    filters: {q?:string;status?:string};
 }>();
+const q = ref(props.filters?.q || '');
+const statusFilter = ref(props.filters?.status || '');
+const search = () => router.get('/admin/service-requests', {q:q.value||undefined,status:statusFilter.value||undefined}, {preserveState:true,replace:true});
 
 const selectedReq = ref<any>(null);
 const updateForm = ref({
     status: 'in_progress',
     created_invitation_url: '',
+    admin_notes: '',
 });
 
 const openModal = (req: any) => {
@@ -38,6 +45,7 @@ const openModal = (req: any) => {
     updateForm.value = {
         status: req.status,
         created_invitation_url: req.created_invitation_url || '',
+        admin_notes: req.admin_notes || '',
     };
 };
 
@@ -69,6 +77,8 @@ const openWhatsApp = (phone: string, name: string) => {
                     <p class="text-xs text-stone-500">Daftar calon pengantin yang memesan layanan pembuatan undangan Terima Beres.</p>
                 </div>
             </div>
+
+            <form @submit.prevent="search" class="flex flex-wrap gap-2 mt-6"><input v-model="q" class="rounded-xl border-stone-200 text-sm" placeholder="Cari pemesan, WhatsApp, mempelai"><select v-model="statusFilter" class="rounded-xl border-stone-200 text-sm"><option value="">Semua status</option><option v-for="s in ['pending','contacted','in_progress','completed','cancelled']" :key="s" :value="s">{{s}}</option></select><button class="px-4 py-2 bg-stone-900 text-white rounded-xl text-sm">Filter</button></form>
 
             <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm mt-8">
                 <table class="w-full text-left text-xs text-stone-600">
@@ -160,6 +170,10 @@ const openWhatsApp = (phone: string, name: string) => {
                             <option value="cancelled">Cancelled (Batal)</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block font-semibold text-stone-700 mb-1">Catatan internal admin</label>
+                        <textarea v-model="updateForm.admin_notes" rows="3" maxlength="1000" class="w-full p-2 border rounded-xl bg-stone-50" placeholder="Catatan tindak lanjut untuk tim"></textarea>
+                    </div>
 
                     <div>
                         <label class="block font-semibold text-stone-700 mb-1">URL Undangan yang Selesai Dibuat</label>
@@ -182,5 +196,6 @@ const openWhatsApp = (phone: string, name: string) => {
                 </div>
             </div>
         </div>
+        <nav class="flex gap-2 mt-4"><Link v-for="link in requests.links" :key="link.label" :href="link.url || '/admin/service-requests'" preserve-scroll class="px-3 py-1 rounded border text-xs" :class="link.active?'bg-stone-900 text-white':'bg-white'" v-html="link.label"/></nav>
     </AppLayout>
 </template>

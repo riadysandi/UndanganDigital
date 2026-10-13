@@ -100,6 +100,7 @@ erDiagram
         bigint invitation_id FK
         integer version_number
         json design_json
+        json events_json "nullable for legacy versions"
         integer schema_version
         bigint created_by FK
         timestamp published_at
@@ -155,7 +156,7 @@ erDiagram
         bigint invitation_id FK
         string guest_name
         text message
-        string moderation_status "approved|pending|spam"
+        string moderation_status "pending|approved|rejected"
         timestamps created_at_updated_at
     }
 

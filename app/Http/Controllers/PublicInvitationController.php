@@ -23,10 +23,11 @@ class PublicInvitationController extends Controller
         }
 
         // 2. Cek status publikasi (Kecuali jika owner sedang melihat pratinjau ?preview=1)
-        $isPreview = $request->boolean('preview');
+        $requestedPreview = $request->boolean('preview');
         $isOwnerOrAdmin = auth()->check() && (auth()->id() === $invitation->user_id || auth()->user()->role === 'admin');
+        $isPreview = $requestedPreview && $isOwnerOrAdmin;
 
-        if ((!$isOwnerOrAdmin || !$isPreview) && ($invitation->status !== 'published' || !$invitation->published_version_id)) {
+        if (!$isPreview && ($invitation->status !== 'published' || !$invitation->published_version_id)) {
             return Inertia::render('Public/Unpublished', [
                 'title' => $invitation->title,
                 'status' => $invitation->status,
@@ -46,7 +47,9 @@ class PublicInvitationController extends Controller
             ? $invitation->design->design_json
             : ($publishedVersion?->design_json ?? $invitation->design?->design_json);
 
-        $events = $invitation->events;
+        $events = $isPreview || !$publishedVersion || $publishedVersion->events_json === null
+            ? $invitation->events
+            : $publishedVersion->events_json;
         $guestbookEntries = $invitation->approvedGuestbookEntries;
 
         // 5. Cek parameter tamu personal (?to=Nama atau ?t=Token)
@@ -83,6 +86,7 @@ class PublicInvitationController extends Controller
     public function submitRsvp(Request $request, string $slug): JsonResponse
     {
         $invitation = Invitation::where('slug', $slug)->firstOrFail();
+        $this->ensureAcceptingResponses($invitation);
 
         $request->validate([
             'guest_name' => ['required', 'string', 'max:255'],
@@ -115,7 +119,7 @@ class PublicInvitationController extends Controller
                 'invitation_id' => $invitation->id,
                 'guest_name' => strip_tags($request->guest_name),
                 'message' => strip_tags($request->message),
-                'moderation_status' => 'approved',
+                'moderation_status' => 'pending',
             ]);
         }
 
@@ -129,6 +133,7 @@ class PublicInvitationController extends Controller
     public function submitGuestbook(Request $request, string $slug): JsonResponse
     {
         $invitation = Invitation::where('slug', $slug)->firstOrFail();
+        $this->ensureAcceptingResponses($invitation);
 
         $request->validate([
             'guest_name' => ['required', 'string', 'max:255'],
@@ -139,13 +144,22 @@ class PublicInvitationController extends Controller
             'invitation_id' => $invitation->id,
             'guest_name' => strip_tags($request->guest_name),
             'message' => strip_tags($request->message),
-            'moderation_status' => 'approved',
+            'moderation_status' => 'pending',
         ]);
 
         return response()->json([
             'success' => true,
-            'message' => 'Doa dan ucapan Anda berhasil dikirimkan!',
+            'message' => 'Doa dan ucapan Anda dikirim dan menunggu persetujuan.',
             'entry' => $entry,
         ]);
+    }
+
+    private function ensureAcceptingResponses(Invitation $invitation): void
+    {
+        abort_unless(
+            $invitation->isPublished() && (!$invitation->expires_at || !$invitation->expires_at->isPast()),
+            404,
+            'Undangan tidak tersedia.'
+        );
     }
 }

@@ -71,13 +71,6 @@ class EditorController extends Controller
             ]
         );
 
-        // Sync langsung ke versi published jika sudah dipublikasikan
-        if ($invitation->published_version_id && $invitation->publishedVersion) {
-            $invitation->publishedVersion->update([
-                'design_json' => $designData,
-            ]);
-        }
-
         // Update events jika disertakan
         if ($request->has('events') && is_array($request->input('events'))) {
             foreach ($request->input('events') as $eventInput) {

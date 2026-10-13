@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditLog;
 use App\Models\ServiceRequest;
+use App\Models\PlatformSetting;
 use App\Models\Template;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
@@ -73,7 +74,8 @@ class ServiceRequestController extends Controller
             . ($serviceRequest->photo_drive_link ? "• Link Foto: {$serviceRequest->photo_drive_link}\n" : "")
             . ($serviceRequest->notes ? "• Catatan Khusus: {$serviceRequest->notes}\n" : "");
 
-        $waUrl = "https://api.whatsapp.com/send?phone=6281234567890&text=" . urlencode($waMessage);
+        $csNumber = PlatformSetting::find('whatsapp_cs')?->value ?? config('services.whatsapp.number', '6281234567890');
+        $waUrl = "https://api.whatsapp.com/send?phone={$csNumber}&text=" . urlencode($waMessage);
 
         return back()->with([
             'success' => 'Permintaan bantuan Anda berhasil dikirim! Tim kami akan segera memprosesnya.',
@@ -83,10 +85,20 @@ class ServiceRequestController extends Controller
 
     public function adminIndex(Request $request): Response
     {
-        $requests = ServiceRequest::with('user')->latest()->paginate(20);
+        $query = ServiceRequest::with('user')->latest();
+        if ($request->filled('q')) {
+            $term = trim($request->string('q')->toString());
+            $query->where(fn ($q) => $q->where('customer_name', 'like', "%{$term}%")
+                ->orWhere('whatsapp', 'like', "%{$term}%")
+                ->orWhere('groom_name', 'like', "%{$term}%")
+                ->orWhere('bride_name', 'like', "%{$term}%"));
+        }
+        if ($request->filled('status')) $query->where('status', $request->input('status'));
+        $requests = $query->paginate(20)->withQueryString();
 
         return Inertia::render('Admin/ServiceRequests', [
             'requests' => $requests,
+            'filters' => $request->only('q', 'status'),
         ]);
     }
 
@@ -99,6 +111,14 @@ class ServiceRequestController extends Controller
         ]);
 
         $serviceRequest->update($validated);
+
+        AuditLog::create([
+            'actor_user_id' => $request->user()->id,
+            'action' => 'service_request.updated',
+            'subject_type' => ServiceRequest::class,
+            'subject_id' => $serviceRequest->id,
+            'metadata_json' => ['status' => $serviceRequest->status],
+        ]);
 
         return back()->with('success', 'Status pengerjaan berhasil diperbarui.');
     }

@@ -98,6 +98,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/templates', [AdminController::class, 'templates'])->name('templates');
     Route::post('/templates/{template}/toggle', [AdminController::class, 'toggleTemplate'])->name('templates.toggle');
+    Route::patch('/users/{user}/toggle', [AdminController::class, 'toggleUser'])->name('users.toggle');
+    Route::post('/invitations/{invitation}/unpublish', [AdminController::class, 'unpublishInvitation'])->name('invitations.unpublish');
     Route::get('/invitations', [AdminController::class, 'invitations'])->name('invitations');
     Route::get('/users', [AdminController::class, 'users'])->name('users');
     Route::get('/orders', [AdminController::class, 'orders'])->name('orders');
@@ -105,4 +107,5 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(fun
     Route::patch('/service-requests/{serviceRequest}', [\App\Http\Controllers\ServiceRequestController::class, 'updateStatus'])->name('service-requests.update');
     Route::get('/audit-logs', [AdminController::class, 'auditLogs'])->name('audit-logs');
     Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
+    Route::patch('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
 });

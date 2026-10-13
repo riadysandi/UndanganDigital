@@ -63,8 +63,7 @@ Aplikasi mengadopsi arsitektur **Modular Monolith** berbasis **Laravel 11** dan 
 - **Form Requests**: Validasi ketat untuk input, termasuk schema JSON desain dan unggahan file.
 - **Policies**: Enforce tenant ownership di setiap level model (`InvitationPolicy`, `GuestPolicy`, dll.) untuk mencegah IDOR (Insecure Direct Object Reference).
 - **Service Layer**:
-  - `InvitationPublishingService`: Menangani atomic snapshot ke `invitation_versions` dan invalidasi cache.
-  - `DesignSchemaValidator`: Memastikan JSON desain memenuhi Schema v1 dan bebas dari tag berbahaya / arbitrary HTML.
+  - `InvitationPublishingService`: Menangani snapshot atomik desain dan acara ke `invitation_versions`.
   - `BillingEntitlementService`: Memeriksa apakah user berhak menggunakan template premium atau melebihi kuota tamu/fitur.
   - `PaymentGatewayManager`: Mengabstraksi penyedia pembayaran (Midtrans/Xendit/Sandbox Mock).
 
@@ -73,15 +72,15 @@ Aplikasi mengadopsi arsitektur **Modular Monolith** berbasis **Laravel 11** dan 
 ## 3. Data & Storage Strategy
 
 1. **Design Versioning**:
-   - Draft disimpan di `invitation_designs` (`design_json`).
-   - Setiap kali user melakukan **Publish**, snapshot immutable disalin ke `invitation_versions` dengan nomor versi inkremental (`version_number`).
+   - Draft desain disimpan di `invitation_designs` (`design_json`); acara draft disimpan di `events`.
+   - Setiap kali user melakukan **Publish**, snapshot desain dan acara disalin ke `invitation_versions` dengan nomor versi inkremental (`version_number`). Autosave tidak mengubah snapshot yang aktif.
    - Pointer `published_version_id` pada tabel `invitations` diperbarui secara atomik dalam database transaction.
 2. **Public Invitation Rendering**:
-   - Halaman publik `/i/{slug}` hanya membaca snapshot dari `invitation_versions` yang aktif.
+   - Halaman publik `/i/{slug}` membaca snapshot aktif. Versi lama yang belum memiliki `events_json` memakai data acara lama sebagai fallback.
    - Draft yang belum dipublikasikan tidak pernah diekspos ke pengunjung publik.
 3. **Media Storage**:
    - Berkas media (foto pengantin, galeri, musik) diunggah melalui endpoint terotorisasi.
-   - Database hanya menyimpan metadata dan storage key/path. File tersimpan di `storage/app/public` (atau S3 bucket).
+   - File tersimpan pada disk `public` di `storage/app/public`; deployment perlu memasang volume persisten atau object storage agar file bertahan saat container diganti.
    - Validasi ketat: MIME type (`image/jpeg`, `image/png`, `image/webp`, `audio/mpeg`), max size 5MB untuk gambar.
 
 ---
@@ -90,8 +89,9 @@ Aplikasi mengadopsi arsitektur **Modular Monolith** berbasis **Laravel 11** dan 
 
 - **Tenant Isolation**: Setiap query resource pengguna disaring berdasarkan `user_id` pemilik melalui Policy & Global Scope.
 - **XSS Prevention**: Teks dari pengguna selalu di-escape oleh Vue template engine; Canvas Fabric.js hanya merender primitif canvas tanpa menyisipkan node HTML sembarangan.
-- **Anti-Spam & Rate Limiting**:
-  - Endpoint publik RSVP dan Buku Tamu dibatasi dengan rate limiting (Throttle middleware).
+- **Anti-Spam & Moderasi**:
+  - Endpoint publik RSVP dan Buku Tamu dibatasi rate limiting; undangan harus terbit dan belum kedaluwarsa.
+  - Ucapan pengunjung menunggu moderasi sebelum ditampilkan di halaman publik.
   - Guest link menggunakan token acak terenkripsi/hash.
 - **Payment & Webhook Idempotency**:
   - Webhook diverifikasi menggunakan signature hash.

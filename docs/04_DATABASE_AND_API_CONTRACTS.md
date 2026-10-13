@@ -1,96 +1,53 @@
-# 04 - Kontrak Database & REST API
+# 04 - Kontrak Database dan Endpoint
 
-Dokumen ini mendokumentasikan skema database relasional, model Eloquent, serta kontrak endpoint REST API yang digunakan di platform Undangan Digital.
+Dokumen ini mengikuti migration, model, dan `routes/web.php` yang berjalan saat ini. Kontrak pembayaran tidak dibahas di sini.
 
----
+## Relasi utama
 
-## 1. Diagram Relasi Entitas (ERD Ringkas)
-
-```
-[Users] (role: 'admin' | 'user')
-   │
-   ├── 1:N ──> [Invitations] (slug, status: 'draft'|'published')
-   │              │
-   │              ├── 1:1 ──> [InvitationDesigns] (design_json, schema_version)
-   │              ├── 1:N ──> [PublishedVersions] (snapshot_json, version_number)
-   │              ├── 1:N ──> [Events] (title, starts_at, ends_at, venue)
-   │              ├── 1:N ──> [Guests] (name, slug, category, pax, qr_code_hash)
-   │              │              └── 1:1 ──> [RSVPs] (attendance, pax, message)
-   │              └── 1:N ──> [Wishes] (name, message, is_hidden)
-   │
-   ├── 1:N ──> [Orders] (order_number, amount, status: 'pending'|'paid')
-   │              └── 1:1 ──> [Payments] (provider, transaction_id, status)
-   │
-   └── 1:N ──> [ServiceRequests] (subject, category, status)
+```text
+User
+├── Invitations
+│   ├── InvitationDesign (draft design_json)
+│   ├── InvitationVersion (published design_json + events_json snapshots)
+│   ├── Events (draft/current event data)
+│   ├── Guests ── RSVP
+│   └── GuestbookEntries (pending/approved/rejected)
+└── Orders / subscriptions
 ```
 
----
+Role akun yang dipakai saat ini adalah `admin` dan `customer`. Policy undangan membatasi akses pemilik; admin dapat mengelola semua undangan.
 
-## 2. Rincian Tabel Utama
+## Undangan dan versi
 
-### A. Tabel `invitations`
-- `id` (BigIncrements, PK)
-- `user_id` (BigInteger, FK ke `users.id`, cascade on delete)
-- `template_id` (BigInteger, FK ke `templates.id`)
-- `title` (String, misal: *"The Wedding of Dimas & Anisa"*)
-- `slug` (String, Unique, URL ramah SEO misal: `"dimas-anisa"`)
-- `status` (Enum: `'draft'`, `'published'`, `'archived'`)
-- `published_version_id` (Nullable BigInteger, menunjuk ke snapshot aktif di `published_versions`)
-- `created_at`, `updated_at`
+- `invitations`: pemilik, template, judul, slug, status, pointer `published_version_id`, dan masa berlaku.
+- `invitation_designs`: JSON draft dan `schema_version`.
+- `invitation_versions`: versi berurutan dengan `design_json`, `schema_version`, `events_json`, pembuat, dan waktu publikasi. `events_json` boleh null untuk versi lama.
+- `events`: jadwal dan lokasi acara draft/current.
+- `guests`: nama, token undangan personal, nomor telepon, dan kuota.
+- `rsvps`: respons kehadiran tamu.
+- `guestbook_entries`: ucapan dengan status moderasi.
 
-### B. Tabel `invitation_designs`
-- `id` (BigIncrements, PK)
-- `invitation_id` (BigInteger, Unique FK ke `invitations.id`)
-- `schema_version` (Integer, default `1`)
-- `design_json` (JSONB / JSON, menyimpan data lengkap teks, palet, galeri, amplop, dll)
-- `updated_at`
+Autosave menggunakan `PUT /api/invitations/{invitation}/design`. Saat Publish, service membuat snapshot desain dan acara baru, lalu mengganti pointer versi publik. Autosave berikutnya hanya memperbarui draft. Versi lama tanpa snapshot acara menggunakan relasi `events` sebagai fallback.
 
-### C. Tabel `published_versions`
-- `id` (BigIncrements, PK)
-- `invitation_id` (BigInteger, FK ke `invitations.id`)
-- `version_number` (Integer, incrementing)
-- `snapshot_json` (JSONB / JSON, snapshot data saat tombol Publish ditekan)
-- `published_at` (Timestamp)
+## Route utama
 
-### D. Tabel `guests`
-- `id` (BigIncrements, PK)
-- `invitation_id` (BigInteger, FK ke `invitations.id`)
-- `name` (String, nama tamu, misal: *"Bpk. Joko Widodo & Rekan"*)
-- `slug` (String, slug unik untuk URL personal: `?to=nama-tamu`)
-- `category` (String, misal: *"Keluarga"*, *"Sahabat"*, *"VIP"*, *"Umum"*)
-- `phone` (Nullable String, untuk pengiriman via WhatsApp Web)
-- `pax` (Integer, kuota undangan)
-- `attendance_status` (Enum: `'pending'`, `'attending'`, `'declined'`)
-- `qr_code_hash` (String, hash unik untuk scan QR resepsionis di meja penerima tamu)
-
----
-
-## 3. Kontrak Endpoint REST / AJAX
-
-| Method | Endpoint | Deskripsi | Autentikasi |
+| Method | Route | Fungsi | Akses |
 |---|---|---|---|
-| `POST` | `/api/invitations/{id}/design` | Menyimpan perubahan desain (`design_json`) secara autosave | `auth` (Hanya pemilik) |
-| `POST` | `/api/invitations/{id}/publish` | Menerbitkan undangan ke versi publik & mengembalikan `public_url` | `auth` (Hanya pemilik) |
-| `POST` | `/api/upload` | Mengunggah foto mempelai, galeri, barcode QRIS, atau audio MP3 | `auth` |
-| `POST` | `/api/guests/{id}/checkin` | Memvalidasi kehadiran tamu via QR Scanner resepsionis | `auth` / Resepsionis |
-| `POST` | `/api/sandbox/simulate-payment/{orderId}` | Menyimulasikan pelunasan pembayaran paket premium | `auth` |
-| `POST` | `/i/{slug}/rsvp` | Tamu mengirimkan konfirmasi kehadiran & jumlah pax | Publik |
-| `POST` | `/i/{slug}/wish` | Tamu mengirimkan ucapan selamat & doa restu | Publik |
+| `GET` | `/login` | Login admin/customer satu pintu | Guest |
+| `GET` | `/admin/login` | Alias menuju `/login` | Guest |
+| `GET/POST` | `/register` | Registrasi customer | Guest |
+| `GET` | `/invitations/{invitation}/editor` | Editor visual | Pemilik/admin |
+| `GET/PUT` | `/api/invitations/{invitation}/design` | Baca/simpan draft desain dan acara | Auth + policy |
+| `POST` | `/api/invitations/{invitation}/upload` | Unggah media undangan | Auth + policy |
+| `POST` | `/api/invitations/{invitation}/publish` | Buat snapshot versi publik | Auth + policy |
+| `POST` | `/api/invitations/{invitation}/unpublish` | Kembalikan status ke draft | Auth + policy |
+| `GET` | `/i/{slug}` | Lihat undangan publik | Publik; versi harus terbit |
+| `POST` | `/api/public/{slug}/rsvp` | Kirim RSVP | Publik; undangan aktif dan belum kedaluwarsa |
+| `POST` | `/api/public/{slug}/guestbook` | Kirim ucapan | Publik; undangan aktif dan belum kedaluwarsa |
+| `GET/POST` | `/invitations/{invitation}/guests` | Kelola dan check-in tamu | Auth + policy |
 
----
+RSVP membatasi nilai status dan jumlah hadir. Ucapan dari RSVP maupun endpoint guestbook disimpan dengan status `pending`; pengelola dapat mengubah status moderasi melalui route guestbook admin/pemilik. Halaman publik hanya menerima kiriman untuk undangan yang masih terbit dan belum kedaluwarsa, dan hanya menampilkan ucapan `approved`.
 
-## 4. Mekanisme Rute Publik Undangan (`/i/{slug}`)
+## Mode preview editor
 
-Halaman publik undangan di-handle oleh `PublicInvitationController`:
-
-1. **Akses Publik Normal (`/i/{slug}`)**:
-   - Sistem mencari data undangan berdasarkan `slug`.
-   - Jika status masih `draft`, sistem menampilkan halaman pemberitahuan bahwa undangan belum diterbitkan.
-   - Jika status `published`, sistem membaca data dari snapshot aktif `published_versions`.
-2. **Akses Undangan Khusus Tamu (`/i/{slug}?to={guest_slug}`)**:
-   - Sistem mencocokkan `guest_slug` dengan tabel `guests`.
-   - Mengisi otomatis nama tamu pada sampul pembuka, amplop nama, dan form RSVP.
-3. **Akses Mode Pratinjau Editor (`/i/{slug}?preview=1`)**:
-   - Hanya dapat diakses oleh pemilik undangan atau admin yang sedang login.
-   - Mengabaikan status publikasi dan langsung memuat data draf dari `invitation_designs`.
-   - Mengaktifkan listener `postMessage` untuk menerima pembaruan instan dari panel editor.
+`/i/{slug}?preview=1` menampilkan draft hanya untuk pemilik undangan atau admin yang login. Preview membaca acara draft dan mendengarkan pesan `LIVE_UPDATE_DESIGN` dari iframe editor. Mode preview tidak mengizinkan endpoint RSVP/guestbook menerima kiriman karena endpoint tersebut mensyaratkan undangan publik aktif.

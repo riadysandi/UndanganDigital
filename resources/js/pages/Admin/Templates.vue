@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { router, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 
-defineProps<{
-    templates: Array<{
+const props = defineProps<{
+    templates: {
+    data: Array<{
         id: number;
         name: string;
         slug: string;
@@ -13,7 +15,12 @@ defineProps<{
         is_active: boolean;
         invitations_count: number;
     }>;
+    links:Array<{url:string|null;label:string;active:boolean}>;
+    };
+    filters:{q?:string;status?:string};
 }>();
+const q=ref(props.filters?.q||''); const status=ref(props.filters?.status||'');
+const search=()=>router.get('/admin/templates',{q:q.value||undefined,status:status.value||undefined},{preserveState:true,replace:true});
 
 const toggle = (templateId: number, field: 'is_premium' | 'is_active') => {
     router.post(`/admin/templates/${templateId}/toggle`, { field });
@@ -32,9 +39,11 @@ const toggle = (templateId: number, field: 'is_premium' | 'is_active') => {
                 </div>
             </div>
 
+            <form @submit.prevent="search" class="flex flex-wrap gap-2 mt-6"><input v-model="q" class="rounded-xl border-stone-200 text-sm" placeholder="Cari nama atau slug template"><select v-model="status" class="rounded-xl border-stone-200 text-sm"><option value="">Semua status</option><option value="active">Aktif</option><option value="inactive">Nonaktif</option></select><button class="px-4 py-2 bg-stone-900 text-white rounded-xl text-sm">Filter</button></form>
+
             <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-6 mt-8">
                 <div
-                    v-for="tpl in templates"
+                    v-for="tpl in templates.data"
                     :key="tpl.id"
                     class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm flex flex-col justify-between"
                 >
@@ -74,6 +83,7 @@ const toggle = (templateId: number, field: 'is_premium' | 'is_active') => {
                     </div>
                 </div>
             </div>
+            <nav class="flex gap-2 mt-4"><Link v-for="link in templates.links" :key="link.label" :href="link.url || '/admin/templates'" preserve-scroll class="px-3 py-1 rounded border text-xs" :class="link.active?'bg-stone-900 text-white':'bg-white'" v-html="link.label"/></nav>
         </div>
     </AppLayout>
 </template>

@@ -24,27 +24,44 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // 1. Users
-        $admin = User::firstOrCreate(
-            ['email' => 'admin@undangan.id'],
-            [
-                'name' => 'Administrator Undangan',
-                'password' => Hash::make('password123'),
-                'role' => 'admin',
-                'email_verified_at' => now(),
-            ]
-        );
+        // Demo accounts and invitations belong only in local/test databases.
+        $customer = null;
+        if (app()->environment(['local', 'testing'])) {
+            User::firstOrCreate(
+                ['email' => 'admin@undangan.id'],
+                [
+                    'name' => 'Administrator Undangan',
+                    'password' => Hash::make('password123'),
+                    'role' => 'admin',
+                    'email_verified_at' => now(),
+                ]
+            );
 
-        $customer = User::firstOrCreate(
-            ['email' => 'pengantin@undangan.id'],
-            [
-                'name' => 'Dimas & Anisa',
-                'password' => Hash::make('password123'),
-                'role' => 'customer',
-                'phone_number' => '081234567890',
-                'email_verified_at' => now(),
-            ]
-        );
+            $customer = User::firstOrCreate(
+                ['email' => 'pengantin@undangan.id'],
+                [
+                    'name' => 'Dimas & Anisa',
+                    'password' => Hash::make('password123'),
+                    'role' => 'customer',
+                    'phone_number' => '081234567890',
+                    'email_verified_at' => now(),
+                ]
+            );
+        } elseif (app()->isProduction() && env('ADMIN_EMAIL') && env('ADMIN_PASSWORD')) {
+            if (Str::length(env('ADMIN_PASSWORD')) < 12) {
+                throw new \RuntimeException('ADMIN_PASSWORD must contain at least 12 characters in production.');
+            }
+
+            User::updateOrCreate(
+                ['email' => env('ADMIN_EMAIL')],
+                [
+                    'name' => 'Administrator Undangan',
+                    'password' => Hash::make(env('ADMIN_PASSWORD')),
+                    'role' => 'admin',
+                    'email_verified_at' => now(),
+                ]
+            );
+        }
 
         // 2. Plans
         $planFree = Plan::firstOrCreate(
@@ -288,6 +305,10 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        if (!$customer) {
+            return;
+        }
+
         // 4. Sample Invitation for Customer
         $invitation = Invitation::firstOrCreate(
             ['slug' => 'dimas-anisa'],
@@ -472,4 +493,3 @@ class DatabaseSeeder extends Seeder
         );
     }
 }
-

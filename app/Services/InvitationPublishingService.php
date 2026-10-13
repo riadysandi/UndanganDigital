@@ -40,6 +40,7 @@ class InvitationPublishingService
                 'invitation_id' => $invitation->id,
                 'version_number' => $nextVersionNumber,
                 'design_json' => $design->design_json,
+                'events_json' => $invitation->events()->get()->toArray(),
                 'schema_version' => $design->schema_version ?? 1,
                 'created_by' => $user->id,
                 'published_at' => now(),

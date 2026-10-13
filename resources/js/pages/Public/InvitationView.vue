@@ -408,14 +408,6 @@ const submitRsvp = async () => {
                 origin: { y: 0.6 },
             });
 
-            if (rsvpForm.value.message) {
-                localGuestbook.value.unshift({
-                    id: Date.now(),
-                    guest_name: rsvpForm.value.guest_name,
-                    message: rsvpForm.value.message,
-                    created_at: 'Baru saja',
-                });
-            }
         } else {
             rsvpErrorMessage.value = data.message || 'Gagal mengirim konfirmasi RSVP.';
         }
@@ -1429,7 +1421,7 @@ const digitalGift = computed(() => {
                         Terima Kasih!
                     </div>
                     <p class="text-xs text-stone-300">
-                        Konfirmasi kehadiran dan doa restu Anda telah berhasil kami simpan.
+                        Konfirmasi kehadiran Anda tersimpan. Ucapan doa akan tampil setelah disetujui oleh pengantin.
                     </p>
                 </div>
 

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue';
+import { router } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
 
 const props = defineProps<{
@@ -14,16 +15,9 @@ const props = defineProps<{
     };
 }>();
 
-const savedNotification = ref(false);
 const whatsappNumber = ref(props.whatsapp_cs);
-const maintenanceMode = ref(false);
-
-const handleSave = () => {
-    savedNotification.value = true;
-    setTimeout(() => {
-        savedNotification.value = false;
-    }, 3000);
-};
+const saving = ref(false);
+const handleSave = () => router.patch('/admin/settings', { whatsapp_cs: whatsappNumber.value }, { preserveScroll: true, onStart: () => saving.value = true, onFinish: () => saving.value = false });
 </script>
 
 <template>
@@ -42,9 +36,6 @@ const handleSave = () => {
                     <p class="text-xs text-stone-500 mt-1">Konfigurasi operasional platform, kontak CS WhatsApp, dan informasi server.</p>
                 </div>
 
-                <div v-if="savedNotification" class="px-3 py-1.5 bg-emerald-100 text-emerald-800 text-xs font-semibold rounded-lg shadow-sm flex items-center gap-1.5 animate-bounce">
-                    <span>✓</span> Konfigurasi berhasil disimpan!
-                </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mt-8">
@@ -98,9 +89,10 @@ const handleSave = () => {
                         <div class="mt-6 pt-4 border-t border-stone-100 flex justify-end">
                             <button
                                 @click="handleSave"
+                                :disabled="saving"
                                 class="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold rounded-xl shadow-sm shadow-rose-200 transition-colors"
                             >
-                                Simpan Perubahan
+                                {{ saving ? 'Menyimpan…' : 'Simpan Perubahan' }}
                             </button>
                         </div>
                     </div>
@@ -108,39 +100,17 @@ const handleSave = () => {
                     <!-- Maintenance & Feature Flags Card -->
                     <div class="bg-white rounded-2xl border border-stone-200 p-6 shadow-sm">
                         <h2 class="text-base font-bold text-stone-900 mb-1 flex items-center gap-2">
-                            <span>🛠️</span> Mode Pemeliharaan & Fitur
+                            <span>🛠️</span> Fitur Platform
                         </h2>
-                        <p class="text-xs text-stone-500 mb-6">Kontrol aksesibilitas dan fitur platform.</p>
+                        <p class="text-xs text-stone-500 mb-6">Informasi fitur yang saat ini tidak dapat diubah dari panel admin.</p>
 
                         <div class="space-y-4">
                             <div class="flex items-center justify-between p-3.5 rounded-xl border border-stone-100 bg-stone-50/50">
                                 <div>
-                                    <div class="text-xs font-semibold text-stone-800">Mode Sandbox Pembayaran</div>
-                                    <div class="text-[11px] text-stone-500">Gunakan simulator pembayaran untuk pengujian transaksi instan tanpa biaya.</div>
-                                </div>
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                    Aktif
-                                </span>
-                            </div>
-
-                            <div class="flex items-center justify-between p-3.5 rounded-xl border border-stone-100 bg-stone-50/50">
-                                <div>
-                                    <div class="text-xs font-semibold text-stone-800">Fitur 3D Canvas Interaktif</div>
-                                    <div class="text-[11px] text-stone-500">Mendukung Three.js dan render model amplop interaktif 3D.</div>
-                                </div>
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                    Aktif
-                                </span>
-                            </div>
-
-                            <div class="flex items-center justify-between p-3.5 rounded-xl border border-stone-100 bg-stone-50/50">
-                                <div>
                                     <div class="text-xs font-semibold text-stone-800">Layanan Terima Beres (Dibantu Tim)</div>
-                                    <div class="text-[11px] text-stone-500">Formulir penerimaan pesanan jasa pembuatan oleh staf admin.</div>
+                                    <div class="text-[11px] text-stone-500">Fitur aktif melalui konfigurasi aplikasi. Pengaturan enable/disable belum tersedia.</div>
                                 </div>
-                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                                    Aktif
-                                </span>
+                                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-stone-100 text-stone-600">Info</span>
                             </div>
                         </div>
                     </div>
@@ -181,10 +151,10 @@ const handleSave = () => {
                     <div class="bg-gradient-to-br from-stone-900 to-stone-800 rounded-2xl p-6 text-white shadow-sm">
                         <div class="flex items-center gap-2 mb-2">
                             <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></div>
-                            <span class="text-xs font-semibold text-emerald-400">Server Status: Sehat</span>
+                            <span class="text-xs font-semibold text-emerald-400">Runtime aplikasi</span>
                         </div>
                         <p class="text-xs text-stone-300 mb-4">
-                            Platform terhubung ke cloud production Railway & GitHub repository dengan webhook otomatis.
+                            Informasi di samping berasal dari runtime aktif. Koneksi layanan eksternal tidak diperiksa oleh halaman ini.
                         </p>
                         <a
                             href="/"

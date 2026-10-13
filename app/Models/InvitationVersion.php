@@ -14,6 +14,7 @@ class InvitationVersion extends Model
         'invitation_id',
         'version_number',
         'design_json',
+        'events_json',
         'schema_version',
         'created_by',
         'published_at',
@@ -21,6 +22,7 @@ class InvitationVersion extends Model
 
     protected $casts = [
         'design_json' => 'array',
+        'events_json' => 'array',
         'schema_version' => 'integer',
         'published_at' => 'datetime',
     ];

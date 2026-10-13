@@ -1,8 +1,10 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
-defineProps<{
+const props = defineProps<{
     invitations: {
         data: Array<{
             id: number;
@@ -26,8 +28,14 @@ defineProps<{
                 published_at: string;
             } | null;
         }>;
+        links:Array<{url:string|null;label:string;active:boolean}>;
     };
+    filters: {q?:string;status?:string};
 }>();
+const q=ref(props.filters?.q||''); const status=ref(props.filters?.status||'');
+const {confirmAction}=useConfirm();
+const search=()=>router.get('/admin/invitations',{q:q.value||undefined,status:status.value||undefined},{preserveState:true,replace:true});
+const unpublish=async (invitation:{id:number;title:string})=>{if(await confirmAction({title:'Unpublish undangan?',message:`Undangan “${invitation.title}” akan menjadi draft dan tidak tampil ke publik.`,confirmText:'Unpublish',type:'warning'})) router.post(`/admin/invitations/${invitation.id}/unpublish`,{}, {preserveScroll:true});};
 </script>
 
 <template>
@@ -46,6 +54,8 @@ defineProps<{
                     <p class="text-xs text-stone-500 mt-1">Daftar semua undangan digital yang dibuat oleh seluruh klien di platform.</p>
                 </div>
             </div>
+
+            <form @submit.prevent="search" class="flex flex-wrap gap-2 mt-6"><input v-model="q" class="rounded-xl border-stone-200 text-sm" placeholder="Cari judul, slug, pemilik"><select v-model="status" class="rounded-xl border-stone-200 text-sm"><option value="">Semua status</option><option value="published">Published</option><option value="draft">Draft</option></select><button class="px-4 py-2 bg-stone-900 text-white rounded-xl text-sm">Filter</button></form>
 
             <!-- Table Section -->
             <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm mt-8">
@@ -114,6 +124,7 @@ defineProps<{
                                         <span>Lihat Web</span>
                                         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                                     </a>
+                                    <button v-if="inv.status === 'published'" @click="unpublish(inv)" class="ml-2 inline-flex px-3 py-1.5 bg-amber-50 text-amber-800 rounded-lg text-xs">Unpublish</button>
                                 </td>
                             </tr>
                             <tr v-if="invitations.data.length === 0">
@@ -127,6 +138,7 @@ defineProps<{
                     </table>
                 </div>
             </div>
+            <nav class="flex gap-2 mt-4"><Link v-for="link in invitations.links" :key="link.label" :href="link.url || '/admin/invitations'" preserve-scroll class="px-3 py-1 rounded border text-xs" :class="link.active?'bg-stone-900 text-white':'bg-white'" v-html="link.label"/></nav>
         </div>
     </AppLayout>
 </template>

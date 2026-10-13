@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { Link } from '@inertiajs/vue3';
+import { Link, router } from '@inertiajs/vue3';
+import { ref } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
 
-defineProps<{
+const props = defineProps<{
     orders: {
         data: Array<{
             id: number;
@@ -18,8 +19,12 @@ defineProps<{
                 name: string;
             };
         }>;
+        links:Array<{url:string|null;label:string;active:boolean}>;
     };
+    filters:{q?:string;status?:string};
 }>();
+const q=ref(props.filters?.q||''); const status=ref(props.filters?.status||'');
+const search=()=>router.get('/admin/orders',{q:q.value||undefined,status:status.value||undefined},{preserveState:true,replace:true});
 
 const formatRupiah = (val: string | number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(val));
@@ -37,6 +42,8 @@ const formatRupiah = (val: string | number) => {
                     <h1 class="text-2xl font-serif font-bold text-stone-900">Riwayat Transaksi & Order</h1>
                 </div>
             </div>
+
+            <form @submit.prevent="search" class="flex flex-wrap gap-2 mt-6"><input v-model="q" class="rounded-xl border-stone-200 text-sm" placeholder="Cari order, nama, email"><select v-model="status" class="rounded-xl border-stone-200 text-sm"><option value="">Semua status</option><option v-for="s in ['pending','paid','failed','cancelled','expired']" :key="s" :value="s">{{s}}</option></select><button class="px-4 py-2 bg-stone-900 text-white rounded-xl text-sm">Filter</button><span class="self-center text-xs text-stone-500">Informasi saja; pembayaran tidak dapat diubah dari panel ini.</span></form>
 
             <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm mt-8">
                 <table class="w-full text-left text-xs text-stone-600">
@@ -74,6 +81,7 @@ const formatRupiah = (val: string | number) => {
                     </tbody>
                 </table>
             </div>
+            <nav class="flex gap-2 mt-4"><Link v-for="link in orders.links" :key="link.label" :href="link.url || '/admin/orders'" preserve-scroll class="px-3 py-1 rounded border text-xs" :class="link.active?'bg-stone-900 text-white':'bg-white'" v-html="link.label"/></nav>
         </div>
     </AppLayout>
 </template>
