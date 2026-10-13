@@ -233,6 +233,47 @@ const updateCountdown = () => {
     }
 };
 
+// =========================================================
+// INTERACTIVE 3D TILT & PARALLAX MOTION ENGINE
+// =========================================================
+const mouseX = ref(0);
+const mouseY = ref(0);
+
+const handleGlobalMouseMove = (e: MouseEvent) => {
+    const nx = (e.clientX / window.innerWidth) * 2 - 1;
+    const ny = (e.clientY / window.innerHeight) * 2 - 1;
+    mouseX.value = nx;
+    mouseY.value = ny;
+};
+
+// Dynamic 3D Card Hover Tilt with realistic depth
+const handleCardTilt = (e: MouseEvent) => {
+    const card = e.currentTarget as HTMLElement;
+    if (!card) return;
+    const rect = card.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const rotX = ((y / rect.height) - 0.5) * -18;
+    const rotY = ((x / rect.width) - 0.5) * 18;
+    card.style.transform = `perspective(1000px) rotateX(${rotX.toFixed(1)}deg) rotateY(${rotY.toFixed(1)}deg) scale3d(1.03, 1.03, 1.03)`;
+};
+
+const resetCardTilt = (e: MouseEvent) => {
+    const card = e.currentTarget as HTMLElement;
+    if (card) {
+        card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+    }
+};
+
+// Interactive 3D Lightbox Photo state
+const activeLightboxPhoto = ref<string | null>(null);
+const openLightbox = (url: string) => {
+    activeLightboxPhoto.value = url;
+};
+const closeLightbox = () => {
+    activeLightboxPhoto.value = null;
+};
+
 // Cinematic Scroll Reveal Intersection Observer
 let scrollObserver: IntersectionObserver | null = null;
 
@@ -266,6 +307,7 @@ watch(isOpen, (newVal) => {
 
 onMounted(() => {
     window.addEventListener('message', onMessage);
+    window.addEventListener('mousemove', handleGlobalMouseMove);
     updateCountdown();
     timerInterval = setInterval(updateCountdown, 1000);
     setTimeout(() => {
@@ -275,6 +317,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     window.removeEventListener('message', onMessage);
+    window.removeEventListener('mousemove', handleGlobalMouseMove);
     if (timerInterval) clearInterval(timerInterval);
     if (audioEl.value) {
         audioEl.value.pause();
@@ -661,6 +704,72 @@ const digitalGift = computed(() => {
             </div>
         </div>
 
+        <!-- 3D Interactive Floating Elements Layer (Butterflies, Shimmer Dust, & Botanical Sprigs) -->
+        <div v-if="isOpen" class="pointer-events-none fixed inset-0 z-30 overflow-hidden" aria-hidden="true">
+            <!-- 3D Fluttering Butterfly 1 (Top Left) -->
+            <div 
+                class="butterfly-3d top-[15%] left-[8%] sm:left-[18%]"
+                :style="{ transform: `translate3d(${mouseX * 20}px, ${mouseY * 20}px, 40px)` }"
+            >
+                <div class="relative w-8 h-8 flex items-center justify-center">
+                    <svg viewBox="0 0 32 32" class="w-full h-full drop-shadow-md">
+                        <g class="butterfly-wing-left">
+                            <path d="M16 16 C12 6, 2 8, 4 18 C6 24, 14 20, 16 16 Z" :fill="invitationData.theme.primaryColor" opacity="0.9" />
+                        </g>
+                        <g class="butterfly-wing-right">
+                            <path d="M16 16 C20 6, 30 8, 28 18 C26 24, 18 20, 16 16 Z" :fill="invitationData.theme.primaryColor" opacity="0.9" />
+                        </g>
+                        <line x1="16" y1="10" x2="16" y2="22" :stroke="invitationData.theme.secondaryColor" stroke-width="1.5" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 3D Fluttering Butterfly 2 (Mid Right) -->
+            <div 
+                class="butterfly-3d top-[48%] right-[8%] sm:right-[16%]"
+                :style="{ transform: `translate3d(${-mouseX * 25}px, ${-mouseY * 25}px, 60px)`, animationDelay: '-4s' }"
+            >
+                <div class="relative w-6 h-6 flex items-center justify-center">
+                    <svg viewBox="0 0 32 32" class="w-full h-full drop-shadow-md">
+                        <g class="butterfly-wing-left">
+                            <path d="M16 16 C12 6, 2 8, 4 18 C6 24, 14 20, 16 16 Z" :fill="invitationData.theme.secondaryColor" opacity="0.85" />
+                        </g>
+                        <g class="butterfly-wing-right">
+                            <path d="M16 16 C20 6, 30 8, 28 18 C26 24, 18 20, 16 16 Z" :fill="invitationData.theme.secondaryColor" opacity="0.85" />
+                        </g>
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 3D Floating Glowing Fairy Dust / Sparkles -->
+            <div 
+                class="fairy-dust-orb absolute top-[28%] right-[22%] w-3 h-3 rounded-full blur-[1px] pointer-events-none"
+                :style="{
+                    backgroundColor: invitationData.theme.primaryColor,
+                    boxShadow: `0 0 12px ${invitationData.theme.primaryColor}, 0 0 24px ${invitationData.theme.secondaryColor}`,
+                    transform: `translate3d(${mouseX * 35}px, ${mouseY * 35}px, 50px)`
+                }"
+            ></div>
+            <div 
+                class="fairy-dust-orb absolute top-[65%] left-[15%] w-2.5 h-2.5 rounded-full blur-[1px] pointer-events-none"
+                :style="{
+                    backgroundColor: invitationData.theme.secondaryColor,
+                    boxShadow: `0 0 10px ${invitationData.theme.secondaryColor}`,
+                    animationDelay: '-2.5s',
+                    transform: `translate3d(${-mouseX * 30}px, ${-mouseY * 30}px, 30px)`
+                }"
+            ></div>
+            <div 
+                class="fairy-dust-orb absolute top-[82%] right-[14%] w-2 h-2 rounded-full blur-[0.5px] pointer-events-none"
+                :style="{
+                    backgroundColor: invitationData.theme.primaryColor,
+                    boxShadow: `0 0 8px ${invitationData.theme.primaryColor}`,
+                    animationDelay: '-4.2s',
+                    transform: `translate3d(${mouseX * 40}px, ${mouseY * 40}px, 70px)`
+                }"
+            ></div>
+        </div>
+
         <!-- Floating Controls (shown after opened) -->
         <div v-if="isOpen" class="fixed bottom-6 right-6 z-40 flex flex-col items-center gap-3">
             <!-- Reopen 3D Envelope -->
@@ -1005,17 +1114,64 @@ const digitalGift = computed(() => {
                     {{ invitationData.content.weddingDateText }}
                 </p>
 
-                <!-- Hero Photo with 3D Border Glow -->
-                <div
-                    class="reveal-on-scroll reveal-zoom-in reveal-delay-3 relative w-64 h-80 rounded-t-full rounded-b-3xl overflow-hidden border-2 shadow-[0_20px_50px_rgba(0,0,0,0.8)] mx-auto mb-6 transform hover:scale-[1.02] transition-transform duration-500"
-                    :style="{ borderColor: invitationData.theme.primaryColor + '66' }"
-                >
-                    <img
-                        :src="invitationData.content.coverImage"
-                        :alt="invitationData.content.weddingTitle"
-                        class="w-full h-full object-cover"
-                    />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
+                <!-- Interactive 3D Hero Arch Showcase with Tilt & Shimmer -->
+                <div class="reveal-on-scroll reveal-zoom-in reveal-delay-3 relative my-6 flex items-center justify-center">
+                    <div
+                        class="card-tilt-3d relative w-72 sm:w-80 h-96 rounded-t-full rounded-b-3xl p-2.5 transition-all duration-300 ease-out cursor-pointer select-none"
+                        @mousemove="handleCardTilt"
+                        @mouseleave="resetCardTilt"
+                        :style="{
+                            backgroundColor: invitationData.theme.cardBgColor,
+                            boxShadow: `0 25px 60px -15px ${invitationData.theme.primaryColor}50, 0 10px 25px rgba(0,0,0,0.6)`,
+                            border: `2px solid ${invitationData.theme.primaryColor}80`
+                        }"
+                    >
+                        <!-- 3D Baroque Corner Flourishes (Top-Left & Top-Right) -->
+                        <div class="absolute -top-3.5 -left-3.5 w-11 h-11 pointer-events-none drop-shadow-lg z-20">
+                            <svg viewBox="0 0 40 40" fill="none" class="w-full h-full">
+                                <path d="M0,0 C18,6 28,16 32,32 C22,22 12,16 0,0 Z" :fill="invitationData.theme.primaryColor" />
+                                <circle cx="10" cy="10" r="3.5" :fill="invitationData.theme.secondaryColor" />
+                            </svg>
+                        </div>
+                        <div class="absolute -top-3.5 -right-3.5 w-11 h-11 pointer-events-none drop-shadow-lg z-20 scale-x-[-1]">
+                            <svg viewBox="0 0 40 40" fill="none" class="w-full h-full">
+                                <path d="M0,0 C18,6 28,16 32,32 C22,22 12,16 0,0 Z" :fill="invitationData.theme.primaryColor" />
+                                <circle cx="10" cy="10" r="3.5" :fill="invitationData.theme.secondaryColor" />
+                            </svg>
+                        </div>
+
+                        <!-- Arch Inner Frame with Shimmer & 3D Badge -->
+                        <div class="relative w-full h-full rounded-t-full rounded-b-2xl overflow-hidden border border-amber-200/30 group">
+                            <img
+                                :src="invitationData.content.coverImage"
+                                :alt="invitationData.content.weddingTitle"
+                                class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-108"
+                            />
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent"></div>
+
+                            <!-- Dynamic Metallic 3D Shimmer Sweep Bar -->
+                            <div class="absolute inset-0 pointer-events-none overflow-hidden">
+                                <div class="shimmer-sweep-bar"></div>
+                            </div>
+
+                            <!-- Floating 3D Badge on Card Base -->
+                            <div class="absolute bottom-4 inset-x-4 text-center z-10">
+                                <span
+                                    class="inline-block px-3 py-1 rounded-full text-[10px] font-serif font-bold tracking-widest uppercase border shadow-lg backdrop-blur-md"
+                                    :style="{
+                                        backgroundColor: invitationData.theme.cardBgColor + 'e6',
+                                        borderColor: invitationData.theme.primaryColor,
+                                        color: invitationData.theme.secondaryColor
+                                    }"
+                                >
+                                    ✨ {{ invitationData.content.coverBadge }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- 3D Specular Light Glare Overlay -->
+                        <div class="absolute inset-0 rounded-t-full rounded-b-3xl pointer-events-none bg-gradient-to-tr from-white/10 to-transparent opacity-60"></div>
+                    </div>
                 </div>
 
                 <div 
@@ -1070,10 +1226,13 @@ const digitalGift = computed(() => {
                     <!-- Groom (Slide In From Left) -->
                     <div class="reveal-on-scroll reveal-slide-left flex flex-col items-center">
                         <div
-                            class="w-32 h-32 rounded-full overflow-hidden border-2 shadow-xl mb-4 p-1"
+                            class="card-tilt-3d relative w-36 h-36 rounded-full overflow-hidden border-2 shadow-2xl mb-4 p-1 cursor-pointer transition-transform duration-300"
+                            @mousemove="handleCardTilt"
+                            @mouseleave="resetCardTilt"
                             :style="{
-                                borderColor: invitationData.theme.primaryColor + '66',
-                                backgroundColor: invitationData.theme.primaryColor + '1a'
+                                borderColor: invitationData.theme.primaryColor,
+                                backgroundColor: invitationData.theme.primaryColor + '20',
+                                boxShadow: `0 15px 35px -5px ${invitationData.theme.primaryColor}50`
                             }"
                         >
                             <img
@@ -1117,10 +1276,13 @@ const digitalGift = computed(() => {
                     <!-- Bride (Slide In From Right) -->
                     <div class="reveal-on-scroll reveal-slide-right reveal-delay-2 flex flex-col items-center">
                         <div
-                            class="w-32 h-32 rounded-full overflow-hidden border-2 shadow-xl mb-4 p-1"
+                            class="card-tilt-3d relative w-36 h-36 rounded-full overflow-hidden border-2 shadow-2xl mb-4 p-1 cursor-pointer transition-transform duration-300"
+                            @mousemove="handleCardTilt"
+                            @mouseleave="resetCardTilt"
                             :style="{
-                                borderColor: invitationData.theme.primaryColor + '66',
-                                backgroundColor: invitationData.theme.primaryColor + '1a'
+                                borderColor: invitationData.theme.primaryColor,
+                                backgroundColor: invitationData.theme.primaryColor + '20',
+                                boxShadow: `0 15px 35px -5px ${invitationData.theme.primaryColor}50`
                             }"
                         >
                             <img
@@ -1439,16 +1601,25 @@ const digitalGift = computed(() => {
                     <div
                         v-for="(photoUrl, pIdx) in invitationData.content.gallery"
                         :key="pIdx"
+                        @mousemove="handleCardTilt"
+                        @mouseleave="resetCardTilt"
+                        @click="openLightbox(photoUrl)"
                         :class="[
-                            'reveal-on-scroll reveal-zoom-in rounded-2xl overflow-hidden shadow-lg h-48 border border-stone-800 group',
+                            'card-tilt-3d reveal-on-scroll reveal-zoom-in rounded-2xl overflow-hidden shadow-lg h-48 border border-stone-800 group cursor-pointer relative',
                             pIdx === 0 ? '' : pIdx === 1 ? 'reveal-delay-1' : pIdx === 2 ? 'reveal-delay-2' : 'reveal-delay-3'
                         ]"
+                        title="Klik untuk perbesar 3D Lightbox"
                     >
                         <img
                             :src="photoUrl"
                             :alt="'Galeri ' + (pIdx + 1)"
-                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                            class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 pointer-events-none"
                         />
+                        <div class="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span class="px-3 py-1 rounded-full bg-black/70 text-white text-[11px] font-semibold border border-white/20 shadow-lg">
+                                🔍 Perbesar
+                            </span>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -1910,6 +2081,36 @@ const digitalGift = computed(() => {
                 </button>
             </div>
         </div>
+
+        <!-- 3D Photo Lightbox Modal -->
+        <div
+            v-if="lightboxActive && lightboxPhoto"
+            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg animate-in fade-in duration-300"
+            @click.self="closeLightbox"
+        >
+            <div
+                class="relative max-w-2xl w-full max-h-[85vh] rounded-3xl overflow-hidden p-2 shadow-[0_25px_70px_rgba(0,0,0,0.9)] border"
+                :style="{
+                    backgroundColor: invitationData.theme.cardBgColor,
+                    borderColor: invitationData.theme.primaryColor + '80'
+                }"
+            >
+                <button
+                    @click="closeLightbox"
+                    class="absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center border border-white/20 transition-colors shadow-lg"
+                    title="Tutup"
+                >
+                    ✕
+                </button>
+                <div class="relative w-full h-full max-h-[80vh] flex items-center justify-center overflow-hidden rounded-2xl">
+                    <img
+                        :src="lightboxPhoto"
+                        alt="Preview Foto"
+                        class="max-w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl transition-transform duration-500 hover:scale-105"
+                    />
+                </div>
+            </div>
+        </div>
     </div>
 </template>
 
@@ -2066,5 +2267,124 @@ const digitalGift = computed(() => {
 }
 .reveal-delay-4 {
     transition-delay: 600ms;
+}
+
+/* ========================================================= */
+/* 3D CARD TILT & METALLIC SHIMMER                          */
+/* ========================================================= */
+.card-tilt-3d {
+    transform-style: preserve-3d;
+    will-change: transform;
+    transition: transform 0.15s ease-out, box-shadow 0.3s ease;
+}
+
+.shimmer-sweep-bar {
+    position: absolute;
+    top: -50%;
+    left: -150%;
+    width: 60%;
+    height: 200%;
+    background: linear-gradient(
+        105deg,
+        rgba(255, 255, 255, 0) 0%,
+        rgba(255, 255, 255, 0.08) 35%,
+        rgba(255, 255, 255, 0.5) 50%,
+        rgba(255, 255, 255, 0.08) 65%,
+        rgba(255, 255, 255, 0) 100%
+    );
+    transform: rotate(25deg);
+    animation: sweepShimmer 5.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+}
+
+@keyframes sweepShimmer {
+    0%, 30% {
+        left: -150%;
+        opacity: 0;
+    }
+    35% {
+        opacity: 0.8;
+    }
+    60% {
+        left: 200%;
+        opacity: 0.8;
+    }
+    61%, 100% {
+        left: 200%;
+        opacity: 0;
+    }
+}
+
+/* ========================================================= */
+/* 3D FLOATING BUTTERFLY ENGINE                             */
+/* ========================================================= */
+.butterfly-3d {
+    position: absolute;
+    width: 32px;
+    height: 26px;
+    transform-style: preserve-3d;
+    pointer-events: none;
+    will-change: transform;
+    animation: butterflyFloat 16s ease-in-out infinite;
+}
+
+.butterfly-wing-left {
+    transform-origin: right center;
+    animation: wingFlap 0.22s ease-in-out infinite alternate;
+}
+
+.butterfly-wing-right {
+    transform-origin: left center;
+    animation: wingFlap 0.22s ease-in-out infinite alternate-reverse;
+}
+
+@keyframes wingFlap {
+    0% {
+        transform: rotateY(0deg) scaleX(1);
+    }
+    100% {
+        transform: rotateY(70deg) scaleX(0.72);
+    }
+}
+
+@keyframes butterflyFloat {
+    0% {
+        transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+    25% {
+        transform: translate3d(35px, -40px, 30px) rotate(12deg);
+    }
+    50% {
+        transform: translate3d(-25px, -85px, 15px) rotate(-8deg);
+    }
+    75% {
+        transform: translate3d(20px, -135px, 45px) rotate(10deg);
+    }
+    100% {
+        transform: translate3d(0, 0, 0) rotate(0deg);
+    }
+}
+
+/* ========================================================= */
+/* 3D FAIRY DUST ORBS                                       */
+/* ========================================================= */
+.fairy-dust-orb {
+    animation: orbFloat3d 8s ease-in-out infinite alternate;
+    will-change: transform, opacity;
+}
+
+@keyframes orbFloat3d {
+    0% {
+        transform: translateY(0px) scale(0.9);
+        opacity: 0.35;
+    }
+    50% {
+        transform: translateY(-25px) scale(1.2);
+        opacity: 0.85;
+    }
+    100% {
+        transform: translateY(-48px) scale(0.95);
+        opacity: 0.4;
+    }
 }
 </style>
