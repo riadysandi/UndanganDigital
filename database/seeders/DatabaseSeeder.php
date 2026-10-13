@@ -305,6 +305,157 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // 5 Top Katsudoto-inspired Themes (with 3D elements, luxury palettes, and immersive animations)
+        // 1. Ningrum (Fairytale & Vintage 3D)
+        $designNingrum = $designModern;
+        $designNingrum['theme'] = [
+            'palette' => 'ningrum',
+            'primaryColor' => '#C5A059',
+            'secondaryColor' => '#F5E8CE',
+            'bgColor' => '#1A1215',
+            'cardBgColor' => '#261820',
+            'textColor' => '#FDFBF7',
+            'fontFamily' => 'Cinzel',
+            'fallingPetals' => true,
+        ];
+        $designNingrum['canvas']['background'] = '#1A1215';
+        $designNingrum['canvas']['primaryColor'] = '#C5A059';
+        $designNingrum['canvas']['fontFamily'] = 'Cinzel';
+        $designNingrum['is_3d'] = true;
+
+        $tplNingrum = Template::firstOrCreate(
+            ['slug' => 'ningrum-fairytale-3d'],
+            [
+                'name' => 'Ningrum (Fairytale & Vintage 3D)',
+                'category' => 'fairytale',
+                'thumbnail_path' => 'https://katsudoto.id/media/template/preview/thumbnail/ningrum-original.jpeg',
+                'default_design_json' => $designNingrum,
+                'schema_version' => 1,
+                'is_premium' => true,
+                'is_active' => true,
+            ]
+        );
+
+        // 2. Victoria (Minimalist Luxury 3D)
+        $designVictoria = $designModern;
+        $designVictoria['theme'] = [
+            'palette' => 'victoria',
+            'primaryColor' => '#D4AF37',
+            'secondaryColor' => '#F7E7CE',
+            'bgColor' => '#121316',
+            'cardBgColor' => '#1A1D23',
+            'textColor' => '#F3F4F6',
+            'fontFamily' => 'Playfair Display',
+            'fallingPetals' => true,
+        ];
+        $designVictoria['canvas']['background'] = '#121316';
+        $designVictoria['canvas']['primaryColor'] = '#D4AF37';
+        $designVictoria['canvas']['fontFamily'] = 'Playfair Display';
+        $designVictoria['is_3d'] = true;
+
+        $tplVictoria = Template::firstOrCreate(
+            ['slug' => 'victoria-luxury-3d'],
+            [
+                'name' => 'Victoria (Minimalist Luxury 3D)',
+                'category' => 'minimalist',
+                'thumbnail_path' => 'https://katsudoto.id/media/template/preview/thumbnail/victoria-original.png',
+                'default_design_json' => $designVictoria,
+                'schema_version' => 1,
+                'is_premium' => true,
+                'is_active' => true,
+            ]
+        );
+
+        // 3. Bianca (Modern Botanical Serenity)
+        $designBianca = $designModern;
+        $designBianca['theme'] = [
+            'palette' => 'bianca',
+            'primaryColor' => '#7A9A8B',
+            'secondaryColor' => '#E2EDE6',
+            'bgColor' => '#121A16',
+            'cardBgColor' => '#1B2721',
+            'textColor' => '#F4F7F4',
+            'fontFamily' => 'Plus Jakarta Sans',
+            'fallingPetals' => true,
+        ];
+        $designBianca['canvas']['background'] = '#121A16';
+        $designBianca['canvas']['primaryColor'] = '#7A9A8B';
+        $designBianca['canvas']['fontFamily'] = 'Plus Jakarta Sans';
+        $designBianca['is_3d'] = true;
+
+        $tplBianca = Template::firstOrCreate(
+            ['slug' => 'bianca-botanical-3d'],
+            [
+                'name' => 'Bianca (Modern Botanical Serenity)',
+                'category' => 'nature',
+                'thumbnail_path' => 'https://katsudoto.id/media/template/preview/thumbnail/bianca-original.png',
+                'default_design_json' => $designBianca,
+                'schema_version' => 1,
+                'is_premium' => false,
+                'is_active' => true,
+            ]
+        );
+
+        // 4. Eloise (Floral Romance & Fairy Dust)
+        $designEloise = $designModern;
+        $designEloise['theme'] = [
+            'palette' => 'eloise',
+            'primaryColor' => '#E8A598',
+            'secondaryColor' => '#FDF0EE',
+            'bgColor' => '#1C1316',
+            'cardBgColor' => '#2A1A20',
+            'textColor' => '#FFF5F5',
+            'fontFamily' => 'Cormorant Garamond',
+            'fallingPetals' => true,
+        ];
+        $designEloise['canvas']['background'] = '#1C1316';
+        $designEloise['canvas']['primaryColor'] = '#E8A598';
+        $designEloise['canvas']['fontFamily'] = 'Cormorant Garamond';
+        $designEloise['is_3d'] = true;
+
+        $tplEloise = Template::firstOrCreate(
+            ['slug' => 'eloise-romance-3d'],
+            [
+                'name' => 'Eloise (Floral Romance & Fairy Dust)',
+                'category' => 'floral',
+                'thumbnail_path' => 'https://katsudoto.id/media/template/preview/thumbnail/eloise-original.png',
+                'default_design_json' => $designEloise,
+                'schema_version' => 1,
+                'is_premium' => true,
+                'is_active' => true,
+            ]
+        );
+
+        // 5. Alsa (Royal Adat & Songket Gold)
+        $designAlsa = $designModern;
+        $designAlsa['theme'] = [
+            'palette' => 'alsa',
+            'primaryColor' => '#E5A93C',
+            'secondaryColor' => '#FCE8C3',
+            'bgColor' => '#1A130E',
+            'cardBgColor' => '#281B13',
+            'textColor' => '#FFF8EE',
+            'fontFamily' => 'Cinzel',
+            'fallingPetals' => true,
+        ];
+        $designAlsa['canvas']['background'] = '#1A130E';
+        $designAlsa['canvas']['primaryColor'] = '#E5A93C';
+        $designAlsa['canvas']['fontFamily'] = 'Cinzel';
+        $designAlsa['is_3d'] = true;
+
+        $tplAlsa = Template::firstOrCreate(
+            ['slug' => 'alsa-royal-adat-3d'],
+            [
+                'name' => 'Alsa (Royal Adat & Songket Gold)',
+                'category' => 'adat',
+                'thumbnail_path' => 'https://katsudoto.id/media/template/preview/thumbnail/alsa-original.png',
+                'default_design_json' => $designAlsa,
+                'schema_version' => 1,
+                'is_premium' => true,
+                'is_active' => true,
+            ]
+        );
+
         if (!$customer) {
             return;
         }

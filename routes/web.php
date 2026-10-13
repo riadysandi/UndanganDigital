@@ -21,7 +21,7 @@ use Inertia\Inertia;
 // Landing Page
 Route::get('/', function () {
     return Inertia::render('Welcome', [
-        'templates' => Template::where('is_active', true)->take(4)->get(),
+        'templates' => Template::where('is_active', true)->take(8)->get(),
     ]);
 })->name('home');
 
