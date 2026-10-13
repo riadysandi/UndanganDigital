@@ -1,201 +1,35 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import { router, Link } from '@inertiajs/vue3';
+import { router, Link, useForm } from '@inertiajs/vue3';
 import AppLayout from '@/layouts/AppLayout.vue';
+import { useConfirm } from '@/composables/useConfirm';
 
-const props = defineProps<{
-    requests: {
-        data: Array<{
-            id: number;
-            customer_name: string;
-            whatsapp: string;
-            email: string | null;
-            package_selected: string;
-            template_preference: string;
-            groom_name: string;
-            bride_name: string;
-            akad_date: string | null;
-            akad_venue: string | null;
-            resepsi_date: string | null;
-            resepsi_venue: string | null;
-            photo_drive_link: string | null;
-            notes: string | null;
-            status: string;
-            created_invitation_url: string | null;
-            created_at: string;
-            admin_notes: string | null;
-        }>;
-        links: Array<{url:string|null;label:string;active:boolean}>;
-    };
-    filters: {q?:string;status?:string};
-}>();
-const q = ref(props.filters?.q || '');
-const statusFilter = ref(props.filters?.status || '');
-const search = () => router.get('/admin/service-requests', {q:q.value||undefined,status:statusFilter.value||undefined}, {preserveState:true,replace:true});
-
-const selectedReq = ref<any>(null);
-const updateForm = ref({
-    status: 'in_progress',
-    created_invitation_url: '',
-    admin_notes: '',
-});
-
-const openModal = (req: any) => {
-    selectedReq.value = req;
-    updateForm.value = {
-        status: req.status,
-        created_invitation_url: req.created_invitation_url || '',
-        admin_notes: req.admin_notes || '',
-    };
-};
-
-const saveStatus = () => {
-    if (!selectedReq.value) return;
-    router.patch(`/admin/service-requests/${selectedReq.value.id}`, updateForm.value, {
-        onSuccess: () => {
-            selectedReq.value = null;
-        },
-    });
-};
-
-const openWhatsApp = (phone: string, name: string) => {
-    const cleanPhone = phone.replace(/^0/, '62').replace(/\D/g, '');
-    const text = `Halo Kak ${name}, kami dari Tim Desainer Undangan.id terkait pemesanan jasa pembuatan undangan digital Anda. Apakah ada data tambahan atau referensi yang ingin disertakan?`;
-    window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`, '_blank');
-};
+type RequestRow = { id:number; customer_name:string; whatsapp:string; email:string|null; package_selected:string; template_preference:string; groom_name:string; groom_parents:string|null; bride_name:string; bride_parents:string|null; akad_date:string|null; akad_venue:string|null; resepsi_date:string|null; resepsi_venue:string|null; photo_drive_link:string|null; notes:string|null; status:string; created_invitation_url:string|null; created_at:string; admin_notes:string|null };
+const props=defineProps<{requests:{data:RequestRow[];links:Array<{url:string|null;label:string;active:boolean}>};filters:{q?:string;status?:string}}>();
+const q=ref(props.filters?.q||''); const statusFilter=ref(props.filters?.status||'');
+const selected=ref<RequestRow|null>(null); const createOpen=ref(false); const {confirmAction}=useConfirm();
+const blank={customer_name:'',whatsapp:'',email:'',template_preference:'modern',groom_name:'',groom_parents:'',bride_name:'',bride_parents:'',akad_date:'',akad_venue:'',resepsi_date:'',resepsi_venue:'',photo_drive_link:'',notes:'',package_selected:'Terima Beres VIP',status:'pending',created_invitation_url:'',admin_notes:''};
+const form=useForm({...blank});
+const search=()=>router.get('/admin/service-requests',{q:q.value||undefined,status:statusFilter.value||undefined},{preserveState:true,replace:true});
+const openCreate=()=>{selected.value=null;form.reset();form.clearErrors();createOpen.value=true;};
+const openEdit=(req:RequestRow)=>{selected.value=req;createOpen.value=false;form.clearErrors();Object.assign(form,Object.fromEntries(Object.keys(blank).map(key=>[key,(req as any)[key]??(key==='status'?'pending':'')])));};
+const closeForm=()=>{selected.value=null;createOpen.value=false;form.reset();form.clearErrors();};
+const save=()=>{const options={preserveScroll:true,onSuccess:closeForm};if(selected.value)form.patch(`/admin/service-requests/${selected.value.id}`,options);else form.post('/admin/service-requests',options);};
+const remove=async(req:RequestRow)=>{if(await confirmAction({title:'Hapus permintaan jasa?',message:`Data permintaan dari ${req.customer_name} akan dihapus dari daftar. Catatan audit penghapusan tetap disimpan.`,confirmText:'Hapus permintaan',type:'danger'}))router.delete(`/admin/service-requests/${req.id}`,{preserveScroll:true});};
+const openWhatsApp=(phone:string,name:string)=>{const cleanPhone=phone.replace(/^0/,'62').replace(/\D/g,'');const text=`Halo Kak ${name}, kami dari Tim Desainer Undangan.id terkait pemesanan jasa pembuatan undangan digital Anda. Apakah ada data tambahan atau referensi yang ingin disertakan?`;window.open(`https://api.whatsapp.com/send?phone=${cleanPhone}&text=${encodeURIComponent(text)}`,'_blank');};
 </script>
 
 <template>
     <AppLayout>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
-            <div class="flex items-center justify-between pb-6 border-b border-stone-200">
-                <div>
-                    <Link href="/admin/dashboard" class="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 mb-1">
-                        ← Kembali ke Dashboard Admin
-                    </Link>
-                    <h1 class="text-2xl font-serif font-bold text-stone-900">Permintaan Jasa (Bantu Buat)</h1>
-                    <p class="text-xs text-stone-500">Daftar calon pengantin yang memesan layanan pembuatan undangan Terima Beres.</p>
-                </div>
-            </div>
-
+            <div class="flex flex-wrap items-end justify-between gap-4 pb-6 border-b border-stone-200"><div><Link href="/admin/dashboard" class="text-xs font-semibold text-rose-600">← Kembali ke Dashboard Admin</Link><h1 class="text-2xl font-serif font-bold text-stone-900">Permintaan Jasa (Bantu Buat)</h1><p class="text-xs text-stone-500">CRUD permintaan, status pengerjaan, dan catatan tim.</p></div><button @click="openCreate" class="px-4 py-2 rounded-xl bg-stone-900 text-white text-sm">+ Tambah permintaan</button></div>
             <form @submit.prevent="search" class="flex flex-wrap gap-2 mt-6"><input v-model="q" class="rounded-xl border-stone-200 text-sm" placeholder="Cari pemesan, WhatsApp, mempelai"><select v-model="statusFilter" class="rounded-xl border-stone-200 text-sm"><option value="">Semua status</option><option v-for="s in ['pending','contacted','in_progress','completed','cancelled']" :key="s" :value="s">{{s}}</option></select><button class="px-4 py-2 bg-stone-900 text-white rounded-xl text-sm">Filter</button></form>
-
-            <div class="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-sm mt-8">
-                <table class="w-full text-left text-xs text-stone-600">
-                    <thead class="bg-stone-50 border-b border-stone-200 text-stone-500 font-semibold uppercase text-[10px]">
-                        <tr>
-                            <th class="p-4">Pemesan & WA</th>
-                            <th class="p-4">Paket & Tema</th>
-                            <th class="p-4">Pasangan Pengantin</th>
-                            <th class="p-4">Status Pengerjaan</th>
-                            <th class="p-4 text-right">Aksi</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-stone-100">
-                        <tr v-for="req in requests.data" :key="req.id" class="hover:bg-stone-50/50">
-                            <td class="p-4">
-                                <div class="font-bold text-stone-900">{{ req.customer_name }}</div>
-                                <div class="text-[11px] text-emerald-600 flex items-center gap-1 font-mono">
-                                    <span>WA: {{ req.whatsapp }}</span>
-                                </div>
-                            </td>
-                            <td class="p-4">
-                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700">
-                                    {{ req.package_selected }}
-                                </span>
-                                <div class="text-stone-400 text-[11px] mt-1">{{ req.template_preference }}</div>
-                            </td>
-                            <td class="p-4">
-                                <div class="font-bold text-stone-800">{{ req.groom_name }} & {{ req.bride_name }}</div>
-                                <div class="text-stone-400 text-[10px]">{{ req.akad_date || 'Belum ada tanggal' }}</div>
-                            </td>
-                            <td class="p-4">
-                                <span
-                                    :class="[
-                                        'px-2 py-0.5 rounded text-[10px] font-bold capitalize',
-                                        req.status === 'completed' ? 'bg-emerald-100 text-emerald-800' :
-                                        req.status === 'in_progress' ? 'bg-blue-100 text-blue-800' :
-                                        req.status === 'contacted' ? 'bg-amber-100 text-amber-800' : 'bg-stone-100 text-stone-700'
-                                    ]"
-                                >
-                                    {{ req.status }}
-                                </span>
-                                <div v-if="req.created_invitation_url" class="mt-1">
-                                    <a :href="req.created_invitation_url" target="_blank" class="text-[10px] text-rose-600 underline">
-                                        Lihat Undangan ↗
-                                    </a>
-                                </div>
-                            </td>
-                            <td class="p-4 text-right space-x-2">
-                                <button
-                                    @click="openWhatsApp(req.whatsapp, req.customer_name)"
-                                    class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-semibold"
-                                >
-                                    💬 Chat WA
-                                </button>
-                                <button
-                                    @click="openModal(req)"
-                                    class="px-2.5 py-1 bg-stone-900 hover:bg-stone-800 text-white rounded-lg text-xs font-semibold"
-                                >
-                                    Update
-                                </button>
-                            </td>
-                        </tr>
-                        <tr v-if="requests.data.length === 0">
-                            <td colspan="5" class="p-8 text-center text-stone-400">
-                                Belum ada permintaan jasa pembuatan saat ini.
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+            <div class="bg-white rounded-2xl border border-stone-200 overflow-x-auto shadow-sm mt-8"><table class="w-full text-left text-xs text-stone-600"><thead class="bg-stone-50 border-b text-stone-500 font-semibold uppercase text-[10px]"><tr><th class="p-4">Pemesan & WA</th><th class="p-4">Paket & Tema</th><th class="p-4">Pasangan</th><th class="p-4">Status</th><th class="p-4 text-right">Aksi</th></tr></thead><tbody class="divide-y divide-stone-100"><tr v-for="req in requests.data" :key="req.id" class="hover:bg-stone-50/50"><td class="p-4"><div class="font-bold text-stone-900">{{req.customer_name}}</div><div class="text-emerald-700">{{req.whatsapp}}</div></td><td class="p-4"><div class="font-semibold">{{req.package_selected}}</div><div class="text-stone-400">{{req.template_preference}}</div></td><td class="p-4"><div class="font-semibold">{{req.groom_name}} & {{req.bride_name}}</div><div class="text-stone-400">{{req.akad_date||'Belum ada tanggal'}}</div></td><td class="p-4 capitalize">{{req.status}}<div v-if="req.created_invitation_url"><a :href="req.created_invitation_url" target="_blank" class="text-rose-600 underline">Lihat undangan</a></div></td><td class="p-4 text-right whitespace-nowrap"><button @click="openWhatsApp(req.whatsapp,req.customer_name)" class="px-2.5 py-1 bg-emerald-50 text-emerald-700 rounded-lg">Chat WA</button><button @click="openEdit(req)" class="ml-2 px-2.5 py-1 bg-stone-900 text-white rounded-lg">Edit</button><button @click="remove(req)" class="ml-2 px-2.5 py-1 bg-red-50 text-red-700 rounded-lg">Hapus</button></td></tr><tr v-if="!requests.data.length"><td colspan="5" class="p-8 text-center text-stone-400">Belum ada permintaan jasa.</td></tr></tbody></table></div>
+            <nav class="flex gap-2 mt-4"><Link v-for="link in requests.links" :key="link.label" :href="link.url || '/admin/service-requests'" preserve-scroll class="px-3 py-1 rounded border text-xs" :class="link.active?'bg-stone-900 text-white':'bg-white'" v-html="link.label"/></nav>
         </div>
-
-        <!-- Update Status Modal -->
-        <div v-if="selectedReq" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-stone-200 space-y-4">
-                <div class="flex items-center justify-between pb-3 border-b border-stone-100">
-                    <h3 class="font-serif font-bold text-base text-stone-900">Update Status Pengerjaan</h3>
-                    <button @click="selectedReq = null" class="text-stone-400 hover:text-stone-600">✕</button>
-                </div>
-
-                <div class="space-y-3 text-xs">
-                    <div>
-                        <label class="block font-semibold text-stone-700 mb-1">Status</label>
-                        <select v-model="updateForm.status" class="w-full p-2 border rounded-xl bg-stone-50">
-                            <option value="pending">Pending (Menunggu)</option>
-                            <option value="contacted">Contacted (Sudah Dihubungi)</option>
-                            <option value="in_progress">In Progress (Sedang Dibuatkan)</option>
-                            <option value="completed">Completed (Selesai)</option>
-                            <option value="cancelled">Cancelled (Batal)</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block font-semibold text-stone-700 mb-1">Catatan internal admin</label>
-                        <textarea v-model="updateForm.admin_notes" rows="3" maxlength="1000" class="w-full p-2 border rounded-xl bg-stone-50" placeholder="Catatan tindak lanjut untuk tim"></textarea>
-                    </div>
-
-                    <div>
-                        <label class="block font-semibold text-stone-700 mb-1">URL Undangan yang Selesai Dibuat</label>
-                        <input
-                            v-model="updateForm.created_invitation_url"
-                            type="url"
-                            class="w-full p-2 border rounded-xl bg-stone-50"
-                            placeholder="http://127.0.0.1:8000/i/slug-pengantin"
-                        />
-                    </div>
-                </div>
-
-                <div class="flex justify-end gap-2 pt-2">
-                    <button @click="selectedReq = null" class="px-4 py-2 border rounded-xl text-xs font-semibold text-stone-600">
-                        Batal
-                    </button>
-                    <button @click="saveStatus" class="px-5 py-2 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold">
-                        Simpan Perubahan
-                    </button>
-                </div>
-            </div>
-        </div>
-        <nav class="flex gap-2 mt-4"><Link v-for="link in requests.links" :key="link.label" :href="link.url || '/admin/service-requests'" preserve-scroll class="px-3 py-1 rounded border text-xs" :class="link.active?'bg-stone-900 text-white':'bg-white'" v-html="link.label"/></nav>
+        <div v-if="selected||createOpen" class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" @click.self="closeForm"><form @submit.prevent="save" class="w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-2xl bg-white p-6 shadow-xl space-y-4"><div class="flex justify-between"><h2 class="text-lg font-serif font-bold">{{selected?'Edit permintaan':'Tambah permintaan'}}</h2><button type="button" @click="closeForm">✕</button></div>
+            <div class="grid sm:grid-cols-2 gap-3"><label class="text-sm">Nama pemesan<input v-model="form.customer_name" required class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">WhatsApp<input v-model="form.whatsapp" required class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">Email<input v-model="form.email" type="email" class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">Paket<input v-model="form.package_selected" required class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">Preferensi template<input v-model="form.template_preference" required class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">Status<select v-model="form.status" class="mt-1 w-full rounded-xl border-stone-200"><option v-for="s in ['pending','contacted','in_progress','completed','cancelled']" :key="s" :value="s">{{s}}</option></select></label><label class="text-sm">Nama mempelai pria<input v-model="form.groom_name" required class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">Orang tua mempelai pria<input v-model="form.groom_parents" class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">Nama mempelai wanita<input v-model="form.bride_name" required class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">Orang tua mempelai wanita<input v-model="form.bride_parents" class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">Tanggal akad<input v-model="form.akad_date" type="text" placeholder="Minggu, 28 Des 2026, 08:00 WIB" class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">Lokasi akad<input v-model="form.akad_venue" class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">Tanggal resepsi<input v-model="form.resepsi_date" type="text" placeholder="Minggu, 28 Des 2026, 11:00–14:00 WIB" class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm">Lokasi resepsi<input v-model="form.resepsi_venue" class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm sm:col-span-2">Link foto<input v-model="form.photo_drive_link" type="url" class="mt-1 w-full rounded-xl border-stone-200"></label><label class="text-sm sm:col-span-2">Catatan pemesan<textarea v-model="form.notes" rows="2" class="mt-1 w-full rounded-xl border-stone-200"></textarea></label><label class="text-sm sm:col-span-2">URL undangan hasil<textarea v-model="form.created_invitation_url" rows="2" class="mt-1 w-full rounded-xl border-stone-200"></textarea></label><label class="text-sm sm:col-span-2">Catatan internal admin<textarea v-model="form.admin_notes" rows="3" class="mt-1 w-full rounded-xl border-stone-200"></textarea></label></div>
+            <div v-if="Object.keys(form.errors).length" class="text-xs text-red-600">Periksa kembali data yang ditandai. {{Object.values(form.errors).join(' ')}}</div><div class="flex justify-end gap-2"><button type="button" @click="closeForm" class="px-4 py-2 rounded-xl border">Batal</button><button :disabled="form.processing" class="px-4 py-2 rounded-xl bg-stone-900 text-white">Simpan</button></div>
+        </form></div>
     </AppLayout>
 </template>

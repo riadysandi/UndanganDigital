@@ -46,6 +46,10 @@ Autosave menggunakan `PUT /api/invitations/{invitation}/design`. Saat Publish, s
 | `POST` | `/api/public/{slug}/guestbook` | Kirim ucapan | Publik; undangan aktif dan belum kedaluwarsa |
 | `GET/POST` | `/invitations/{invitation}/guests` | Kelola dan check-in tamu | Auth + policy |
 
+## Pengelolaan admin
+
+Semua route `/admin/*` dilindungi autentikasi dan role `admin`. Pengguna, template, undangan, dan permintaan jasa mendukung tambah, baca, ubah, dan hapus dengan audit log. Penghapusan akun/template/undangan dibatasi bila ada data terkait agar riwayat tidak hilang. Order dan audit log bersifat hanya-baca; aksi pembayaran tidak tersedia di panel admin.
+
 RSVP membatasi nilai status dan jumlah hadir. Ucapan dari RSVP maupun endpoint guestbook disimpan dengan status `pending`; pengelola dapat mengubah status moderasi melalui route guestbook admin/pemilik. Halaman publik hanya menerima kiriman untuk undangan yang masih terbit dan belum kedaluwarsa, dan hanya menampilkan ucapan `approved`.
 
 ## Mode preview editor

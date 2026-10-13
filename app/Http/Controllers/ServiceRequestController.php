@@ -102,24 +102,61 @@ class ServiceRequestController extends Controller
         ]);
     }
 
+    public function storeAdmin(Request $request)
+    {
+        $data = $this->validateAdminRequest($request);
+        $serviceRequest = ServiceRequest::create($data);
+        $this->logAdminRequest($request, 'service_request.created', $serviceRequest);
+        return back()->with('success', 'Permintaan jasa berhasil dibuat.');
+    }
+
     public function updateStatus(Request $request, ServiceRequest $serviceRequest)
     {
-        $validated = $request->validate([
+        $serviceRequest->update($this->validateAdminRequest($request));
+        $this->logAdminRequest($request, 'service_request.updated', $serviceRequest);
+
+        return back()->with('success', 'Status pengerjaan berhasil diperbarui.');
+    }
+
+    public function destroyAdmin(Request $request, ServiceRequest $serviceRequest)
+    {
+        $this->logAdminRequest($request, 'service_request.deleted', $serviceRequest);
+        $serviceRequest->delete();
+        return back()->with('success', 'Permintaan jasa berhasil dihapus.');
+    }
+
+    private function validateAdminRequest(Request $request): array
+    {
+        return $request->validate([
+            'customer_name' => ['required', 'string', 'max:255'],
+            'whatsapp' => ['required', 'string', 'max:25'],
+            'email' => ['nullable', 'email', 'max:255'],
+            'template_preference' => ['required', 'string', 'max:255'],
+            'groom_name' => ['required', 'string', 'max:255'],
+            'groom_parents' => ['nullable', 'string', 'max:255'],
+            'bride_name' => ['required', 'string', 'max:255'],
+            'bride_parents' => ['nullable', 'string', 'max:255'],
+            'akad_date' => ['nullable', 'string', 'max:255'],
+            'akad_venue' => ['nullable', 'string', 'max:255'],
+            'resepsi_date' => ['nullable', 'string', 'max:255'],
+            'resepsi_venue' => ['nullable', 'string', 'max:255'],
+            'photo_drive_link' => ['nullable', 'string', 'max:1000'],
+            'notes' => ['nullable', 'string', 'max:2000'],
+            'package_selected' => ['required', 'string', 'max:255'],
             'status' => ['required', 'in:pending,contacted,in_progress,completed,cancelled'],
             'created_invitation_url' => ['nullable', 'string', 'max:500'],
             'admin_notes' => ['nullable', 'string', 'max:1000'],
         ]);
+    }
 
-        $serviceRequest->update($validated);
-
+    private function logAdminRequest(Request $request, string $action, ServiceRequest $serviceRequest): void
+    {
         AuditLog::create([
             'actor_user_id' => $request->user()->id,
-            'action' => 'service_request.updated',
+            'action' => $action,
             'subject_type' => ServiceRequest::class,
             'subject_id' => $serviceRequest->id,
             'metadata_json' => ['status' => $serviceRequest->status],
         ]);
-
-        return back()->with('success', 'Status pengerjaan berhasil diperbarui.');
     }
 }

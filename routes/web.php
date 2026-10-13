@@ -97,14 +97,25 @@ Route::post('/bantu-buat', [\App\Http\Controllers\ServiceRequestController::clas
 Route::middleware(['auth', 'admin'])->prefix('admin')->name('admin.')->group(function () {
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
     Route::get('/templates', [AdminController::class, 'templates'])->name('templates');
+    Route::post('/templates', [AdminController::class, 'storeTemplate'])->name('templates.store');
+    Route::put('/templates/{template}', [AdminController::class, 'updateTemplate'])->name('templates.update');
+    Route::delete('/templates/{template}', [AdminController::class, 'destroyTemplate'])->name('templates.destroy');
     Route::post('/templates/{template}/toggle', [AdminController::class, 'toggleTemplate'])->name('templates.toggle');
+    Route::post('/users', [AdminController::class, 'storeUser'])->name('users.store');
+    Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
+    Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
     Route::patch('/users/{user}/toggle', [AdminController::class, 'toggleUser'])->name('users.toggle');
+    Route::post('/invitations', [AdminController::class, 'storeInvitation'])->name('invitations.store');
+    Route::put('/invitations/{invitation}', [AdminController::class, 'updateInvitation'])->name('invitations.update');
+    Route::delete('/invitations/{invitation}', [AdminController::class, 'destroyInvitation'])->name('invitations.destroy');
     Route::post('/invitations/{invitation}/unpublish', [AdminController::class, 'unpublishInvitation'])->name('invitations.unpublish');
     Route::get('/invitations', [AdminController::class, 'invitations'])->name('invitations');
     Route::get('/users', [AdminController::class, 'users'])->name('users');
     Route::get('/orders', [AdminController::class, 'orders'])->name('orders');
     Route::get('/service-requests', [\App\Http\Controllers\ServiceRequestController::class, 'adminIndex'])->name('service-requests');
+    Route::post('/service-requests', [\App\Http\Controllers\ServiceRequestController::class, 'storeAdmin'])->name('service-requests.store');
     Route::patch('/service-requests/{serviceRequest}', [\App\Http\Controllers\ServiceRequestController::class, 'updateStatus'])->name('service-requests.update');
+    Route::delete('/service-requests/{serviceRequest}', [\App\Http\Controllers\ServiceRequestController::class, 'destroyAdmin'])->name('service-requests.destroy');
     Route::get('/audit-logs', [AdminController::class, 'auditLogs'])->name('audit-logs');
     Route::get('/settings', [AdminController::class, 'settings'])->name('settings');
     Route::patch('/settings', [AdminController::class, 'updateSettings'])->name('settings.update');
