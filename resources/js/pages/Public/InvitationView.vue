@@ -2,6 +2,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import confetti from 'canvas-confetti';
+import NingrumTemplate from '@/components/Templates/NingrumTemplate.vue';
 
 const props = defineProps<{
     invitation: {
@@ -166,6 +167,11 @@ const invitationData = computed(() => {
         },
         musicUrl: d.musicUrl || '/audio/romantic-wedding.mp3'
     };
+});
+
+const isNingrum = computed(() => {
+    const slug = props.template?.slug || '';
+    return slug.includes('ningrum') || slug.includes('fairytale-3d');
 });
 
 // Authentic Katsudoto Assets Resolution
@@ -689,124 +695,68 @@ const digitalGift = computed(() => {
         <meta name="twitter:image" :content="invitationData.content.coverImage" />
     </Head>
 
+    <!-- Top Demo Mode Banner -->
+    <div v-if="props.isDemo" class="fixed top-0 inset-x-0 z-[100] bg-stone-900/95 backdrop-blur-md text-white py-2.5 px-4 flex items-center justify-between text-xs shadow-xl border-b border-white/10">
+        <div class="flex items-center gap-2">
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-stone-900">DEMO MODE</span>
+            <span class="font-medium text-stone-200 hidden sm:inline">Pratinjau Desain: <strong>{{ template?.name || 'Template' }}</strong></span>
+        </div>
+        <div class="flex items-center gap-2">
+            <a href="/" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white transition-colors">
+                ← Beranda
+            </a>
+            <a :href="'/register?template=' + (template?.id || '')" class="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold shadow transition-colors">
+                Gunakan Desain Ini
+            </a>
+        </div>
+    </div>
+
+    <!-- Audio Element (Loop, Preloaded, with Playsinline for iOS/Android) -->
+    <audio
+        ref="audioEl"
+        loop
+        preload="auto"
+        playsinline
+        :src="musicSource"
+    ></audio>
+
+    <!-- 1. AUTHENTIC 1:1 KATSUDOTO NINGRUM TEMPLATE -->
+    <NingrumTemplate
+        v-if="isNingrum"
+        :invitation-data="invitationData"
+        :events="events"
+        :guestbook="localGuestbook"
+        :digital-gift="digitalGift"
+        :guest-name="guestName"
+        :guest-token="guestToken"
+        :is-demo="props.isDemo"
+        :template="props.template"
+        :is-open="isOpen"
+        :is-playing-music="isPlayingMusic"
+        :time-left="timeLeft"
+        :format-display-date="formatDisplayDate"
+        :format-event-time="formatEventTime"
+        :copy-address="copyAddress"
+        :open-qris="openQris"
+        :submit-rsvp="submitRsvp"
+        :rsvp-form="rsvpForm"
+        :rsvp-submitting="rsvpSubmitting"
+        :rsvp-success="rsvpSuccess"
+        :rsvp-error-message="rsvpErrorMessage"
+        @open-invitation="openInvitation"
+        @toggle-music="toggleMusic"
+    />
+
+    <!-- 2. STANDARD INVITATION TEMPLATE (Other Themes) -->
     <div
-        class="kat-page__side-to-side min-h-screen w-full relative flex flex-col lg:flex-row transition-colors duration-500 overflow-x-hidden selection:bg-amber-400 selection:text-stone-900"
+        v-else
+        class="min-h-screen w-full relative transition-colors duration-500 overflow-x-hidden selection:bg-amber-400 selection:text-stone-900"
         :style="{
             backgroundColor: invitationData.theme.bgColor,
             fontFamily: invitationData.theme.fontFamily + ', serif',
             color: invitationData.theme.textColor,
         }"
     >
-        <!-- Background Vintage Canvas Texture Overlay (Authentic Katsudoto) -->
-        <div class="fixed inset-0 pointer-events-none z-10 opacity-20 bg-texture-sd"></div>
-
-        <!-- ======================================================== -->
-        <!-- DESKTOP PRIMARY PANE (Fixed Left 50% on Desktop)         -->
-        <!-- ======================================================== -->
-        <aside
-            class="hidden lg:flex lg:w-1/2 lg:fixed lg:inset-y-0 lg:left-0 z-30 flex-col items-center justify-center p-8 xl:p-12 overflow-hidden border-r border-amber-900/30 select-none"
-            :style="{ backgroundColor: invitationData.theme.cardBgColor }"
-        >
-            <!-- Top Chandelier Swinging (Pendulum Effect) -->
-            <div class="absolute -top-3 inset-x-0 flex justify-center pointer-events-none z-20">
-                <div class="w-36 animate-goyang-top">
-                    <img :src="templateAssets.chandelier" alt="Chandelier" class="w-full drop-shadow-2xl" />
-                </div>
-            </div>
-
-            <!-- Corner Vines Left & Right -->
-            <div class="absolute top-0 left-0 w-32 xl:w-40 pointer-events-none z-10">
-                <img :src="templateAssets.cornerVines" alt="Vines" class="w-full opacity-85" />
-            </div>
-            <div class="absolute top-0 right-0 w-32 xl:w-40 pointer-events-none z-10 scale-x-[-1]">
-                <img :src="templateAssets.cornerVines" alt="Vines" class="w-full opacity-85" />
-            </div>
-
-            <!-- Arch Crest Top -->
-            <div class="w-64 xl:w-72 mb-2 pointer-events-none drop-shadow-md">
-                <img :src="templateAssets.crest" alt="Crest" class="w-full object-contain" />
-            </div>
-
-            <!-- VIP Badge -->
-            <div
-                class="mb-3 px-4 py-1 rounded-full text-xs font-serif uppercase tracking-widest border shadow-md flex items-center gap-2"
-                :style="{
-                    borderColor: invitationData.theme.primaryColor,
-                    color: invitationData.theme.secondaryColor,
-                    backgroundColor: invitationData.theme.primaryColor + '25'
-                }"
-            >
-                <span>👑</span>
-                <span>VIP EXCLUSIVE INVITATION</span>
-            </div>
-
-            <!-- Couple Title -->
-            <h1
-                class="font-serif text-3xl xl:text-5xl font-bold text-center tracking-tight mb-4 drop-shadow"
-                :style="{ color: invitationData.theme.secondaryColor }"
-            >
-                {{ invitationData.content.weddingTitle }}
-            </h1>
-
-            <!-- Arched Baroque Frame with Couple Photo -->
-            <div
-                class="card-tilt-3d relative w-72 xl:w-80 h-96 xl:h-[420px] select-none cursor-pointer my-2"
-                @mousemove="handleCardTilt"
-                @mouseleave="resetCardTilt"
-            >
-                <div class="absolute inset-0 rounded-t-full overflow-hidden">
-                    <img
-                        :src="invitationData.content.coverImage"
-                        :alt="invitationData.content.weddingTitle"
-                        class="w-full h-full object-cover"
-                    />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/75 via-transparent to-transparent"></div>
-                </div>
-                <!-- Baroque Frame overlay -->
-                <img
-                    :src="templateAssets.frameFf"
-                    alt="Frame"
-                    class="absolute inset-0 w-full h-full pointer-events-none drop-shadow-2xl z-20 object-contain"
-                />
-            </div>
-
-            <!-- Bottom Pediment -->
-            <div class="w-64 xl:w-72 mt-2 pointer-events-none drop-shadow-md">
-                <img :src="templateAssets.pediment" alt="Pediment" class="w-full object-contain" />
-            </div>
-
-            <p class="font-serif text-xs text-stone-400 mt-3 tracking-widest uppercase">
-                {{ invitationData.content.weddingDateText }}
-            </p>
-        </aside>
-
-        <!-- ======================================================== -->
-        <!-- SECONDARY PANE (Right on Desktop, Full-Width on Mobile)  -->
-        <!-- ======================================================== -->
-        <main class="w-full lg:w-1/2 lg:ml-auto min-h-screen relative z-20 flex flex-col">
-            <!-- Top Demo Mode Banner -->
-        <div v-if="props.isDemo" class="fixed top-0 inset-x-0 z-[100] bg-stone-900/95 backdrop-blur-md text-white py-2.5 px-4 flex items-center justify-between text-xs shadow-xl border-b border-white/10">
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-stone-900">DEMO MODE</span>
-                <span class="font-medium text-stone-200 hidden sm:inline">Pratinjau Desain: <strong>{{ template?.name || 'Template' }}</strong></span>
-            </div>
-            <div class="flex items-center gap-2">
-                <a href="/" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-stone-300 hover:text-white transition-colors">
-                    ← Beranda
-                </a>
-                <a :href="'/register?template=' + (template?.id || '')" class="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold shadow transition-colors">
-                    Gunakan Desain Ini
-                </a>
-            </div>
-        </div>
-        <!-- Audio Element (Loop, Preloaded, with Playsinline for iOS/Android) -->
-        <audio
-            ref="audioEl"
-            loop
-            preload="auto"
-            playsinline
-            :src="musicSource"
-        ></audio>
 
         <!-- Falling Romantic Rose Petals Layer (Efek Visual Romantis) -->
         <div 
@@ -982,133 +932,11 @@ const digitalGift = computed(() => {
         </div>
 
         <!-- ======================================================== -->
-        <!-- 1. AUTHENTIC KATSUDOTO TOP COVER WELCOME SCREEN           -->
-        <!-- ======================================================== -->
-        <div
-            v-if="!isOpen && !envelopeMode"
-            class="min-h-screen flex flex-col items-center justify-center p-6 text-center relative overflow-hidden select-none"
-        >
-            <!-- Top Chandelier Swinging (Pendulum) -->
-            <div class="absolute -top-3 inset-x-0 flex justify-center pointer-events-none z-20">
-                <div class="w-32 sm:w-40 animate-goyang-top">
-                    <img :src="templateAssets.chandelier" alt="Chandelier" class="w-full drop-shadow-xl" />
-                </div>
-            </div>
-
-            <!-- Corner Vines Left & Right -->
-            <div class="absolute top-0 left-0 w-24 sm:w-32 pointer-events-none z-10">
-                <img :src="templateAssets.cornerVines" alt="Vines" class="w-full opacity-80" />
-            </div>
-            <div class="absolute top-0 right-0 w-24 sm:w-32 pointer-events-none z-10 scale-x-[-1]">
-                <img :src="templateAssets.cornerVines" alt="Vines" class="w-full opacity-80" />
-            </div>
-
-            <!-- Category VIP Badge -->
-            <div
-                class="mb-3 px-3.5 py-1 rounded-full text-[10px] font-serif uppercase tracking-widest border shadow-sm flex items-center gap-1.5"
-                :style="{
-                    borderColor: invitationData.theme.primaryColor,
-                    color: invitationData.theme.secondaryColor,
-                    backgroundColor: invitationData.theme.primaryColor + '20'
-                }"
-            >
-                <span>✨</span>
-                <span>{{ invitationData.content.coverBadge || 'Exclusive Wedding' }}</span>
-            </div>
-
-            <!-- Wedding Subtitle -->
-            <div class="text-xs uppercase tracking-[0.25em] font-serif text-stone-400 mb-1">
-                {{ invitationData.content.coverSubtitle }}
-            </div>
-
-            <!-- Wedding Title -->
-            <h1
-                class="font-serif text-3xl sm:text-4xl font-bold tracking-tight mb-5"
-                :style="{ color: invitationData.theme.secondaryColor }"
-            >
-                {{ invitationData.content.weddingTitle }}
-            </h1>
-
-            <!-- Baroque Framed Portrait with 3D Tilt -->
-            <div
-                class="card-tilt-3d relative w-64 h-80 my-2 select-none cursor-pointer"
-                @mousemove="handleCardTilt"
-                @mouseleave="resetCardTilt"
-            >
-                <div class="absolute inset-0 rounded-t-full overflow-hidden">
-                    <img
-                        :src="invitationData.content.coverImage"
-                        :alt="invitationData.content.weddingTitle"
-                        class="w-full h-full object-cover"
-                    />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent"></div>
-                </div>
-                <img
-                    :src="templateAssets.frameFf"
-                    alt="Frame"
-                    class="absolute inset-0 w-full h-full pointer-events-none drop-shadow-2xl z-20 object-contain"
-                />
-            </div>
-
-            <!-- Smoking Incense Urn (Authentic Katsudoto Effect!) -->
-            <div class="relative w-28 my-3 flex items-center justify-center">
-                <div class="smoke-wrap">
-                    <span v-for="s in 12" :key="s" :class="'smoke s' + s"></span>
-                </div>
-                <img :src="templateAssets.incenseUrn" alt="Incense Urn" class="w-full object-contain drop-shadow-lg" />
-            </div>
-
-            <!-- Guest Greeting Box -->
-            <div
-                class="my-4 max-w-sm w-full p-4 rounded-2xl border backdrop-blur-md"
-                :style="{
-                    backgroundColor: invitationData.theme.cardBgColor + 'd0',
-                    borderColor: invitationData.theme.primaryColor + '40'
-                }"
-            >
-                <p class="text-[11px] text-stone-400 uppercase tracking-widest mb-1">Kepada Yth. Bpk/Ibu/Saudara/i:</p>
-                <div
-                    class="font-serif font-bold text-base sm:text-lg"
-                    :style="{ color: invitationData.theme.secondaryColor }"
-                >
-                    {{ guestName || 'Tamu Undangan Yang Berbahagia' }}
-                </div>
-                <div v-if="guestToken" class="text-[10px] font-mono text-stone-500 mt-1">
-                    Kode Tamu: <span class="px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-200">{{ guestToken.substring(0, 8) }}</span>
-                </div>
-            </div>
-
-            <!-- Open Invitation Button -->
-            <button
-                @click="openInvitation"
-                class="px-8 py-3.5 rounded-full font-serif font-bold text-xs uppercase tracking-widest shadow-2xl transition-all duration-300 hover:scale-105 active:scale-95 flex items-center gap-3 border cursor-pointer"
-                :style="{
-                    backgroundColor: invitationData.theme.primaryColor,
-                    color: '#111827',
-                    borderColor: invitationData.theme.secondaryColor,
-                    boxShadow: `0 15px 35px ${invitationData.theme.primaryColor}50`
-                }"
-            >
-                <span>💌</span>
-                <span>Open Invitation</span>
-                <span>✨</span>
-            </button>
-
-            <!-- Alternate Envelope trigger -->
-            <button
-                @click="envelopeMode = true"
-                class="mt-4 text-[11px] text-stone-400 hover:text-stone-200 underline font-serif transition-colors cursor-pointer"
-            >
-                Atau Buka dengan Amplop 3D Wax Seal →
-            </button>
-        </div>
-
-        <!-- ======================================================== -->
-        <!-- 2. FULLSCREEN 3D ENVELOPE MODAL (When envelopeMode is on) -->
+        <!-- FULLSCREEN 3D ENVELOPE MODAL (When not yet opened)       -->
         <!-- ======================================================== -->
         <transition name="envelope-fade">
             <div
-                v-if="!isOpen && envelopeMode"
+                v-if="!isOpen"
                 class="fixed inset-0 z-50 flex flex-col items-center justify-center bg-stone-950/95 backdrop-blur-xl p-4 overflow-y-auto"
             >
                 <!-- Subtle Ambient Glow with theme color -->
@@ -2309,7 +2137,6 @@ const digitalGift = computed(() => {
                 </div>
             </footer>
         </div>
-        </main>
 
         <!-- QRIS Preview Modal Popup -->
         <div

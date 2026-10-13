@@ -282,7 +282,7 @@ class DatabaseSeeder extends Seeder
                 'coverSubtitle' => 'Serat Palakrama & The Royal Fairytale',
                 'weddingTitle' => 'Raden Arya & Putri Ningrum',
                 'weddingDateText' => 'Sabtu, 14 November 2026',
-                'coverImage' => '/images/templates/ningrum-original.jpeg',
+                'coverImage' => '/images/templates/ningrum/couple-3d.gif',
                 'quote' => 'Mugi Gusti paring berkah ingkang kathah, nyawijekaken katresnan luhur ing salebeting bebrayan agung ingkang langgeng.',
                 'quoteSource' => 'Serat Wulangreh',
                 'groom' => [
