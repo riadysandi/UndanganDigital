@@ -103,6 +103,13 @@ const formatDisplayTime = (val: string) => {
     }
 };
 
+const formatEventTime = (startsAt: string, endsAt: string | null, timezone: string = 'WIB') => {
+    const s = formatDisplayTime(startsAt);
+    if (!endsAt) return `${s} ${timezone} - Selesai`;
+    const e = formatDisplayTime(endsAt);
+    return `${s} - ${e} ${timezone}`;
+};
+
 // Dynamic Invitation Data resolution (combining props.design with defaults)
 const invitationData = computed(() => {
     const d = liveDesignOverride.value || props.design || {};

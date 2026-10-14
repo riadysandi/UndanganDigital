@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import confetti from 'canvas-confetti';
 
@@ -29,8 +29,8 @@ const props = defineProps<{
     isOpen: boolean;
     isPlayingMusic: boolean;
     timeLeft: { days: number; hours: number; minutes: number; seconds: number };
-    formatDisplayDate: (d: string) => string;
-    formatEventTime: (s: string, e: string | null, tz: string) => string;
+    formatDisplayDate?: (d: string) => string;
+    formatEventTime?: (s: string, e: string | null, tz: string) => string;
     copyAddress: (addr: string) => void;
     openQris: (acc: any) => void;
     submitRsvp: () => void;
@@ -39,6 +39,28 @@ const props = defineProps<{
     rsvpSuccess: boolean;
     rsvpErrorMessage: string;
 }>();
+
+const safeFormatEventTime = (startsAt: string, endsAt: string | null, tz: string = 'WIB') => {
+    if (typeof props.formatEventTime === 'function') {
+        return props.formatEventTime(startsAt, endsAt, tz);
+    }
+    return '08:00 WIB - Selesai';
+};
+
+const safeFormatDisplayDate = (d: string) => {
+    if (typeof props.formatDisplayDate === 'function') {
+        return props.formatDisplayDate(d);
+    }
+    return d || 'Sabtu, 14 November 2026';
+};
+
+onMounted(() => {
+    document.body.classList.add('ningrum', 'original', 'preset-original');
+});
+
+onBeforeUnmount(() => {
+    document.body.classList.remove('ningrum', 'original', 'preset-original');
+});
 
 const emit = defineEmits<{
     (e: 'openInvitation'): void;
@@ -153,7 +175,7 @@ const handleOpenInvitation = () => {
 
                                 <div class="preview-container cover-show" id="cover-primary">
                                     <div class="picture desktop">
-                                        <img :src="livingPhoto" alt="Couple 3D">
+                                        <img src="/images/templates/ningrum/portrait-couple.webp" alt="Couple">
                                     </div>
                                 </div>
 
@@ -179,6 +201,23 @@ const handleOpenInvitation = () => {
                                     </div>
                                 </div>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="details">
+                        <p>Hai&nbsp;{{ guestName || 'Katsudoto' }}</p>
+                    </div>
+                </div>
+
+                <div class="ornaments-wrapper">
+                    <div class="orn-pp-5">
+                        <div class="image-wrap">
+                            <img src="/images/templates/ningrum/Orn-43.png" alt="Ornaments">
+                        </div>
+                    </div>
+                    <div class="orn-pp-4">
+                        <div class="image-wrap">
+                            <img src="/images/templates/ningrum/Orn-17.png" alt="Ornaments">
                         </div>
                     </div>
                 </div>
@@ -252,7 +291,7 @@ const handleOpenInvitation = () => {
                                 </div>
                                 <div class="preview-container cover-show" id="cover-opening">
                                     <div class="picture mobile">
-                                        <img :src="livingPhoto" alt="Couple 3D">
+                                        <img src="/images/templates/ningrum/portrait-couple.webp" alt="Couple">
                                     </div>
                                 </div>
                                 <div class="image-wrap">
@@ -321,7 +360,7 @@ const handleOpenInvitation = () => {
                 <div class="inner">
                     <div class="head">
                         <div class="logo-wrap">
-                            <img src="/images/templates/ningrum/Orn-51.png" alt="Monogram" class="logo">
+                            <img src="/images/templates/ningrum/monogram.webp" alt="Monogram" class="logo">
                         </div>
                     </div>
 
@@ -650,9 +689,9 @@ const handleOpenInvitation = () => {
                                     <div class="event-head-wrapper">
                                         <p class="event-day">{{ ev.name }}</p>
                                         <div class="event-date">
-                                            <p class="event-date-text">{{ formatDisplayDate(ev.starts_at) }}</p>
+                                            <p class="event-date-text">{{ safeFormatDisplayDate(ev.starts_at) }}</p>
                                         </div>
-                                        <p class="event-time">{{ formatEventTime(ev.starts_at, ev.ends_at, ev.timezone) }}</p>
+                                        <p class="event-time">{{ safeFormatEventTime(ev.starts_at, ev.ends_at, ev.timezone) }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -987,11 +1026,19 @@ const handleOpenInvitation = () => {
 </template>
 
 <style>
+@font-face {
+    font-family: 'Sloop';
+    src: url('/fonts/Sloop.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+    font-display: swap;
+}
+
 /* CSS Variables for Ningrum Authentic Layout */
-:root, .kat-page__side-to-side {
+:root, .kat-page__side-to-side, body.ningrum {
     --heading-size: 48px !important;
     --body-text-size: 16px !important;
-    --heading-family: 'Cormorant Upright', serif !important;
+    --heading-family: 'Sloop', cursive !important;
     --body-text-family: 'Plus Jakarta Sans', sans-serif !important;
     --background-primary: #17130E !important;
     --background-primary-rgb: 23, 19, 14 !important;
@@ -1017,6 +1064,20 @@ const handleOpenInvitation = () => {
     --frame-cover-mask: url("/images/templates/ningrum/mask-cover.png");
     --frame-ff-mask: url("/images/templates/ningrum/mask-ff.png");
     --mask-couple: url("/images/templates/ningrum/mask-couple.png");
+}
+
+/* Ensure headings use authentic Katsudoto script */
+.top-cover-title,
+.cover-title,
+.pp-head h1,
+body.ningrum h1,
+body.ningrum h2 {
+    font-family: 'Sloop', cursive !important;
+}
+
+/* Prevent un-animated opaque background overlay on mobile */
+.bg-tca {
+    display: none !important;
 }
 
 /* Ensure smooth transitions and full-height scroll */
