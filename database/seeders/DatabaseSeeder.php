@@ -890,7 +890,7 @@ class DatabaseSeeder extends Seeder
             [
                 'name' => 'Celestia (Royal 3D Celestial & Emerald)',
                 'category' => '3d',
-                'thumbnail_path' => '/images/templates/ningrum-original.jpeg',
+                'thumbnail_path' => '/images/templates/celestia-original.png',
                 'default_design_json' => $designCelestia,
                 'schema_version' => 1,
                 'is_premium' => true,
