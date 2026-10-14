@@ -76,6 +76,17 @@ const closeLightbox = () => {
     activeLightboxImg.value = null;
 };
 
+// QRIS Modal State
+const localShowQris = ref(false);
+const localActiveQris = ref<any>(null);
+const handleOpenQris = (acc: any) => {
+    localActiveQris.value = acc;
+    localShowQris.value = true;
+    if (typeof props.openQris === 'function') {
+        props.openQris(acc);
+    }
+};
+
 // Copy bank account number feedback
 const copiedBankIndex = ref<number | null>(null);
 const copyBankNumber = (num: string, index: number) => {
@@ -717,31 +728,52 @@ const handleOpenInvitation = () => {
             </section>
 
             <!-- ==================================================== -->
-            <!-- GALLERY PHOTO (Vintage Baroque Grid)                 -->
+            <!-- GALLERY PHOTO (Vintage Baroque Frames - Anti-Gepeng)  -->
             <!-- ==================================================== -->
             <section class="photo-wrap" data-section-order="gallery_photo">
                 <div class="photo-inner">
                     <div class="photo-head">
                         <h1 class="photo-title">Our Gallery</h1>
+                        <p class="text-xs text-stone-300 max-w-xs mx-auto mt-1 opacity-80 font-serif">
+                            Setiap detik kebersamaan terukir indah dalam bingkai kenangan suci kami.
+                        </p>
                     </div>
 
                     <div class="photo-body">
-                        <div class="photo-box-outer no-scrollbar">
-                            <div class="photo-box ningrum-lightgallery">
-                                <div class="photo-group pattern-0">
-                                    <div
-                                        v-for="(img, idx) in invitationData.content.gallery"
-                                        :key="idx"
-                                        class="photo-item"
-                                        :class="idx % 2 === 0 ? 'photo-big' : 'photo-small'"
-                                        :style="{ '--gal-frame': `url('/images/templates/ningrum/${idx % 2 === 0 ? 'gal-big' : 'gal-small'}.png')` }"
-                                        @click="openLightbox(img)"
-                                        style="cursor: pointer;"
+                        <div class="ningrum-gallery-container">
+                            <!-- Featured 1st Landscape Frame (Angel Cherubs) -->
+                            <div
+                                v-if="invitationData.content.gallery && invitationData.content.gallery[0]"
+                                class="gal-card-featured group"
+                                @click="openLightbox(invitationData.content.gallery[0])"
+                            >
+                                <div class="gal-img-inner">
+                                    <img
+                                        :src="invitationData.content.gallery[0]"
+                                        alt="Gallery Featured"
                                     >
-                                        <span class="photo-item-inner">
-                                            <img :src="img" :alt="`Gallery Photo ${idx + 1}`" class="w-full h-full object-cover">
-                                        </span>
+                                </div>
+                                <div class="gal-frame-overlay"></div>
+                            </div>
+
+                            <!-- Grid of Square Frames (Ornate Baroque Gold) -->
+                            <div
+                                v-if="invitationData.content.gallery && invitationData.content.gallery.length > 1"
+                                class="gal-grid-couples"
+                            >
+                                <div
+                                    v-for="(img, idx) in invitationData.content.gallery.slice(1)"
+                                    :key="idx + 1"
+                                    class="gal-card-square group"
+                                    @click="openLightbox(img)"
+                                >
+                                    <div class="gal-img-inner">
+                                        <img
+                                            :src="img"
+                                            :alt="`Gallery Photo ${idx + 2}`"
+                                        >
                                     </div>
+                                    <div class="gal-frame-overlay"></div>
                                 </div>
                             </div>
                         </div>
@@ -762,6 +794,60 @@ const handleOpenInvitation = () => {
                         class="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-amber-600 text-stone-900 font-bold flex items-center justify-center shadow-lg"
                     >
                         ✕
+                    </button>
+                </div>
+            </div>
+
+            <!-- Local QRIS Popup Modal Backup -->
+            <div
+                v-if="localShowQris && localActiveQris"
+                class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md"
+                @click.self="localShowQris = false"
+            >
+                <div
+                    class="text-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border text-center space-y-4"
+                    style="background-color: #17130E; border-color: rgba(212, 175, 55, 0.5);"
+                >
+                    <div class="flex items-center justify-between border-b border-amber-900/40 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xl">📱</span>
+                            <h3 class="font-serif font-bold text-sm text-amber-200">
+                                QRIS Cashless Gift
+                            </h3>
+                        </div>
+                        <button
+                            @click="localShowQris = false"
+                            class="text-stone-400 hover:text-white p-1 rounded-lg text-sm"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    <div class="space-y-1">
+                        <div class="text-xs font-bold uppercase tracking-wider text-amber-400">
+                            {{ localActiveQris.bank }}
+                        </div>
+                        <div class="text-sm font-semibold text-white">{{ localActiveQris.account_name }}</div>
+                    </div>
+
+                    <!-- QRIS Image -->
+                    <div class="w-60 h-60 mx-auto p-4 bg-white rounded-2xl shadow-xl flex items-center justify-center">
+                        <img
+                            :src="localActiveQris.qr_image || localActiveQris.qris_image_url || localActiveQris.qr_code_url || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(localActiveQris.account_number || 'QRIS')}`"
+                            alt="QRIS Code"
+                            class="w-full h-full object-contain"
+                        />
+                    </div>
+
+                    <p class="text-[11px] text-stone-400 leading-relaxed font-sans">
+                        Scan QRIS di atas dengan aplikasi BCA Mobile, Livin' Mandiri, BRImo, BNI, GoPay, OVO, Dana, atau ShopeePay.
+                    </p>
+
+                    <button
+                        @click="localShowQris = false"
+                        class="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors bg-amber-500 hover:bg-amber-400 text-stone-950"
+                    >
+                        Tutup
                     </button>
                 </div>
             </div>
@@ -888,21 +974,21 @@ const handleOpenInvitation = () => {
                                 a.n. {{ acc.account_name }}
                             </div>
 
-                            <div class="flex items-center gap-2">
+                            <div class="flex flex-wrap items-center gap-2">
                                 <button
                                     @click="copyBankNumber(acc.account_number, i)"
-                                    class="px-4 py-2 rounded-xl text-xs font-serif font-bold transition-all flex items-center gap-1.5"
+                                    class="px-4 py-2 rounded-xl text-xs font-serif font-bold transition-all flex items-center gap-1.5 cursor-pointer"
                                     :class="copiedBankIndex === i ? 'bg-emerald-600 text-white' : 'bg-amber-500 text-stone-950 hover:bg-amber-400'"
                                 >
                                     <span v-if="copiedBankIndex === i">✓ Berhasil Disalin</span>
-                                    <span v-else>📋 Salin Nomor Rekening</span>
+                                    <span v-else>📋 Salin No. Rekening</span>
                                 </button>
                                 <button
-                                    v-if="acc.qr_image"
-                                    @click="openQris(acc)"
-                                    class="px-3.5 py-2 rounded-xl text-xs font-serif border border-amber-400/40 text-amber-200 hover:bg-amber-400/10 transition-colors"
+                                    @click="handleOpenQris(acc)"
+                                    class="px-4 py-2 rounded-xl text-xs font-serif font-bold border border-amber-400/60 bg-amber-400/10 text-amber-200 hover:bg-amber-400/20 transition-all flex items-center gap-1.5 shadow-md cursor-pointer"
                                 >
-                                    QRIS
+                                    <span>📱</span>
+                                    <span>Tampilkan QRIS</span>
                                 </button>
                             </div>
                         </div>
@@ -1266,5 +1352,139 @@ body.ningrum h2 {
     max-height: 250px !important;
     object-fit: contain !important;
     margin: 0 auto !important;
+}
+
+/* ==================================================== */
+/* FIX: VINTAGE BAROQUE GALLERY - ANTI-SQUISH (NO GEPENG) */
+/* ==================================================== */
+.photo-wrap {
+    position: relative !important;
+    padding: 30px 0 45px !important;
+    overflow: hidden !important;
+}
+
+.photo-wrap .photo-head {
+    text-align: center !important;
+    margin-bottom: 24px !important;
+    padding: 0 16px !important;
+}
+
+.photo-wrap .photo-title {
+    font-family: 'Sloop', cursive !important;
+    font-size: clamp(38px, 5.5vw, 50px) !important;
+    color: #FBEFD3 !important;
+    text-shadow: 0 4px 14px rgba(0, 0, 0, 0.8) !important;
+}
+
+.ningrum-gallery-container {
+    max-width: 480px !important;
+    margin: 0 auto !important;
+    padding: 0 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 18px !important;
+}
+
+/* Featured Big Landscape Baroque Frame */
+.gal-card-featured {
+    position: relative !important;
+    width: 100% !important;
+    aspect-ratio: 14 / 10 !important;
+    cursor: pointer !important;
+    filter: drop-shadow(0 15px 25px rgba(0, 0, 0, 0.75)) !important;
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+.gal-card-featured:hover {
+    transform: translateY(-3px) scale(1.015) !important;
+}
+
+.gal-card-featured .gal-img-inner {
+    position: absolute !important;
+    inset: 12% 10% !important;
+    overflow: hidden !important;
+    border-radius: 8px !important;
+    background: #17130E !important;
+}
+
+.gal-card-featured .gal-img-inner img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    display: block !important;
+    transition: transform 0.5s ease !important;
+}
+
+.gal-card-featured:hover .gal-img-inner img {
+    transform: scale(1.05) !important;
+}
+
+.gal-card-featured .gal-frame-overlay {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-image: url('/images/templates/ningrum/gal-big.png') !important;
+    background-size: 100% 100% !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
+}
+
+/* Grid of Square Baroque Frames */
+.gal-grid-couples {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 14px !important;
+    width: 100% !important;
+}
+
+.gal-card-square {
+    position: relative !important;
+    width: 100% !important;
+    aspect-ratio: 1 / 1 !important;
+    cursor: pointer !important;
+    filter: drop-shadow(0 12px 20px rgba(0, 0, 0, 0.7)) !important;
+    transition: transform 0.35s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+}
+
+.gal-card-square:hover {
+    transform: translateY(-3px) scale(1.02) !important;
+}
+
+.gal-card-square .gal-img-inner {
+    position: absolute !important;
+    inset: 13% !important;
+    overflow: hidden !important;
+    border-radius: 6px !important;
+    background: #17130E !important;
+}
+
+.gal-card-square .gal-img-inner img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    display: block !important;
+    transition: transform 0.5s ease !important;
+}
+
+.gal-card-square:hover .gal-img-inner img {
+    transform: scale(1.06) !important;
+}
+
+.gal-card-square .gal-frame-overlay {
+    position: absolute !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-image: url('/images/templates/ningrum/gal-small.png') !important;
+    background-size: 100% 100% !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    pointer-events: none !important;
+    z-index: 2 !important;
 }
 </style>

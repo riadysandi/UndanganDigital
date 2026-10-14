@@ -2309,18 +2309,23 @@ const digitalGift = computed(() => {
                 </div>
             </footer>
         </div>
+    </div>
+
+    <!-- ========================================================= -->
+    <!-- GLOBAL MODALS (Available to all templates)                -->
+    <!-- ========================================================= -->
 
         <!-- QRIS Preview Modal Popup -->
         <div
             v-if="showQrisModal && activeQris"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+            class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
             @click.self="showQrisModal = false"
         >
             <div
                 class="text-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border text-center space-y-4"
                 :style="{
-                    backgroundColor: invitationData.theme.cardBgColor,
-                    borderColor: invitationData.theme.primaryColor + '60'
+                    backgroundColor: invitationData.theme.cardBgColor || '#1c1917',
+                    borderColor: (invitationData.theme.primaryColor || '#D4AF37') + '60'
                 }"
             >
                 <div class="flex items-center justify-between border-b border-stone-800 pb-3">
@@ -2328,7 +2333,7 @@ const digitalGift = computed(() => {
                         <span class="text-xl">📱</span>
                         <h3
                             class="font-serif font-bold text-sm"
-                            :style="{ color: invitationData.theme.secondaryColor }"
+                            :style="{ color: invitationData.theme.secondaryColor || '#FBEFD3' }"
                         >
                             QRIS Cashless Gift
                         </h3>
@@ -2344,7 +2349,7 @@ const digitalGift = computed(() => {
                 <div class="space-y-1">
                     <div
                         class="text-xs font-bold uppercase tracking-wider"
-                        :style="{ color: invitationData.theme.primaryColor }"
+                        :style="{ color: invitationData.theme.primaryColor || '#D4AF37' }"
                     >
                         {{ activeQris.bank }}
                     </div>
@@ -2354,7 +2359,7 @@ const digitalGift = computed(() => {
                 <!-- QRIS Image -->
                 <div class="w-60 h-60 mx-auto p-4 bg-white rounded-2xl shadow-xl flex items-center justify-center">
                     <img
-                        :src="activeQris.qr_image"
+                        :src="activeQris.qr_image || activeQris.qris_image_url || activeQris.qr_code_url || `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(activeQris.account_number || 'QRIS')}`"
                         alt="QRIS Code"
                         class="w-full h-full object-contain"
                     />
@@ -2368,7 +2373,7 @@ const digitalGift = computed(() => {
                     @click="showQrisModal = false"
                     class="w-full py-2.5 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors"
                     :style="{
-                        backgroundColor: invitationData.theme.primaryColor,
+                        backgroundColor: invitationData.theme.primaryColor || '#D4AF37',
                         color: '#111827'
                     }"
                 >
@@ -2380,14 +2385,14 @@ const digitalGift = computed(() => {
         <!-- 3D Photo Lightbox Modal -->
         <div
             v-if="activeLightboxPhoto"
-            class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg animate-in fade-in duration-300"
+            class="fixed inset-0 z-[999999] flex items-center justify-center p-4 bg-black/90 backdrop-blur-lg animate-in fade-in duration-300"
             @click.self="closeLightbox"
         >
             <div
                 class="relative max-w-2xl w-full max-h-[85vh] rounded-3xl overflow-hidden p-2 shadow-[0_25px_70px_rgba(0,0,0,0.9)] border"
                 :style="{
-                    backgroundColor: invitationData.theme.cardBgColor,
-                    borderColor: invitationData.theme.primaryColor + '80'
+                    backgroundColor: invitationData.theme.cardBgColor || '#1c1917',
+                    borderColor: (invitationData.theme.primaryColor || '#D4AF37') + '80'
                 }"
             >
                 <button
@@ -2406,7 +2411,6 @@ const digitalGift = computed(() => {
                 </div>
             </div>
         </div>
-    </div>
 </template>
 
 <style scoped>
