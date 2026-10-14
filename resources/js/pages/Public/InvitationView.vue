@@ -3,6 +3,10 @@ import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue';
 import { Head } from '@inertiajs/vue3';
 import confetti from 'canvas-confetti';
 import NingrumTemplate from '@/components/Templates/NingrumTemplate.vue';
+import VictoriaEnvelopeTemplate from '@/components/Templates/VictoriaEnvelopeTemplate.vue';
+import AlsaTraditionalTemplate from '@/components/Templates/AlsaTraditionalTemplate.vue';
+import ArunaBotanicalTemplate from '@/components/Templates/ArunaBotanicalTemplate.vue';
+import EmeraldArtDecoTemplate from '@/components/Templates/EmeraldArtDecoTemplate.vue';
 
 const props = defineProps<{
     invitation: {
@@ -179,6 +183,26 @@ const invitationData = computed(() => {
 const isNingrum = computed(() => {
     const slug = props.template?.slug || '';
     return slug.includes('ningrum') || slug.includes('fairytale-3d');
+});
+
+const isVictoria = computed(() => {
+    const slug = props.template?.slug || '';
+    return slug.includes('victoria') || slug.includes('royal-3d-envelope') || slug.includes('envelope');
+});
+
+const isAlsa = computed(() => {
+    const slug = props.template?.slug || '';
+    return slug.includes('alsa') || slug.includes('nusantara-romance') || slug.includes('traditional');
+});
+
+const isAruna = computed(() => {
+    const slug = props.template?.slug || '';
+    return slug.includes('aruna') || slug.includes('rustic-floral') || slug.includes('rustic');
+});
+
+const isEmerald = computed(() => {
+    const slug = props.template?.slug || '';
+    return slug.includes('royal-emerald-gold') || slug.includes('emerald');
 });
 
 // Authentic Katsudoto Assets Resolution
@@ -754,7 +778,115 @@ const digitalGift = computed(() => {
         @toggle-music="toggleMusic"
     />
 
-    <!-- 2. STANDARD INVITATION TEMPLATE (Other Themes) -->
+    <!-- 2. ROYAL 3D PHYSICAL ENVELOPE & WAX SEAL (VICTORIA) -->
+    <VictoriaEnvelopeTemplate
+        v-else-if="isVictoria"
+        :invitation-data="invitationData"
+        :events="events"
+        :guestbook="localGuestbook"
+        :digital-gift="digitalGift"
+        :guest-name="guestName"
+        :guest-token="guestToken"
+        :is-demo="props.isDemo"
+        :template="props.template"
+        :is-open="isOpen"
+        :is-playing-music="isPlayingMusic"
+        :time-left="timeLeft"
+        :format-display-date="formatDisplayDate"
+        :format-event-time="formatEventTime"
+        :copy-address="copyAddress"
+        :open-qris="openQris"
+        :submit-rsvp="submitRsvp"
+        :rsvp-form="rsvpForm"
+        :rsvp-submitting="rsvpSubmitting"
+        :rsvp-success="rsvpSuccess"
+        :rsvp-error-message="rsvpErrorMessage"
+        @open-invitation="openInvitation"
+        @toggle-music="toggleMusic"
+    />
+
+    <!-- 3. NUSANTARA ROMANCE & 3D GEBYOK KERATON DOORS (ALSA) -->
+    <AlsaTraditionalTemplate
+        v-else-if="isAlsa"
+        :invitation-data="invitationData"
+        :events="events"
+        :guestbook="localGuestbook"
+        :digital-gift="digitalGift"
+        :guest-name="guestName"
+        :guest-token="guestToken"
+        :is-demo="props.isDemo"
+        :template="props.template"
+        :is-open="isOpen"
+        :is-playing-music="isPlayingMusic"
+        :time-left="timeLeft"
+        :format-display-date="formatDisplayDate"
+        :format-event-time="formatEventTime"
+        :copy-address="copyAddress"
+        :open-qris="openQris"
+        :submit-rsvp="submitRsvp"
+        :rsvp-form="rsvpForm"
+        :rsvp-submitting="rsvpSubmitting"
+        :rsvp-success="rsvpSuccess"
+        :rsvp-error-message="rsvpErrorMessage"
+        @open-invitation="openInvitation"
+        @toggle-music="toggleMusic"
+    />
+
+    <!-- 4. RUSTIC FLORAL & BOTANICAL GLASSHOUSE (ARUNA) -->
+    <ArunaBotanicalTemplate
+        v-else-if="isAruna"
+        :invitation-data="invitationData"
+        :events="events"
+        :guestbook="localGuestbook"
+        :digital-gift="digitalGift"
+        :guest-name="guestName"
+        :guest-token="guestToken"
+        :is-demo="props.isDemo"
+        :template="props.template"
+        :is-open="isOpen"
+        :is-playing-music="isPlayingMusic"
+        :time-left="timeLeft"
+        :format-display-date="formatDisplayDate"
+        :format-event-time="formatEventTime"
+        :copy-address="copyAddress"
+        :open-qris="openQris"
+        :submit-rsvp="submitRsvp"
+        :rsvp-form="rsvpForm"
+        :rsvp-submitting="rsvpSubmitting"
+        :rsvp-success="rsvpSuccess"
+        :rsvp-error-message="rsvpErrorMessage"
+        @open-invitation="openInvitation"
+        @toggle-music="toggleMusic"
+    />
+
+    <!-- 5. ROYAL EMERALD & GOLD ART DECO LUXURY -->
+    <EmeraldArtDecoTemplate
+        v-else-if="isEmerald"
+        :invitation-data="invitationData"
+        :events="events"
+        :guestbook="localGuestbook"
+        :digital-gift="digitalGift"
+        :guest-name="guestName"
+        :guest-token="guestToken"
+        :is-demo="props.isDemo"
+        :template="props.template"
+        :is-open="isOpen"
+        :is-playing-music="isPlayingMusic"
+        :time-left="timeLeft"
+        :format-display-date="formatDisplayDate"
+        :format-event-time="formatEventTime"
+        :copy-address="copyAddress"
+        :open-qris="openQris"
+        :submit-rsvp="submitRsvp"
+        :rsvp-form="rsvpForm"
+        :rsvp-submitting="rsvpSubmitting"
+        :rsvp-success="rsvpSuccess"
+        :rsvp-error-message="rsvpErrorMessage"
+        @open-invitation="openInvitation"
+        @toggle-music="toggleMusic"
+    />
+
+    <!-- 6. STANDARD INVITATION TEMPLATE (Fallback / Modern Minimalist) -->
     <div
         v-else
         class="min-h-screen w-full relative transition-colors duration-500 overflow-x-hidden selection:bg-amber-400 selection:text-stone-900"
