@@ -131,6 +131,12 @@ const googleCalendarUrl = computed(() => {
 // Computed content fields
 const bride = computed(() => props.invitationData?.content?.bride || {});
 const groom = computed(() => props.invitationData?.content?.groom || {});
+const groomPhoto = computed(() => {
+    return groom.value?.photo || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80';
+});
+const bridePhoto = computed(() => {
+    return bride.value?.photo || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=600&q=80';
+});
 const weddingTitle = computed(() => {
     if (groom.value?.nickname && bride.value?.nickname) {
         return `${groom.value.nickname} & ${bride.value.nickname}`;
@@ -499,52 +505,94 @@ const loveStoryList = computed(() => {
                         </p>
                     </div>
 
-                    <!-- Groom & Bride Photo Portraits with botanical frames -->
-                    <div class="couple-picture-outer flex justify-center items-center gap-4 my-6">
-                        <!-- Groom Portrait -->
-                        <div class="couple-preview groom">
-                            <div class="couple-frame relative">
-                                <div class="image-wrap">
-                                    <img src="/images/templates/eloise/frame-couple.png" class="img-couple-frame" alt="Frame">
-                                </div>
-                                <div class="couple-picture-wrap">
-                                    <div class="couple-picture">
-                                        <img :src="groom.photo || coverImg" class="img w-full h-full object-cover rounded-full" alt="Groom">
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="orn-cp-2">
-                                <div class="image-wrap">
-                                    <img src="/images/templates/eloise/Orn-12.png" alt="Ornaments">
-                                </div>
-                            </div>
+                    <!-- Groom & Bride Tilted Photo Cards with botanical accents & motion -->
+                    <div class="couple-cards-container relative max-w-md mx-auto my-8">
+
+                        <!-- Top Baby's Breath Bouquet (Pinned at top center, animated float) -->
+                        <div class="orn-couple-bouquet pointer-events-none">
+                            <img
+                                src="/images/templates/eloise/Orn-10.png"
+                                alt="Baby's Breath Bouquet"
+                                class="w-24 sm:w-28 h-auto bouquet-float-anim mx-auto"
+                            >
                         </div>
 
-                        <!-- Center Flourish -->
-                        <div class="orn-cp-1">
-                            <div class="image-wrap">
-                                <img src="/images/templates/eloise/Orn-10.png" alt="Ornaments">
-                            </div>
+                        <!-- Center Anthurium Accent behind cards -->
+                        <div class="orn-couple-center-behind pointer-events-none">
+                            <img
+                                src="/images/templates/eloise/Orn-11.png"
+                                alt="Floral Accent"
+                                class="w-20 sm:w-24 h-auto opacity-90 mx-auto"
+                            >
                         </div>
 
-                        <!-- Bride Portrait -->
-                        <div class="couple-preview bride">
-                            <div class="orn-cp-3">
-                                <div class="image-wrap">
-                                    <img src="/images/templates/eloise/Orn-13.png" alt="Ornaments">
+                        <!-- The Two Tilted Cards: Left (Groom) and Right (Bride) -->
+                        <div class="flex items-center justify-center gap-3 sm:gap-6 relative z-10 px-2">
+
+                            <!-- LEFT CARD: GROOM (Tilted counter-clockwise) -->
+                            <div class="couple-card-item groom-card relative w-[160px] sm:w-[195px] transition-transform duration-300 hover:scale-105 hover:z-20">
+                                <!-- Paper Frame Background -->
+                                <img
+                                    src="/images/templates/eloise/frame-couple.png"
+                                    alt="Paper Card"
+                                    class="w-full h-auto drop-shadow-md select-none"
+                                >
+                                <!-- Embedded Groom Photo in Polaroid Window -->
+                                <div
+                                    class="couple-card-photo-box cursor-pointer"
+                                    @click="openLightbox(groomPhoto)"
+                                    title="Klik untuk perbesar foto Groom"
+                                >
+                                    <img
+                                        :src="groomPhoto"
+                                        alt="Groom"
+                                        class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                                    >
                                 </div>
                             </div>
-                            <div class="couple-frame relative">
-                                <div class="image-wrap">
-                                    <img src="/images/templates/eloise/frame-couple.png" class="img-couple-frame" alt="Frame">
+
+                            <!-- RIGHT CARD: BRIDE (Tilted clockwise) -->
+                            <div class="couple-card-item bride-card relative w-[160px] sm:w-[195px] transition-transform duration-300 hover:scale-105 hover:z-20">
+                                <!-- Paper Frame Background -->
+                                <img
+                                    src="/images/templates/eloise/frame-couple.png"
+                                    alt="Paper Card"
+                                    class="w-full h-auto drop-shadow-md select-none"
+                                >
+                                <!-- Embedded Bride Photo in Polaroid Window -->
+                                <div
+                                    class="couple-card-photo-box cursor-pointer"
+                                    @click="openLightbox(bridePhoto)"
+                                    title="Klik untuk perbesar foto Bride"
+                                >
+                                    <img
+                                        :src="bridePhoto"
+                                        alt="Bride"
+                                        class="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                                    >
                                 </div>
-                                <div class="couple-picture-wrap">
-                                    <div class="couple-picture">
-                                        <img :src="bride.photo || coverImg" class="img w-full h-full object-cover rounded-full" alt="Bride">
-                                    </div>
+
+                                <!-- Botanical Accent on Right Card: White Orchid Stem (Animated Sway) -->
+                                <div class="orn-bride-orchid pointer-events-none">
+                                    <img
+                                        src="/images/templates/eloise/Orn-12.png"
+                                        alt="White Orchid"
+                                        class="w-20 sm:w-24 h-auto orchid-sway-anim"
+                                    >
                                 </div>
                             </div>
+
                         </div>
+
+                        <!-- Botanical Accent on Left: Anthurium / Lily Stem (Animated Sway) -->
+                        <div class="orn-groom-flourish pointer-events-none">
+                            <img
+                                src="/images/templates/eloise/Orn-13.png"
+                                alt="Floral Flourish"
+                                class="w-16 sm:w-20 h-auto floral-left-sway-anim"
+                            >
+                        </div>
+
                     </div>
 
                     <!-- Couple Info Text & Parent Details -->
@@ -617,56 +665,64 @@ const loveStoryList = computed(() => {
             </section>
 
             <!-- 5. SAVE THE DATE & COUNTDOWN -->
-            <section class="save-date-wrap bg-[#FFFFFF]" data-section-order="save_the_date">
-                <div class="save-date-frame">
-                    <div class="ornaments-wrapper">
-                        <div class="orn-sd-3">
-                            <div class="image-wrap">
-                                <img src="/images/templates/eloise/Orn-14.png" alt="Ornaments">
-                            </div>
+            <section class="save-date-wrap py-14 px-4 bg-[#FFFFFF]" data-section-order="save_the_date">
+                <div class="save-date-inner text-center px-4 relative z-10 max-w-lg mx-auto">
+                    <!-- Floral Crown Illustration with animated floating/breathing effect -->
+                    <div class="save-date-floral-header relative mb-5">
+                        <div class="w-44 sm:w-52 mx-auto relative save-date-flower-anim">
+                            <img
+                                src="/images/templates/eloise/Orn-14.png"
+                                alt="White Orchid Bouquet"
+                                class="w-full h-auto object-contain mx-auto filter drop-shadow-md"
+                            >
+                        </div>
+                        <div class="w-10 mx-auto mt-2 opacity-80">
+                            <img src="/images/templates/eloise/Orn-03.png" alt="Crest" class="w-full h-auto">
                         </div>
                     </div>
 
-                    <div class="save-date-inner text-center px-4">
-                        <div class="head mb-6">
-                            <img src="/images/templates/eloise/Orn-03.png" alt="Ornaments" class="mx-auto w-12 mb-3">
-                            <h2 class="save-date-title text-3xl font-serif text-[#353A20]">Save The Date</h2>
-                            <p class="save-date-caption text-sm text-[#56584B] italic mt-1">{{ weddingDate }}</p>
-                        </div>
+                    <!-- Typography - Clean, High Contrast, 100% Unobscured -->
+                    <div class="save-date-typography mb-8 relative z-20">
+                        <h2 class="save-date-title text-4xl sm:text-5xl font-serif text-[#353A20] tracking-wide leading-tight">
+                            Save The Date
+                        </h2>
+                        <p class="save-date-caption text-sm sm:text-base text-[#56584B] font-medium tracking-wide mt-2">
+                            {{ weddingDate }}
+                        </p>
+                    </div>
 
-                        <!-- Live Countdown Timer -->
-                        <div class="grid grid-cols-4 gap-2 max-w-xs mx-auto my-8">
-                            <div class="bg-[#353A20] text-[#F5F0E8] p-3 rounded-xl shadow-md text-center">
-                                <span class="block text-2xl font-serif font-bold">{{ timeLeft.days }}</span>
-                                <span class="text-[10px] uppercase tracking-wider opacity-80">Hari</span>
-                            </div>
-                            <div class="bg-[#353A20] text-[#F5F0E8] p-3 rounded-xl shadow-md text-center">
-                                <span class="block text-2xl font-serif font-bold">{{ timeLeft.hours }}</span>
-                                <span class="text-[10px] uppercase tracking-wider opacity-80">Jam</span>
-                            </div>
-                            <div class="bg-[#353A20] text-[#F5F0E8] p-3 rounded-xl shadow-md text-center">
-                                <span class="block text-2xl font-serif font-bold">{{ timeLeft.minutes }}</span>
-                                <span class="text-[10px] uppercase tracking-wider opacity-80">Menit</span>
-                            </div>
-                            <div class="bg-[#353A20] text-[#F5F0E8] p-3 rounded-xl shadow-md text-center">
-                                <span class="block text-2xl font-serif font-bold">{{ timeLeft.seconds }}</span>
-                                <span class="text-[10px] uppercase tracking-wider opacity-80">Detik</span>
-                            </div>
+                    <!-- Live Countdown Timer -->
+                    <div class="grid grid-cols-4 gap-2 max-w-xs mx-auto my-6">
+                        <div class="bg-[#353A20] text-[#F5F0E8] p-3 rounded-xl shadow-md text-center">
+                            <span class="block text-2xl font-serif font-bold">{{ timeLeft.days }}</span>
+                            <span class="text-[10px] uppercase tracking-wider opacity-80">Hari</span>
                         </div>
+                        <div class="bg-[#353A20] text-[#F5F0E8] p-3 rounded-xl shadow-md text-center">
+                            <span class="block text-2xl font-serif font-bold">{{ timeLeft.hours }}</span>
+                            <span class="text-[10px] uppercase tracking-wider opacity-80">Jam</span>
+                        </div>
+                        <div class="bg-[#353A20] text-[#F5F0E8] p-3 rounded-xl shadow-md text-center">
+                            <span class="block text-2xl font-serif font-bold">{{ timeLeft.minutes }}</span>
+                            <span class="text-[10px] uppercase tracking-wider opacity-80">Menit</span>
+                        </div>
+                        <div class="bg-[#353A20] text-[#F5F0E8] p-3 rounded-xl shadow-md text-center">
+                            <span class="block text-2xl font-serif font-bold">{{ timeLeft.seconds }}</span>
+                            <span class="text-[10px] uppercase tracking-wider opacity-80">Detik</span>
+                        </div>
+                    </div>
 
-                        <!-- Google Calendar Button -->
-                        <div class="mt-6">
-                            <a
-                                :href="googleCalendarUrl"
-                                target="_blank"
-                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-[#353A20] text-[#353A20] text-xs font-sans font-semibold tracking-wider uppercase hover:bg-[#353A20] hover:text-[#F5F0E8] transition-all"
-                            >
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
-                                </svg>
-                                <span>Simpan ke Kalender</span>
-                            </a>
-                        </div>
+                    <!-- Google Calendar Button -->
+                    <div class="mt-6">
+                        <a
+                            :href="googleCalendarUrl"
+                            target="_blank"
+                            class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full border border-[#353A20] text-[#353A20] text-xs font-sans font-semibold tracking-wider uppercase hover:bg-[#353A20] hover:text-[#F5F0E8] transition-all"
+                        >
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <span>Simpan ke Kalender</span>
+                        </a>
                     </div>
                 </div>
             </section>
@@ -1042,5 +1098,145 @@ const loveStoryList = computed(() => {
 .eloise-romance-page {
     position: relative;
     width: 100%;
+}
+
+/* ================================================= */
+/* COUPLE PHOTO CARDS & BOTANICAL ANIMATIONS         */
+/* ================================================= */
+.couple-cards-container {
+    position: relative;
+    padding-top: 28px;
+    padding-bottom: 24px;
+}
+
+/* Left Card (Groom) tilt */
+.groom-card {
+    transform: rotate(-4.5deg) translateY(6px);
+}
+.groom-card:hover {
+    transform: rotate(-2deg) scale(1.04);
+}
+
+/* Right Card (Bride) tilt */
+.bride-card {
+    transform: rotate(5.5deg) translateY(-4px);
+}
+.bride-card:hover {
+    transform: rotate(2deg) scale(1.04);
+}
+
+/* Embedded Photo Box on the Paper Card */
+.couple-card-photo-box {
+    position: absolute;
+    top: 6.8%;
+    bottom: 21%;
+    left: 50%;
+    width: 86.4%;
+    transform: translateX(-50%);
+    overflow: hidden;
+    border-radius: 4px;
+    background: #EAE5DC;
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.08);
+}
+
+/* Top bouquet pinned between the two cards */
+.orn-couple-bouquet {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 25;
+}
+.bouquet-float-anim {
+    animation: floatBouquet 4.5s ease-in-out infinite alternate;
+    transform-origin: 50% 85%;
+    filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.15));
+}
+@keyframes floatBouquet {
+    0% {
+        transform: translateY(0px) rotate(-1deg);
+    }
+    50% {
+        transform: translateY(-6px) rotate(2deg) scale(1.03);
+    }
+    100% {
+        transform: translateY(0px) rotate(-1deg);
+    }
+}
+
+/* Center behind flourish */
+.orn-couple-center-behind {
+    position: absolute;
+    top: 35%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 5;
+}
+
+/* Right orchid on Bride's card */
+.orn-bride-orchid {
+    position: absolute;
+    bottom: -15%;
+    right: -22%;
+    z-index: 15;
+}
+.orchid-sway-anim {
+    animation: orchidSway 4s ease-in-out infinite alternate;
+    transform-origin: 20% 20%;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+@keyframes orchidSway {
+    0% {
+        transform: rotate(-3deg);
+    }
+    50% {
+        transform: rotate(4deg) scale(1.02);
+    }
+    100% {
+        transform: rotate(-3deg);
+    }
+}
+
+/* Left floral flourish */
+.orn-groom-flourish {
+    position: absolute;
+    bottom: 0%;
+    left: 2%;
+    z-index: 15;
+}
+.floral-left-sway-anim {
+    animation: floralLeftSway 5s ease-in-out infinite alternate;
+    transform-origin: 50% 80%;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1));
+}
+@keyframes floralLeftSway {
+    0% {
+        transform: rotate(0deg) translateY(0);
+    }
+    50% {
+        transform: rotate(-3deg) translateY(-4px);
+    }
+    100% {
+        transform: rotate(0deg) translateY(0);
+    }
+}
+
+/* ================================================= */
+/* SAVE THE DATE FLOWER ANIMATION & BUG FIX          */
+/* ================================================= */
+.save-date-flower-anim img {
+    animation: saveDateFlowerFloat 4.5s ease-in-out infinite alternate;
+    transform-origin: 50% 90%;
+}
+@keyframes saveDateFlowerFloat {
+    0% {
+        transform: translateY(0px) rotate(-1deg);
+    }
+    50% {
+        transform: translateY(-6px) rotate(1.5deg) scale(1.02);
+    }
+    100% {
+        transform: translateY(0px) rotate(-1deg);
+    }
 }
 </style>
