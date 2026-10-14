@@ -548,112 +548,83 @@ onBeforeUnmount(() => {
              ======================================================== -->
         <div class="min-h-screen flex flex-col lg:flex-row">
             
-            <!-- LEFT FIXED STAGE: Torii Gate & Japanese Zen Garden (Desktop) -->
+            <!-- LEFT FIXED STAGE: Authentic Japanese Torii Shrine & Prewedding (Desktop) -->
             <div
-                class="hidden lg:flex lg:w-[45%] xl:w-[42%] fixed inset-y-0 left-0 z-20 flex-col items-center justify-between p-12 bg-gradient-to-b from-[#2A2320] via-[#1F1A17] to-[#151210] text-amber-50 select-none overflow-hidden"
+                class="hidden lg:flex lg:w-[45%] xl:w-[42%] fixed inset-y-0 left-0 z-20 flex-col items-center justify-between p-10 select-none overflow-hidden"
                 @wheel="handleStageWheel"
             >
-                <!-- Background Mount Fuji Silhouette & Glowing Sunrise -->
-                <div class="absolute inset-0 pointer-events-none overflow-hidden opacity-40">
-                    <!-- Sunrise Sun Disc -->
-                    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-gradient-to-b from-[#E89CAE]/40 via-[#C23B22]/30 to-transparent blur-2xl"></div>
-                    
-                    <!-- Drifting Japanese Golden Clouds -->
-                    <div class="absolute top-20 -left-20 w-64 opacity-50 animate-cloud-drift-1">
-                        <svg viewBox="0 0 200 60" class="fill-[#D4AF37]/30">
-                            <path d="M20,40 Q40,15 70,30 Q90,10 130,25 Q160,15 180,40 Q150,55 100,50 Q50,55 20,40 Z" />
-                        </svg>
-                    </div>
-                    <div class="absolute top-44 -right-16 w-56 opacity-40 animate-cloud-drift-2">
-                        <svg viewBox="0 0 200 60" class="fill-[#E89CAE]/25">
-                            <path d="M20,40 Q40,15 70,30 Q90,10 130,25 Q160,15 180,40 Q150,55 100,50 Q50,55 20,40 Z" />
-                        </svg>
-                    </div>
-
-                    <!-- Fuji Mountain Polygon -->
-                    <svg viewBox="0 0 500 300" class="absolute bottom-0 w-full fill-[#100D0B] opacity-80">
-                        <polygon points="0,300 180,140 240,110 260,110 320,140 500,300" />
-                        <!-- Snow Cap on Fuji -->
-                        <polygon points="210,125 240,110 260,110 290,125 275,135 260,130 250,140 240,130 225,138" fill="#F7F3E9" opacity="0.6" />
-                    </svg>
+                <!-- Real Photographic Backdrop with Vignette -->
+                <div class="absolute inset-0 pointer-events-none">
+                    <img
+                        src="/images/templates/sakura/japan-torii-gate.jpg"
+                        alt="Kyoto Torii Shrine"
+                        class="w-full h-full object-cover filter brightness-45 contrast-105 scale-105"
+                    />
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#151210] via-black/40 to-[#2A2320]/80"></div>
                 </div>
 
                 <!-- Top Japanese Calligraphy & Crest -->
                 <div class="relative z-10 text-center">
-                    <div class="inline-block px-4 py-1 rounded-full border border-amber-300/30 bg-black/40 backdrop-blur-md text-[11px] uppercase tracking-[0.3em] text-amber-200">
+                    <div class="inline-block px-4 py-1 rounded-full border border-amber-300/40 bg-black/60 backdrop-blur-md text-[11px] uppercase tracking-[0.3em] text-amber-200">
                         Sakura Zen Harmony
                     </div>
-                    <div class="mt-2 text-xs text-rose-200/80 tracking-widest font-light">
+                    <div class="mt-2 text-xs text-rose-200/90 tracking-widest font-light">
                         日本の美と永遠の愛
                     </div>
                 </div>
 
-                <!-- Center 3D Interactive Torii Shrine Gate with Couple Silhouette -->
+                <!-- Center 3D Interactive Prewedding Portrait Frame with Golden Border -->
                 <div
                     class="relative z-10 w-full max-w-sm flex flex-col items-center transition-transform duration-300 ease-out"
                     :style="{
                         transform: `perspective(900px) rotateX(${targetRotateX}deg) rotateY(${targetRotateY}deg)`,
                     }"
                 >
-                    <!-- Hanging Left Chochin Lantern on Torii -->
-                    <div class="absolute top-12 left-2 z-20 flex flex-col items-center animate-lantern-sway origin-top">
+                    <!-- Hanging Left Chochin Lantern -->
+                    <div class="absolute top-6 left-2 z-20 flex flex-col items-center animate-lantern-sway origin-top">
                         <div class="w-0.5 h-6 bg-[#D4AF37]"></div>
                         <div class="w-9 h-12 rounded-full bg-gradient-to-b from-[#C23B22] to-[#8C1D0B] border border-[#D4AF37] shadow-lg flex items-center justify-center text-white text-[10px] font-bold shadow-orange-500/40">
                             和
                         </div>
                     </div>
 
-                    <!-- Hanging Right Chochin Lantern on Torii -->
-                    <div class="absolute top-12 right-2 z-20 flex flex-col items-center animate-lantern-sway origin-top" style="animation-delay: -1.5s;">
+                    <!-- Hanging Right Chochin Lantern -->
+                    <div class="absolute top-6 right-2 z-20 flex flex-col items-center animate-lantern-sway origin-top" style="animation-delay: -1.5s;">
                         <div class="w-0.5 h-6 bg-[#D4AF37]"></div>
                         <div class="w-9 h-12 rounded-full bg-gradient-to-b from-[#C23B22] to-[#8C1D0B] border border-[#D4AF37] shadow-lg flex items-center justify-center text-white text-[10px] font-bold shadow-orange-500/40">
                             愛
                         </div>
                     </div>
 
-                    <!-- Torii Gate Vector SVG -->
-                    <svg viewBox="0 0 300 240" class="w-full drop-shadow-2xl">
-                        <!-- Upper Lintels (Kasagi & Shimaki) -->
-                        <path d="M10,35 Q150,15 290,35 L285,45 Q150,30 15,45 Z" fill="#8C1D0B" stroke="#D4AF37" stroke-width="1.5" />
-                        <path d="M30,48 L270,48 L265,58 L35,58 Z" fill="#2D2424" />
-                        <!-- Central Plaque (Gakuzuka) -->
-                        <rect x="140" y="58" width="20" height="28" fill="#1A1715" stroke="#D4AF37" stroke-width="1" />
-                        <text x="150" y="78" fill="#D4AF37" font-size="14" text-anchor="middle" font-family="serif">縁</text>
-                        <!-- Lower Lintel (Nuki) -->
-                        <rect x="25" y="86" width="250" height="12" fill="#8C1D0B" />
-                        <!-- Vertical Pillars (Hashira) -->
-                        <polygon points="55,58 75,58 70,230 45,230" fill="#A82814" stroke="#D4AF37" stroke-width="1" />
-                        <polygon points="225,58 245,58 255,230 230,230" fill="#A82814" stroke="#D4AF37" stroke-width="1" />
-                        <!-- Pillar Bases (Nemaki) -->
-                        <rect x="42" y="215" width="32" height="15" fill="#1A1715" rx="2" />
-                        <rect x="226" y="215" width="32" height="15" fill="#1A1715" rx="2" />
-                    </svg>
+                    <!-- Authentic Couple Portrait in Traditional Attire -->
+                    <div class="relative w-64 h-80 rounded-2xl p-2 bg-gradient-to-tr from-[#D4AF37] via-[#E89CAE] to-[#C23B22] shadow-2xl overflow-hidden border-2 border-amber-200/50 group">
+                        <img
+                            :src="invitationData.content.coverPhotoUrl || '/images/templates/sakura/couple-traditional.jpg'"
+                            alt="Kenji & Ayumi"
+                            class="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-700"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
 
-                    <!-- Couple In Torii Gate Arch -->
-                    <div class="absolute inset-0 flex flex-col items-center justify-center pt-8">
-                        <div class="w-32 h-32 rounded-full border-2 border-[#D4AF37]/60 overflow-hidden shadow-2xl relative group">
-                            <img
-                                :src="invitationData.content.coverPhotoUrl || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'"
-                                alt="Kenji & Ayumi"
-                                class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                            />
-                            <div class="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                        <!-- Hanging Golden Crest Badge -->
+                        <div class="absolute bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-black/70 backdrop-blur-md border border-amber-300/60 text-amber-200 text-xs font-serif font-bold tracking-widest uppercase truncate max-w-[90%]">
+                            一期一会 • 結
                         </div>
-                        <h2 class="text-2xl font-serif font-bold text-amber-100 tracking-wide mt-3">
-                            {{ invitationData.content.groomNickname || 'Kenji' }} &amp; {{ invitationData.content.brideNickname || 'Ayumi' }}
-                        </h2>
-                        <div class="text-xs text-rose-300 font-light tracking-widest mt-0.5">
-                            {{ safeFormatDisplayDate(invitationData.content.weddingDate) }}
-                        </div>
+                    </div>
+
+                    <h2 class="text-2xl sm:text-3xl font-serif font-bold text-amber-100 tracking-wide mt-4">
+                        {{ invitationData.content.groomNickname || 'Kenji' }} &amp; {{ invitationData.content.brideNickname || 'Ayumi' }}
+                    </h2>
+                    <div class="text-xs text-rose-300 font-light tracking-widest mt-1">
+                        {{ safeFormatDisplayDate(invitationData.content.weddingDate) }}
                     </div>
                 </div>
 
                 <!-- Bottom Shrine Audio & Ceremony Info -->
                 <div class="relative z-10 text-center w-full max-w-xs">
-                    <div class="p-3 rounded-xl bg-white/5 border border-white/10 backdrop-blur-md">
+                    <div class="p-3.5 rounded-xl bg-black/60 border border-white/15 backdrop-blur-md">
                         <div class="text-[10px] text-amber-300/80 uppercase tracking-widest">Tempat Resepsi</div>
                         <div class="text-xs text-amber-100 font-medium truncate mt-0.5">
-                            {{ props.events[0]?.venue_name || 'The Sakura Pavilion & Zen Garden' }}
+                            {{ props.events[0]?.venue_name || 'The Kyoto Pavilion & Zen Garden' }}
                         </div>
                     </div>
                 </div>
@@ -663,9 +634,16 @@ onBeforeUnmount(() => {
             <div class="w-full lg:w-[55%] xl:w-[58%] lg:ml-auto relative z-20 min-h-screen pb-24">
 
                 <!-- MOBILE HERO COVER (Shown only on small screens) -->
-                <div class="lg:hidden relative min-h-[92vh] flex flex-col justify-between items-center text-center p-6 bg-gradient-to-b from-[#2A2320] via-[#1F1A17] to-[#151210] text-amber-50 overflow-hidden">
-                    <!-- Sunrise background glow -->
-                    <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-gradient-to-b from-[#E89CAE]/30 to-transparent blur-3xl pointer-events-none"></div>
+                <div class="lg:hidden relative min-h-[92vh] flex flex-col justify-between items-center text-center p-6 text-amber-50 overflow-hidden">
+                    <!-- Real Photographic Backdrop with Vignette -->
+                    <div class="absolute inset-0 pointer-events-none">
+                        <img
+                            src="/images/templates/sakura/kyoto-pagoda-street.jpg"
+                            alt="Kyoto Street"
+                            class="w-full h-full object-cover filter brightness-40 contrast-105 scale-105"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-[#1A1715]"></div>
+                    </div>
 
                     <!-- Hanging Chochin Lanterns on Mobile Top -->
                     <div class="absolute top-4 left-6 z-10 animate-lantern-sway origin-top">
@@ -683,7 +661,7 @@ onBeforeUnmount(() => {
 
                     <!-- Top Japanese Header -->
                     <div class="relative z-10 mt-6">
-                        <span class="inline-block px-3.5 py-1 rounded-full border border-amber-300/30 bg-black/40 text-[10px] uppercase tracking-[0.25em] text-amber-200">
+                        <span class="inline-block px-3.5 py-1 rounded-full border border-amber-300/40 bg-black/60 text-[10px] uppercase tracking-[0.25em] text-amber-200">
                             The Wedding Of
                         </span>
                     </div>
@@ -693,7 +671,7 @@ onBeforeUnmount(() => {
                         <div class="relative w-56 h-56 rounded-full p-2 bg-gradient-to-tr from-[#D4AF37] via-[#E89CAE] to-[#C23B22] shadow-2xl">
                             <div class="w-full h-full rounded-full overflow-hidden border-2 border-white/60">
                                 <img
-                                    :src="invitationData.content.coverPhotoUrl || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=600&q=80'"
+                                    :src="invitationData.content.coverPhotoUrl || '/images/templates/sakura/couple-traditional.jpg'"
                                     alt="Couple Cover"
                                     class="w-full h-full object-cover"
                                 />
@@ -722,7 +700,7 @@ onBeforeUnmount(() => {
                 </div>
 
                 <!-- ====================================================
-                     SECTION 1: JAPANESE BLESSING & BAMBOO FOUNTAIN (QUOTE)
+                     SECTION 1: JAPANESE BLESSING & TRANQUIL ZEN GARDEN
                      ==================================================== -->
                 <section class="px-6 py-16 max-w-xl mx-auto text-center zen-fade-up relative">
                     <!-- Traditional Stylized Cloud Motif Background -->
@@ -750,28 +728,19 @@ onBeforeUnmount(() => {
                         (QS. Ar-Rum: 21)
                     </p>
 
-                    <!-- ANIMATED JAPANESE BAMBOO FOUNTAIN (SHISHI-ODOSHI) -->
-                    <div class="mt-8 flex flex-col items-center justify-center">
-                        <div class="relative w-44 h-24">
-                            <!-- Water Spout Spilling Water -->
-                            <div class="absolute top-1 left-8 w-16 h-3 bg-[#698246] rounded-r-full rotate-12 shadow-sm border border-[#4E6233]"></div>
-                            <div class="absolute top-6 left-20 w-0.5 h-8 bg-cyan-300/80 rounded-full animate-water-drip"></div>
-
-                            <!-- Tilting Bamboo Rocker Arm -->
-                            <div class="absolute top-8 left-14 w-24 h-4 bg-[#7D9A54] rounded-full border border-[#4E6233] origin-[40%_50%] animate-shishi-rock shadow-md flex items-center justify-end pr-2">
-                                <div class="w-2 h-2 rounded-full bg-[#4E6233]"></div>
-                            </div>
-
-                            <!-- Supporting Bamboo Stand -->
-                            <div class="absolute top-10 left-16 w-3 h-12 bg-[#5A402E] rounded-t-sm shadow"></div>
-                            <div class="absolute top-10 left-22 w-3 h-12 bg-[#5A402E] rounded-t-sm shadow"></div>
-
-                            <!-- Stone Basin (Tsukubai) with Ripple -->
-                            <div class="absolute bottom-0 left-20 w-16 h-6 bg-[#6E6E6E] rounded-full shadow-inner border border-stone-600 flex items-center justify-center">
-                                <div class="w-8 h-2 rounded-full bg-cyan-800/40 animate-ping"></div>
+                    <!-- AUTHENTIC ZEN GARDEN SCENERY CARD -->
+                    <div class="mt-8 max-w-md mx-auto rounded-2xl overflow-hidden shadow-xl border border-[#D4AF37]/50 relative group">
+                        <img
+                            src="/images/templates/sakura/zen-garden-pond.jpg"
+                            alt="Zen Garden Pond"
+                            class="w-full h-44 object-cover group-hover:scale-105 transition-transform duration-700"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent flex items-end p-4">
+                            <div class="text-left">
+                                <div class="text-[10px] uppercase tracking-widest text-amber-300 font-semibold">Taman Ketenangan Zen</div>
+                                <div class="text-xs text-stone-200 mt-0.5">Harmoni bebatuan alam, gemercik air, dan ketenangan jiwa abadi.</div>
                             </div>
                         </div>
-                        <span class="text-[9px] text-stone-500 uppercase tracking-widest mt-1">Shishi-odoshi • Suara Ketenangan Taman Zen</span>
                     </div>
                 </section>
 
@@ -799,7 +768,7 @@ onBeforeUnmount(() => {
                                 <!-- Groom Photo inside Enso Window -->
                                 <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1.5 bg-gradient-to-tr from-[#3D2817] via-[#D4AF37] to-[#8C1D0B] shadow-md flex-shrink-0">
                                     <img
-                                        :src="invitationData.content.groomPhotoUrl || 'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=400&q=80'"
+                                        :src="invitationData.content.groomPhotoUrl || '/images/templates/sakura/groom-real.jpg'"
                                         alt="Groom Photo"
                                         class="w-full h-full object-cover rounded-full"
                                     />
@@ -846,7 +815,7 @@ onBeforeUnmount(() => {
                                 <!-- Bride Photo inside Enso Window -->
                                 <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1.5 bg-gradient-to-tr from-[#D4AF37] via-[#E89CAE] to-[#C23B22] shadow-md flex-shrink-0">
                                     <img
-                                        :src="invitationData.content.bridePhotoUrl || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'"
+                                        :src="invitationData.content.bridePhotoUrl || '/images/templates/sakura/bride-real.jpg'"
                                         alt="Bride Photo"
                                         class="w-full h-full object-cover rounded-full"
                                     />
@@ -892,73 +861,30 @@ onBeforeUnmount(() => {
                         <p class="text-xs text-stone-600 mt-1">Sentuh kolam air untuk menciptakan riak ketenangan</p>
                     </div>
 
-                    <!-- Interactive Koi Pond Card -->
+                    <!-- Interactive Koi Pond Card with Real Crystal Clear Pond Backdrop -->
                     <div
                         @click="triggerPondRipple"
-                        class="relative h-64 sm:h-72 rounded-3xl bg-gradient-to-b from-[#1C2C28] via-[#142320] to-[#0D1816] border-2 border-[#D4AF37]/50 shadow-2xl overflow-hidden cursor-pointer select-none group"
+                        class="relative h-64 sm:h-72 rounded-3xl border-2 border-[#D4AF37]/60 shadow-2xl overflow-hidden cursor-pointer select-none group"
                     >
-                        <!-- Translucent Pond Waterbed & River Pebbles -->
-                        <div class="absolute inset-0 bg-radial from-transparent to-black/60 pointer-events-none"></div>
-
-                        <!-- Smooth Water Lilies / Lotus Leaves -->
-                        <div class="absolute top-6 left-8 w-14 h-14 rounded-full bg-[#2E4A3B] border border-[#48735C] opacity-75 shadow-md transform rotate-45"></div>
-                        <div class="absolute bottom-8 right-10 w-16 h-16 rounded-full bg-[#2E4A3B] border border-[#48735C] opacity-75 shadow-md transform -rotate-12"></div>
-                        <div class="absolute top-1/2 right-6 w-10 h-10 rounded-full bg-[#243B2F] border border-[#3A5F4B] opacity-60"></div>
+                        <!-- Photographic Koi Pond Waterbed -->
+                        <img
+                            src="/images/templates/sakura/koi-fish-real.jpg"
+                            alt="Koi Fish in Clear Pond"
+                            class="w-full h-full object-cover filter brightness-95 group-hover:scale-105 transition-transform duration-1000"
+                        />
+                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none"></div>
 
                         <!-- Animated Concentric Water Ripples from Click / Auto -->
                         <div
                             v-for="r in pondRipples"
                             :key="r.id"
-                            class="absolute pointer-events-none rounded-full border border-cyan-300/60 animate-pond-ripple"
+                            class="absolute pointer-events-none rounded-full border-2 border-white/80 animate-pond-ripple"
                             :style="{ left: r.x + 'px', top: r.y + 'px', transform: 'translate(-50%, -50%)' }"
                         ></div>
 
-                        <!-- 1. KOHAKU KOI (Crimson & White Swimming in Circle) -->
-                        <div class="absolute inset-0 pointer-events-none flex items-center justify-center animate-koi-swim-orbit-1">
-                            <div class="relative w-20 h-36 flex flex-col items-center">
-                                <!-- Head & Body SVG -->
-                                <svg viewBox="0 0 60 120" class="w-full h-full drop-shadow-xl">
-                                    <!-- Pectoral Fins (Left & Right Flapping) -->
-                                    <path d="M12,45 Q-10,35 2,25 Q12,35 15,45 Z" fill="#FBF8F3" opacity="0.8" class="animate-koi-fin-left origin-[15px_45px]" />
-                                    <path d="M48,45 Q70,35 58,25 Q48,35 45,45 Z" fill="#FBF8F3" opacity="0.8" class="animate-koi-fin-right origin-[45px_45px]" />
-                                    
-                                    <!-- Main Body -->
-                                    <ellipse cx="30" cy="50" rx="14" ry="32" fill="#FBF8F3" />
-                                    <!-- Crimson Kohaku Patches -->
-                                    <path d="M22,35 Q30,22 38,36 Q32,48 22,35 Z" fill="#C23B22" />
-                                    <path d="M24,56 Q36,52 35,68 Q24,70 24,56 Z" fill="#C23B22" />
-                                    <!-- Whisker Barbels -->
-                                    <path d="M27,18 Q20,12 18,8" stroke="#FBF8F3" stroke-width="1.2" fill="none" />
-                                    <path d="M33,18 Q40,12 42,8" stroke="#FBF8F3" stroke-width="1.2" fill="none" />
-                                    <!-- Undulating Caudal Tail Fin -->
-                                    <g class="animate-koi-tail origin-[30px_82px]">
-                                        <path d="M30,82 Q20,105 10,118 Q30,110 50,118 Q40,105 30,82 Z" fill="#F4C2C2" opacity="0.85" />
-                                        <path d="M28,85 Q30,102 32,85" stroke="#C23B22" stroke-width="1.5" />
-                                    </g>
-                                </svg>
-                            </div>
-                        </div>
-
-                        <!-- 2. YAMABUKI KOI (Golden Yellow Koi Swimming Reverse Path) -->
-                        <div class="absolute inset-0 pointer-events-none flex items-center justify-center animate-koi-swim-orbit-2">
-                            <div class="relative w-18 h-32 flex flex-col items-center">
-                                <svg viewBox="0 0 60 120" class="w-full h-full drop-shadow-xl">
-                                    <path d="M12,45 Q-8,35 2,25 Q12,35 15,45 Z" fill="#F3D17C" opacity="0.85" class="animate-koi-fin-left origin-[15px_45px]" />
-                                    <path d="M48,45 Q68,35 58,25 Q48,35 45,45 Z" fill="#F3D17C" opacity="0.85" class="animate-koi-fin-right origin-[45px_45px]" />
-                                    <ellipse cx="30" cy="50" rx="13" ry="30" fill="#E5A93C" />
-                                    <path d="M22,35 Q30,24 38,36 Q32,46 22,35 Z" fill="#FEEAA3" />
-                                    <path d="M27,20 Q22,14 20,10" stroke="#FEEAA3" stroke-width="1" fill="none" />
-                                    <path d="M33,20 Q38,14 40,10" stroke="#FEEAA3" stroke-width="1" fill="none" />
-                                    <g class="animate-koi-tail origin-[30px_80px]">
-                                        <path d="M30,80 Q20,102 12,114 Q30,106 48,114 Q40,102 30,80 Z" fill="#F5C765" opacity="0.85" />
-                                    </g>
-                                </svg>
-                            </div>
-                        </div>
-
-                        <!-- Center Japanese Symbol Floating in Deep Water -->
-                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
-                            <span class="text-white/10 text-8xl font-serif select-none font-bold">和</span>
+                        <!-- Floating Golden Calligraphy Badge in Water -->
+                        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-amber-300/60 text-amber-200 text-xs font-serif font-semibold tracking-widest shadow-lg">
+                            和 • KETENANGAN &amp; HARMONI
                         </div>
                     </div>
                 </section>
