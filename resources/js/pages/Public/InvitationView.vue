@@ -125,6 +125,23 @@ const invitationData = computed(() => {
 
     const isLight = theme.isLight === true || theme.mode === 'light';
 
+    // Robust couple normalization supporting both nested and flat fields
+    const groomNick = content.groom?.nickname || content.groomNickname || 'Dimas';
+    const groomFull = content.groom?.fullName || content.groomName || 'Dimas Prasetyo, S.Kom';
+    const groomParents = content.groom?.parents || content.groomParents || 'Putra pertama dari Bpk. Bambang Prasetyo & Ibu Sri Wahyuni';
+    const groomPhoto = content.groom?.photo || content.groomPhotoUrl || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80';
+    const groomInsta = content.groom?.instagram || content.groomInstagram || '@dimasprasetyo';
+
+    const brideNick = content.bride?.nickname || content.brideNickname || 'Anisa';
+    const brideFull = content.bride?.fullName || content.brideName || 'Anisa Rahmawati, S.E';
+    const brideParents = content.bride?.parents || content.brideParents || 'Putri kedua dari Bpk. H. Rahmat Hidayat & Ibu Siti Aminah';
+    const bridePhoto = content.bride?.photo || content.bridePhotoUrl || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80';
+    const brideInsta = content.bride?.instagram || content.brideInstagram || '@anisarahmawati';
+
+    const rawDate = content.weddingDateText || content.weddingDate || (firstEvent ? firstEvent.starts_at : '2026-12-28');
+    const weddingTitle = content.weddingTitle || (groomNick && brideNick ? `${groomNick} & ${brideNick}` : (props.invitation?.title || 'Dimas & Anisa'));
+    const coverImg = content.coverImage || content.coverPhotoUrl || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80';
+
     return {
         theme: {
             palette: theme.palette || 'gold',
@@ -150,26 +167,40 @@ const invitationData = computed(() => {
         content: {
             coverBadge: content.coverBadge || 'Royal 3D Wax Seal Edition',
             coverSubtitle: content.coverSubtitle || "Walimatul 'Ursy",
-            weddingTitle: content.weddingTitle || props.invitation?.title || 'Dimas & Anisa',
-            weddingDateText: formatDisplayDate(content.weddingDateText || (firstEvent ? firstEvent.starts_at : '2026-12-28')),
-            coverImage: content.coverImage || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+            weddingTitle: weddingTitle,
+            weddingDate: content.weddingDate || rawDate,
+            weddingDateText: formatDisplayDate(rawDate),
+            coverImage: coverImg,
+            coverPhotoUrl: coverImg,
             quote: content.quote || 'Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya, dan dijadikan-Nya di antaramu rasa kasih dan sayang.',
             quoteSource: content.quoteSource || 'QS. Ar-Rum: 21',
+            story: content.story || [],
             groom: {
-                nickname: content.groom?.nickname || 'Dimas',
-                fullName: content.groom?.fullName || 'Dimas Prasetyo, S.Kom',
-                parents: content.groom?.parents || 'Putra pertama dari Bpk. Bambang Prasetyo & Ibu Sri Wahyuni',
-                photo: content.groom?.photo || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80',
-                instagram: content.groom?.instagram || '@dimasprasetyo',
+                nickname: groomNick,
+                fullName: groomFull,
+                parents: groomParents,
+                photo: groomPhoto,
+                instagram: groomInsta,
             },
             bride: {
-                nickname: content.bride?.nickname || 'Anisa',
-                fullName: content.bride?.fullName || 'Anisa Rahmawati, S.E',
-                parents: content.bride?.parents || 'Putri kedua dari Bpk. H. Rahmat Hidayat & Ibu Siti Aminah',
-                photo: content.bride?.photo || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80',
-                instagram: content.bride?.instagram || '@anisarahmawati',
+                nickname: brideNick,
+                fullName: brideFull,
+                parents: brideParents,
+                photo: bridePhoto,
+                instagram: brideInsta,
             },
-            gallery: (content.gallery && Array.isArray(content.gallery) && content.gallery.length === 4)
+            // Flat mirrors for templates reading flat fields
+            groomName: groomFull,
+            groomNickname: groomNick,
+            groomParents: groomParents,
+            groomPhotoUrl: groomPhoto,
+            groomInstagram: groomInsta,
+            brideName: brideFull,
+            brideNickname: brideNick,
+            brideParents: brideParents,
+            bridePhotoUrl: bridePhoto,
+            brideInstagram: brideInsta,
+            gallery: (content.gallery && Array.isArray(content.gallery) && content.gallery.length > 0)
                 ? content.gallery
                 : [
                     'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=600&q=80',
@@ -692,25 +723,50 @@ const openQris = (account: any) => {
 };
 
 const digitalGift = computed(() => {
-    return props.design?.gift || {
-        enabled: true,
-        title: 'Amplop Digital & Kado Nikah',
-        description: 'Doa restu Anda adalah karunia terindah bagi kami. Namun jika memberi adalah ungkapan kasih, Anda dapat menyalurkannya melalui cashless digital gift di bawah ini:',
-        accounts: [
-            {
-                bank: 'BCA',
-                account_number: '8210984721',
-                account_name: 'Dimas Prasetyo',
-                qr_image: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226590014ID.LINKAJA.WWW01189360091800000000005204581253033605802ID5914DIMAS_PRASETYO6007JAKARTA63041234',
-            },
-            {
-                bank: 'Bank Mandiri',
-                account_number: '1370019283741',
-                account_name: 'Anisa Rahmawati',
-                qr_image: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226590014ID.LINKAJA.WWW01189360091800000000005204581253033605802ID5915ANISA_RAHMAWATI6007JAKARTA63045678',
-            },
-        ],
-        physical_gift: {
+    const d = liveDesignOverride.value || props.design || {};
+    const gift = d.gift || props.design?.gift || {};
+    const rawAccounts = gift.accounts || [];
+
+    const defaultAccounts = [
+        {
+            bank: 'BCA',
+            bank_name: 'BCA',
+            account_number: '8210984721',
+            account_name: 'Dimas Prasetyo',
+            account_holder: 'Dimas Prasetyo',
+            qr_image: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226590014ID.LINKAJA.WWW01189360091800000000005204581253033605802ID5914DIMAS_PRASETYO6007JAKARTA63041234',
+            qris_image_url: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226590014ID.LINKAJA.WWW01189360091800000000005204581253033605802ID5914DIMAS_PRASETYO6007JAKARTA63041234',
+        },
+        {
+            bank: 'Bank Mandiri',
+            bank_name: 'Bank Mandiri',
+            account_number: '1370019283741',
+            account_name: 'Anisa Rahmawati',
+            account_holder: 'Anisa Rahmawati',
+            qr_image: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226590014ID.LINKAJA.WWW01189360091800000000005204581253033605802ID5915ANISA_RAHMAWATI6007JAKARTA63045678',
+            qris_image_url: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=00020101021226590014ID.LINKAJA.WWW01189360091800000000005204581253033605802ID5915ANISA_RAHMAWATI6007JAKARTA63045678',
+        },
+    ];
+
+    const normalizedAccounts = rawAccounts.length > 0
+        ? rawAccounts.map((acc: any) => ({
+            ...acc,
+            bank: acc.bank || acc.bank_name || acc.name || 'Bank Transfer',
+            bank_name: acc.bank || acc.bank_name || acc.name || 'Bank Transfer',
+            account_number: acc.account_number || acc.number || '',
+            account_name: acc.account_name || acc.account_holder || acc.holder || '',
+            account_holder: acc.account_name || acc.account_holder || acc.holder || '',
+            qr_image: acc.qr_image || acc.qris_image_url || acc.qr_code_url || '',
+            qris_image_url: acc.qr_image || acc.qris_image_url || acc.qr_code_url || '',
+        }))
+        : defaultAccounts;
+
+    return {
+        enabled: gift.enabled !== false,
+        title: gift.title || 'Amplop Digital & Kado Nikah',
+        description: gift.description || 'Doa restu Anda adalah karunia terindah bagi kami. Namun jika memberi adalah ungkapan kasih, Anda dapat menyalurkannya melalui cashless digital gift di bawah ini:',
+        accounts: normalizedAccounts,
+        physical_gift: gift.physical_gift || {
             enabled: true,
             receiver_name: 'Dimas & Anisa',
             phone: '0812-3456-7890',

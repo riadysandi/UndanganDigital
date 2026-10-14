@@ -140,9 +140,50 @@ const copyBankNumber = (num: string, index: number) => {
     }, 2500);
 };
 
+// Normalized couple and design accessors (supports both nested and flat schemas)
+const groom = computed(() => {
+    const c = props.invitationData?.content || {};
+    return {
+        fullName: c.groom?.fullName || c.groomName || 'Kenji Pratama, S.T.',
+        nickname: c.groom?.nickname || c.groomNickname || 'Kenji',
+        parents: c.groom?.parents || c.groomParents || 'Bpk. Ir. Bambang Pratama & Ibu Etsuko Tanaka',
+        photo: c.groom?.photo || c.groomPhotoUrl || '/images/templates/sakura/groom-real.jpg',
+        instagram: c.groom?.instagram || c.groomInstagram || '',
+    };
+});
+
+const bride = computed(() => {
+    const c = props.invitationData?.content || {};
+    return {
+        fullName: c.bride?.fullName || c.brideName || 'Ayumi Larasati, B.Des.',
+        nickname: c.bride?.nickname || c.brideNickname || 'Ayumi',
+        parents: c.bride?.parents || c.brideParents || 'Bpk. Hendra Gunawan & Ibu Rini Larasati',
+        photo: c.bride?.photo || c.bridePhotoUrl || '/images/templates/sakura/bride-real.jpg',
+        instagram: c.bride?.instagram || c.brideInstagram || '',
+    };
+});
+
+const weddingTitle = computed(() => {
+    const c = props.invitationData?.content || {};
+    if (groom.value.nickname && bride.value.nickname) {
+        return `${groom.value.nickname} & ${bride.value.nickname}`;
+    }
+    return c.weddingTitle || 'Kenji & Ayumi';
+});
+
+const weddingDate = computed(() => {
+    const c = props.invitationData?.content || {};
+    return c.weddingDateText || c.weddingDate || 'Sabtu, 12 Desember 2026';
+});
+
+const coverPhoto = computed(() => {
+    const c = props.invitationData?.content || {};
+    return c.coverImage || c.coverPhotoUrl || '/images/templates/sakura/couple-traditional.jpg';
+});
+
 // Google Calendar URL
 const googleCalendarUrl = computed(() => {
-    const title = encodeURIComponent((props.invitationData?.content?.weddingTitle || 'Japanese Zen Wedding') + ' - Kenji & Ayumi');
+    const title = encodeURIComponent((weddingTitle.value || 'Japanese Zen Wedding') + ' - ' + weddingTitle.value);
     const firstEvent = props.events?.[0];
     const location = encodeURIComponent((firstEvent?.venue_name || '') + ' - ' + (firstEvent?.address || ''));
     return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&location=${location}&dates=20261212T010000Z/20261212T140000Z`;
@@ -1231,7 +1272,7 @@ onBeforeUnmount(() => {
                 </div>
 
                 <h1 class="text-3xl sm:text-4xl font-serif text-[#2D2424] font-semibold tracking-wide mb-1">
-                    {{ invitationData.content.groomNickname || 'Kenji' }} &amp; {{ invitationData.content.brideNickname || 'Ayumi' }}
+                    {{ groom.nickname }} &amp; {{ bride.nickname }}
                 </h1>
                 
                 <div class="flex items-center justify-center space-x-3 my-3">
@@ -1241,7 +1282,7 @@ onBeforeUnmount(() => {
                 </div>
 
                 <p class="text-xs text-[#6B5E55] mb-6">
-                    {{ safeFormatDisplayDate(invitationData.content.weddingDate) }}
+                    {{ safeFormatDisplayDate(weddingDate) }}
                 </p>
 
                 <!-- Guest Recipient Tag -->
@@ -1323,8 +1364,8 @@ onBeforeUnmount(() => {
                     <!-- Authentic Couple Portrait in Traditional Attire -->
                     <div class="relative w-64 h-80 rounded-2xl p-2 bg-gradient-to-tr from-[#D4AF37] via-[#E89CAE] to-[#C23B22] shadow-2xl overflow-hidden border-2 border-amber-200/50 group">
                         <img
-                            :src="invitationData.content.coverPhotoUrl || '/images/templates/sakura/couple-traditional.jpg'"
-                            alt="Kenji & Ayumi"
+                            :src="coverPhoto"
+                            alt="Couple Cover"
                             class="w-full h-full object-cover rounded-xl group-hover:scale-105 transition-transform duration-700"
                         />
                         <div class="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none"></div>
@@ -1336,10 +1377,10 @@ onBeforeUnmount(() => {
                     </div>
 
                     <h2 class="text-2xl sm:text-3xl font-serif font-bold text-amber-100 tracking-wide mt-4">
-                        {{ invitationData.content.groomNickname || 'Kenji' }} &amp; {{ invitationData.content.brideNickname || 'Ayumi' }}
+                        {{ groom.nickname }} &amp; {{ bride.nickname }}
                     </h2>
                     <div class="text-xs text-rose-300 font-light tracking-widest mt-1">
-                        {{ safeFormatDisplayDate(invitationData.content.weddingDate) }}
+                        {{ safeFormatDisplayDate(weddingDate) }}
                     </div>
                 </div>
 
@@ -1395,7 +1436,7 @@ onBeforeUnmount(() => {
                         <div class="relative w-56 h-56 rounded-full p-2 bg-gradient-to-tr from-[#D4AF37] via-[#E89CAE] to-[#C23B22] shadow-2xl">
                             <div class="w-full h-full rounded-full overflow-hidden border-2 border-white/60">
                                 <img
-                                    :src="invitationData.content.coverPhotoUrl || '/images/templates/sakura/couple-traditional.jpg'"
+                                    :src="coverPhoto"
                                     alt="Couple Cover"
                                     class="w-full h-full object-cover"
                                 />
@@ -1407,10 +1448,10 @@ onBeforeUnmount(() => {
                         </div>
 
                         <h1 class="text-3xl font-serif font-bold text-amber-100 tracking-wider mt-5">
-                            {{ invitationData.content.groomNickname || 'Kenji' }} &amp; {{ invitationData.content.brideNickname || 'Ayumi' }}
+                            {{ groom.nickname }} &amp; {{ bride.nickname }}
                         </h1>
                         <p class="text-xs text-rose-300 font-light tracking-widest mt-1">
-                            {{ safeFormatDisplayDate(invitationData.content.weddingDate) }}
+                            {{ safeFormatDisplayDate(weddingDate) }}
                         </p>
                     </div>
 
@@ -1492,7 +1533,7 @@ onBeforeUnmount(() => {
                                 <!-- Groom Photo inside Enso Window -->
                                 <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1.5 bg-gradient-to-tr from-[#3D2817] via-[#D4AF37] to-[#8C1D0B] shadow-md flex-shrink-0">
                                     <img
-                                        :src="invitationData.content.groomPhotoUrl || '/images/templates/sakura/groom-real.jpg'"
+                                        :src="groom.photo"
                                         alt="Groom Photo"
                                         class="w-full h-full object-cover rounded-full"
                                     />
@@ -1502,24 +1543,24 @@ onBeforeUnmount(() => {
                                 </div>
                                 <div class="flex-1">
                                     <h3 class="text-xl font-serif font-bold text-[#2D2424]">
-                                        {{ invitationData.content.groomName || 'Kenji Pratama, S.T.' }}
+                                        {{ groom.fullName }}
                                     </h3>
                                     <p class="text-xs text-[#8C6D4A] font-medium tracking-wide mt-1">
                                         Putra Pertama dari:
                                     </p>
                                     <p class="text-xs text-[#5C4D44] mt-0.5 leading-relaxed">
-                                        {{ invitationData.content.groomParents || 'Bpk. Ir. Bambang Pratama & Ibu Etsuko Tanaka' }}
+                                        {{ groom.parents }}
                                     </p>
-                                    <div v-if="invitationData.content.groomInstagram" class="mt-3">
+                                    <div v-if="groom.instagram" class="mt-3">
                                         <a
-                                            :href="'https://instagram.com/' + invitationData.content.groomInstagram.replace('@', '')"
+                                            :href="'https://instagram.com/' + groom.instagram.replace('@', '')"
                                             target="_blank"
                                             class="inline-flex items-center space-x-1.5 text-xs text-[#C23B22] hover:text-[#8C1D0B] font-medium"
                                         >
                                             <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                                                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                                             </svg>
-                                            <span>{{ invitationData.content.groomInstagram }}</span>
+                                            <span>{{ groom.instagram }}</span>
                                         </a>
                                     </div>
                                 </div>
@@ -1539,7 +1580,7 @@ onBeforeUnmount(() => {
                                 <!-- Bride Photo inside Enso Window -->
                                 <div class="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full p-1.5 bg-gradient-to-tr from-[#D4AF37] via-[#E89CAE] to-[#C23B22] shadow-md flex-shrink-0">
                                     <img
-                                        :src="invitationData.content.bridePhotoUrl || '/images/templates/sakura/bride-real.jpg'"
+                                        :src="bride.photo"
                                         alt="Bride Photo"
                                         class="w-full h-full object-cover rounded-full"
                                     />
@@ -1549,24 +1590,24 @@ onBeforeUnmount(() => {
                                 </div>
                                 <div class="flex-1">
                                     <h3 class="text-xl font-serif font-bold text-[#2D2424]">
-                                        {{ invitationData.content.brideName || 'Ayumi Larasati, B.Des.' }}
+                                        {{ bride.fullName }}
                                     </h3>
                                     <p class="text-xs text-[#8C6D4A] font-medium tracking-wide mt-1">
                                         Putri Bungsu dari:
                                     </p>
                                     <p class="text-xs text-[#5C4D44] mt-0.5 leading-relaxed">
-                                        {{ invitationData.content.brideParents || 'Bpk. Hendra Gunawan & Ibu Rini Larasati' }}
+                                        {{ bride.parents }}
                                     </p>
-                                    <div v-if="invitationData.content.brideInstagram" class="mt-3">
+                                    <div v-if="bride.instagram" class="mt-3">
                                         <a
-                                            :href="'https://instagram.com/' + invitationData.content.brideInstagram.replace('@', '')"
+                                            :href="'https://instagram.com/' + bride.instagram.replace('@', '')"
                                             target="_blank"
                                             class="inline-flex items-center space-x-1.5 text-xs text-[#C23B22] hover:text-[#8C1D0B] font-medium"
                                         >
                                             <svg class="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
                                                 <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/>
                                             </svg>
-                                            <span>{{ invitationData.content.brideInstagram }}</span>
+                                            <span>{{ bride.instagram }}</span>
                                         </a>
                                     </div>
                                 </div>
@@ -1870,13 +1911,13 @@ onBeforeUnmount(() => {
                             >
                                 <div>
                                     <div class="text-xs font-bold text-[#C23B22] uppercase tracking-wider">
-                                        {{ bank.bank_name || bank.name || 'Bank Transfer' }}
+                                        {{ bank.bank || bank.bank_name || bank.name || 'Bank Transfer' }}
                                     </div>
                                     <div class="text-base font-mono font-bold text-stone-800 tracking-wider mt-0.5">
                                         {{ bank.account_number || bank.number }}
                                     </div>
                                     <div class="text-xs text-stone-600">
-                                        a.n. {{ bank.account_holder || bank.holder }}
+                                        a.n. {{ bank.account_name || bank.account_holder || bank.holder }}
                                     </div>
                                 </div>
                                 <div class="flex items-center space-x-2">
@@ -1890,7 +1931,7 @@ onBeforeUnmount(() => {
                                         <span>{{ copiedBankIndex === bIdx ? 'Tersalin!' : 'Salin No. Rek' }}</span>
                                     </button>
                                     <button
-                                        v-if="bank.qris_image_url || digitalGift.qris_url"
+                                        v-if="bank.qr_image || bank.qris_image_url || digitalGift.qris_url"
                                         @click="props.openQris(bank)"
                                         class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-50 text-[#C23B22] border border-rose-200 hover:bg-rose-100 transition-colors"
                                     >
@@ -2030,7 +2071,7 @@ onBeforeUnmount(() => {
                         Kami yang berbahagia,
                     </div>
                     <div class="text-lg font-serif font-bold text-[#2D2424] mt-1">
-                        {{ invitationData.content.groomNickname || 'Kenji' }} &amp; {{ invitationData.content.brideNickname || 'Ayumi' }}
+                        {{ groom.nickname }} &amp; {{ bride.nickname }}
                     </div>
 
                     <div class="mt-8 text-[10px] text-stone-400 tracking-widest uppercase">

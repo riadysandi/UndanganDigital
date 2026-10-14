@@ -93,9 +93,27 @@ const refreshPreview = () => {
 const syncToPreview = () => {
     if (previewIframeRef.value && previewIframeRef.value.contentWindow) {
         try {
+            const liveDesign = JSON.parse(JSON.stringify(designData));
+            if (liveDesign.content) {
+                // Mirror flat properties so templates supporting both schemas update simultaneously in 0ms
+                liveDesign.content.groomName = liveDesign.content.groom?.fullName;
+                liveDesign.content.groomNickname = liveDesign.content.groom?.nickname;
+                liveDesign.content.groomParents = liveDesign.content.groom?.parents;
+                liveDesign.content.groomPhotoUrl = liveDesign.content.groom?.photo;
+                liveDesign.content.groomInstagram = liveDesign.content.groom?.instagram;
+
+                liveDesign.content.brideName = liveDesign.content.bride?.fullName;
+                liveDesign.content.brideNickname = liveDesign.content.bride?.nickname;
+                liveDesign.content.brideParents = liveDesign.content.bride?.parents;
+                liveDesign.content.bridePhotoUrl = liveDesign.content.bride?.photo;
+                liveDesign.content.brideInstagram = liveDesign.content.bride?.instagram;
+
+                liveDesign.content.coverPhotoUrl = liveDesign.content.coverImage;
+                liveDesign.content.weddingDate = liveDesign.content.weddingDate;
+            }
             previewIframeRef.value.contentWindow.postMessage({
                 type: 'LIVE_UPDATE_DESIGN',
-                design: JSON.parse(JSON.stringify(designData))
+                design: liveDesign
             }, '*');
         } catch (e) {
             // iframe cross-origin or loading
@@ -469,12 +487,53 @@ onMounted(() => {
         const loaded = props.invitation.design.design_json;
         if (loaded.theme) Object.assign(designData.theme, loaded.theme);
         if (loaded.content) {
+            // Normalize flat legacy/seeder fields into groom/bride
+            if (loaded.content.groomName && (!loaded.content.groom || !loaded.content.groom.fullName)) {
+                designData.content.groom.fullName = loaded.content.groomName;
+            }
+            if (loaded.content.groomNickname && (!loaded.content.groom || !loaded.content.groom.nickname)) {
+                designData.content.groom.nickname = loaded.content.groomNickname;
+            }
+            if (loaded.content.groomParents && (!loaded.content.groom || !loaded.content.groom.parents)) {
+                designData.content.groom.parents = loaded.content.groomParents;
+            }
+            if (loaded.content.groomPhotoUrl && (!loaded.content.groom || !loaded.content.groom.photo)) {
+                designData.content.groom.photo = loaded.content.groomPhotoUrl;
+            }
+            if (loaded.content.groomInstagram && (!loaded.content.groom || !loaded.content.groom.instagram)) {
+                designData.content.groom.instagram = loaded.content.groomInstagram;
+            }
+
+            if (loaded.content.brideName && (!loaded.content.bride || !loaded.content.bride.fullName)) {
+                designData.content.bride.fullName = loaded.content.brideName;
+            }
+            if (loaded.content.brideNickname && (!loaded.content.bride || !loaded.content.bride.nickname)) {
+                designData.content.bride.nickname = loaded.content.brideNickname;
+            }
+            if (loaded.content.brideParents && (!loaded.content.bride || !loaded.content.bride.parents)) {
+                designData.content.bride.parents = loaded.content.brideParents;
+            }
+            if (loaded.content.bridePhotoUrl && (!loaded.content.bride || !loaded.content.bride.photo)) {
+                designData.content.bride.photo = loaded.content.bridePhotoUrl;
+            }
+            if (loaded.content.brideInstagram && (!loaded.content.bride || !loaded.content.bride.instagram)) {
+                designData.content.bride.instagram = loaded.content.brideInstagram;
+            }
+
+            if (loaded.content.coverPhotoUrl && !loaded.content.coverImage) {
+                designData.content.coverImage = loaded.content.coverPhotoUrl;
+            }
+
             if (loaded.content.groom) Object.assign(designData.content.groom, loaded.content.groom);
             if (loaded.content.bride) Object.assign(designData.content.bride, loaded.content.bride);
             if (loaded.content.gallery && Array.isArray(loaded.content.gallery)) {
                 designData.content.gallery = [...loaded.content.gallery];
             }
             Object.assign(designData.content, loaded.content);
+
+            // Re-ensure nested objects remain properly assigned
+            if (loaded.content.groom) Object.assign(designData.content.groom, loaded.content.groom);
+            if (loaded.content.bride) Object.assign(designData.content.bride, loaded.content.bride);
 
             // Initialize date picker value
             if (loaded.content.weddingDate) {
@@ -531,7 +590,22 @@ const executeSave = async () => {
             design: {
                 schemaVersion: 1,
                 theme: designData.theme,
-                content: designData.content,
+                content: {
+                    ...designData.content,
+                    // Mirror flat keys for cross-template compatibility
+                    groomName: designData.content.groom?.fullName,
+                    groomNickname: designData.content.groom?.nickname,
+                    groomParents: designData.content.groom?.parents,
+                    groomPhotoUrl: designData.content.groom?.photo,
+                    groomInstagram: designData.content.groom?.instagram,
+                    brideName: designData.content.bride?.fullName,
+                    brideNickname: designData.content.bride?.nickname,
+                    brideParents: designData.content.bride?.parents,
+                    bridePhotoUrl: designData.content.bride?.photo,
+                    brideInstagram: designData.content.bride?.instagram,
+                    coverPhotoUrl: designData.content.coverImage,
+                    weddingDate: designData.content.weddingDate,
+                },
                 canvas: designData.canvas,
                 musicUrl: designData.musicUrl,
                 gift: designData.gift,
