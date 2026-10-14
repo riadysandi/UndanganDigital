@@ -23,6 +23,7 @@ Route::get('/', function () {
     $masterSlugs = [
         'ningrum-fairytale-3d',
         'celestia-starlight-3d',
+        'sakura-zen-3d',
         'victoria-luxury-3d',
         'alsa-royal-adat-3d',
         'bianca-botanical-3d',
