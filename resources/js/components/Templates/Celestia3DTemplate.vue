@@ -84,6 +84,15 @@ const handleMouseMove = (e: MouseEvent) => {
     targetRotateX.value = -y * 14;
 };
 
+const handleTouchMove = (e: TouchEvent) => {
+    if (!e.touches[0]) return;
+    const t = e.touches[0];
+    const x = (t.clientX / window.innerWidth - 0.5) * 2;
+    const y = (t.clientY / window.innerHeight - 0.5) * 2;
+    targetRotateY.value = x * 14;
+    targetRotateX.value = -y * 14;
+};
+
 // 3D Tilt for Interactive Hologram Cards
 const cardGroomTilt = ref({ x: 0, y: 0, glareX: 50, glareY: 50 });
 const cardBrideTilt = ref({ x: 0, y: 0, glareX: 50, glareY: 50 });
@@ -476,8 +485,9 @@ onMounted(() => {
     // 1. Initialize Stardust
     initStardustCanvas();
 
-    // 2. Listen to mousemove for 3D parallax on Left Pane
+    // 2. Listen to mousemove and touchmove for 3D parallax
     window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('touchmove', handleTouchMove, { passive: true });
 
     // 3. Initialize GSAP ScrollTrigger after DOM is ready
     nextTick(() => {
@@ -489,6 +499,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
     window.removeEventListener('mousemove', handleMouseMove);
+    window.removeEventListener('touchmove', handleTouchMove);
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     ScrollTrigger.getAll().forEach((t) => t.kill());
 });
@@ -610,42 +621,62 @@ const scrollToTop = () => {
                     <!-- Subtle Ambient Aura Glow -->
                     <div class="celestia-cover-glow"></div>
 
-                    <!-- 3D Interactive Astrolabe Lock -->
-                    <div class="celestia-cover-lock-wrap">
-                        <div class="lock-ring lock-ring-1"></div>
-                        <div class="lock-ring lock-ring-2"></div>
-                        <div class="lock-ring lock-ring-3"></div>
+                    <!-- 3D Interactive Astrolabe with Couple Photo (Moving centerpiece on Mobile & Cover) -->
+                    <div
+                        class="celestia-astrolabe-viewport celestia-cover-astrolabe"
+                        :style="{
+                            transform: `perspective(1000px) rotateX(${targetRotateX * 0.4}deg) rotateY(${targetRotateY * 0.4}deg)`
+                        }"
+                    >
+                        <!-- Outer Astrological Orbit Ring -->
+                        <div class="astrolabe-ring ring-outer"></div>
+                        <!-- Middle Gyroscope Ring (Rotates on X axis) -->
+                        <div class="astrolabe-ring ring-middle"></div>
+                        <!-- Inner Gyroscope Ring (Rotates on Y axis) -->
+                        <div class="astrolabe-ring ring-inner"></div>
 
-                        <!-- Core Medallion -->
-                        <div class="lock-medallion">
-                            <span class="monogram-symbol">
-                                {{ (invitationData.content.groom?.nickname?.[0] || 'A') }} &amp; {{ (invitationData.content.bride?.nickname?.[0] || 'N') }}
-                            </span>
-                            <span class="medallion-year">2026</span>
+                        <!-- Center 3D Floating Prism with Couple Portrait -->
+                        <div class="astrolabe-center-core">
+                            <div class="prism-frame">
+                                <img
+                                    :src="invitationData.content.coverImage || '/images/templates/ningrum/portrait-couple.webp'"
+                                    alt="The Couple"
+                                    class="prism-photo"
+                                />
+                                <div class="prism-glass-overlay"></div>
+                                <div class="prism-gold-filigree"></div>
+                            </div>
                         </div>
+
+                        <!-- Floating 3D Star Constellations -->
+                        <div class="floating-constellation star-1">✦</div>
+                        <div class="floating-constellation star-2">✧</div>
+                        <div class="floating-constellation star-3">✦</div>
+                        <div class="floating-constellation star-4">✧</div>
                     </div>
 
                     <!-- Invitation Header -->
-                    <div class="mt-6 text-center z-10 px-4">
-                        <p class="text-amber-300/90 text-xs tracking-[0.25em] uppercase font-medium">
-                            THE WEDDING CELEBRATION OF
-                        </p>
-                        <h2 class="text-3xl sm:text-4xl md:text-5xl font-serif text-white tracking-tight mt-2 font-normal">
+                    <div class="mt-4 text-center z-10 px-4">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-400/30 text-amber-300 text-[10px] tracking-widest uppercase font-semibold mb-2">
+                            <span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping"></span>
+                            Royal 3D Celestial Edition
+                        </div>
+                        <h2 class="text-3xl sm:text-4xl font-serif text-white tracking-tight mt-1 font-normal">
                             {{ invitationData.content.weddingTitle }}
                         </h2>
-                        <div class="w-16 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto my-4"></div>
-                        <p class="text-emerald-200/80 text-sm font-sans">
+                        <div class="w-16 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto my-3"></div>
+                        <p class="text-emerald-200/80 text-xs sm:text-sm font-sans">
                             {{ safeFormatDisplayDate(invitationData.content.weddingDateText) }}
                         </p>
                     </div>
 
                     <!-- Guest VIP Card -->
-                    <div class="celestia-guest-card mt-6">
+                    <div class="celestia-guest-card mt-4">
                         <p class="text-[11px] text-stone-400 uppercase tracking-widest">Kepada Yth. Bapak/Ibu/Saudara/i</p>
-                        <h3 class="text-lg font-serif text-amber-200 font-semibold mt-1">
+                        <h3 class="text-base sm:text-lg font-serif text-amber-200 font-semibold mt-0.5">
                             {{ guestName || 'Tamu Undangan Spesial' }}
                         </h3>
-                        <p class="text-[10px] text-stone-400 mt-1 italic">
+                        <p class="text-[10px] text-stone-400 mt-0.5 italic">
                             *Mohon maaf apabila ada kesalahan penulisan nama/gelar
                         </p>
                     </div>
@@ -653,10 +684,10 @@ const scrollToTop = () => {
                     <!-- 3D Open Button -->
                     <button
                         @click="handleOpenInvitation"
-                        class="celestia-btn-open group mt-7"
+                        class="celestia-btn-open group mt-5"
                     >
                         <span class="btn-glow"></span>
-                        <span class="relative z-10 flex items-center gap-3 text-stone-900 font-serif font-bold text-sm tracking-wider uppercase px-6 py-3">
+                        <span class="relative z-10 flex items-center gap-3 text-stone-900 font-serif font-bold text-xs sm:text-sm tracking-wider uppercase px-6 py-2.5 sm:py-3">
                             <svg class="w-4 h-4 text-emerald-900 fill-current animate-spin" style="animation-duration: 6s;" viewBox="0 0 24 24">
                                 <path d="M12 2L14.39 8.26L21 9.27L16.5 14.14L17.77 21L12 17.77L6.23 21L7.5 14.14L3 9.27L9.61 8.26L12 2Z"/>
                             </svg>
@@ -689,19 +720,29 @@ const scrollToTop = () => {
                             {{ invitationData.content.weddingTitle }}
                         </h2>
 
-                        <!-- 3D Tilting Hero Couple Portrait -->
-                        <div class="celestia-hero-prism mt-8 relative mx-auto w-72 sm:w-80 h-96 sm:h-[420px] rounded-2xl p-2.5 bg-gradient-to-b from-amber-400/30 via-emerald-800/20 to-amber-500/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] border border-amber-400/30">
-                            <div class="relative w-full h-full rounded-xl overflow-hidden">
-                                <img
-                                    :src="invitationData.content.coverImage || '/images/templates/ningrum/portrait-couple.webp'"
-                                    alt="Couple Portrait"
-                                    class="w-full h-full object-cover transform hover:scale-105 transition-transform duration-700"
-                                />
-                                <div class="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-transparent to-transparent"></div>
-                                <div class="absolute bottom-4 inset-x-4 text-center">
-                                    <p class="text-xs text-amber-200 tracking-widest uppercase font-serif">Menuju Bahtera Abadi</p>
-                                    <p class="text-sm text-stone-200 font-light mt-0.5">{{ safeFormatDisplayDate(invitationData.content.weddingDateText) }}</p>
+                        <!-- 3D Tilting Hero Couple Portrait with Orbiting Astrolabe Rings -->
+                        <div class="celestia-hero-prism mt-8 relative mx-auto flex items-center justify-center">
+                            <div class="celestia-astrolabe-viewport celestia-hero-astrolabe">
+                                <div class="astrolabe-ring ring-outer"></div>
+                                <div class="astrolabe-ring ring-middle"></div>
+                                <div class="astrolabe-ring ring-inner"></div>
+
+                                <div class="astrolabe-center-core">
+                                    <div class="prism-frame">
+                                        <img
+                                            :src="invitationData.content.coverImage || '/images/templates/ningrum/portrait-couple.webp'"
+                                            alt="Couple Portrait"
+                                            class="prism-photo"
+                                        />
+                                        <div class="prism-glass-overlay"></div>
+                                        <div class="prism-gold-filigree"></div>
+                                    </div>
                                 </div>
+
+                                <div class="floating-constellation star-1">✦</div>
+                                <div class="floating-constellation star-2">✧</div>
+                                <div class="floating-constellation star-3">✦</div>
+                                <div class="floating-constellation star-4">✧</div>
                             </div>
                         </div>
                     </div>
@@ -1536,72 +1577,78 @@ const scrollToTop = () => {
     pointer-events: none;
 }
 
-/* 3D Cover Lock */
-.celestia-cover-lock-wrap {
-    position: relative;
-    width: 160px;
-    height: 160px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transform-style: preserve-3d;
+/* 3D Astrolabe on Cover (Mobile & Desktop) */
+.celestia-cover-astrolabe {
+    width: 250px;
+    height: 250px;
+    margin: 0 auto;
+    animation: astrolabeFloat3D 6s ease-in-out infinite alternate;
 }
 
-.lock-ring {
-    position: absolute;
-    border-radius: 50%;
-    border: 1.5px solid rgba(212, 175, 55, 0.4);
+.celestia-cover-astrolabe .ring-outer {
+    width: 240px;
+    height: 240px;
 }
 
-.lock-ring-1 {
-    width: 150px;
-    height: 150px;
-    border-style: dashed;
-    border-color: rgba(230, 202, 101, 0.5);
-    animation: orbitSpin 35s linear infinite;
+.celestia-cover-astrolabe .ring-middle {
+    width: 205px;
+    height: 205px;
 }
 
-.lock-ring-2 {
+.celestia-cover-astrolabe .ring-inner {
+    width: 170px;
+    height: 170px;
+}
+
+.celestia-cover-astrolabe .astrolabe-center-core {
     width: 125px;
-    height: 125px;
-    border-color: rgba(110, 231, 183, 0.45);
-    animation: orbitSpin 20s linear infinite reverse;
+    height: 155px;
 }
 
-.lock-ring-3 {
-    width: 100px;
-    height: 100px;
-    border-color: rgba(212, 175, 55, 0.6);
+@keyframes astrolabeFloat3D {
+    0% {
+        transform: perspective(900px) rotateX(8deg) rotateY(-8deg);
+    }
+    50% {
+        transform: perspective(900px) rotateX(-6deg) rotateY(10deg);
+    }
+    100% {
+        transform: perspective(900px) rotateX(9deg) rotateY(5deg);
+    }
 }
 
-.lock-medallion {
-    position: relative;
-    width: 78px;
-    height: 78px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #E6CA65 0%, #AA771C 60%, #5E4007 100%);
-    box-shadow: 0 0 25px rgba(212, 175, 55, 0.5), inset 0 2px 5px rgba(255,255,255,0.6);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: #1A1203;
-    font-family: 'Cinzel', serif;
-    font-weight: 700;
-    text-align: center;
+/* 3D Astrolabe in Hero Section */
+.celestia-hero-astrolabe {
+    width: 300px;
+    height: 300px;
+    margin: 0 auto;
 }
 
-.monogram-symbol {
-    font-size: 14px;
-    letter-spacing: 1px;
+.celestia-hero-astrolabe .ring-outer {
+    width: 290px;
+    height: 290px;
 }
 
-.medallion-year {
-    font-size: 9px;
-    letter-spacing: 2px;
-    font-family: 'Plus Jakarta Sans', sans-serif;
-    font-weight: 600;
-    margin-top: 1px;
+.celestia-hero-astrolabe .ring-middle {
+    width: 245px;
+    height: 245px;
+}
+
+.celestia-hero-astrolabe .ring-inner {
+    width: 200px;
+    height: 200px;
+}
+
+.celestia-hero-astrolabe .astrolabe-center-core {
+    width: 150px;
+    height: 190px;
+}
+
+@media (min-width: 1024px) {
+    /* On desktop, hide cover astrolabe because left stage already has the grand astrolabe */
+    .celestia-cover-astrolabe {
+        display: none !important;
+    }
 }
 
 .celestia-guest-card {
