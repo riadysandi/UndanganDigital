@@ -1088,4 +1088,183 @@ body.ningrum h2 {
     color: var(--text-secondary);
     font-family: var(--body-text-family);
 }
+
+/* ==================================================== */
+/* FIX: SAVE THE DATE COUNTDOWN & FLORAL ORNAMENT BUG    */
+/* ==================================================== */
+.save-date-wrap {
+    position: relative !important;
+    overflow: hidden !important;
+    padding: 10% 0 15% !important;
+    min-height: unset !important;
+}
+
+.save-date-wrap .save-date {
+    position: relative !important;
+    z-index: 10 !important;
+    background: transparent !important;
+    padding: 0 16px 200px !important;
+    margin: 0 auto !important;
+}
+
+.save-date-wrap .save-date:before {
+    display: none !important;
+}
+
+.save-date-wrap .save-date-body {
+    position: relative !important;
+    z-index: 10 !important;
+    max-width: 520px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+}
+
+.save-date-wrap .save-date-title {
+    position: relative !important;
+    z-index: 12 !important;
+    font-family: 'Sloop', cursive !important;
+    font-size: clamp(38px, 6vw, 56px) !important;
+    color: #FBEFD3 !important;
+    text-shadow: 0 4px 16px rgba(0, 0, 0, 0.9) !important;
+    margin-bottom: 24px !important;
+    padding: 0 !important;
+    text-align: center !important;
+}
+
+.save-date-wrap .save-date-box {
+    position: relative !important;
+    z-index: 12 !important;
+    background: rgba(23, 19, 14, 0.85) !important;
+    backdrop-filter: blur(14px) !important;
+    -webkit-backdrop-filter: blur(14px) !important;
+    border: 1px solid rgba(212, 175, 55, 0.4) !important;
+    border-radius: 24px !important;
+    padding: 28px 20px !important;
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.75), inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+    margin: 0 auto !important;
+    max-width: 480px !important;
+}
+
+.save-date-wrap .countdown {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    margin-bottom: 20px !important;
+}
+
+.save-date-wrap .countdown .count-item {
+    background: rgba(255, 255, 255, 0.04) !important;
+    border: 1px solid rgba(212, 175, 55, 0.25) !important;
+    border-radius: 14px !important;
+    padding: 12px 6px !important;
+    width: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+}
+
+.save-date-wrap .countdown .count-num {
+    font-family: 'Cormorant Upright', serif !important;
+    font-size: clamp(26px, 4vw, 36px) !important;
+    font-weight: 700 !important;
+    color: #FBEFD3 !important;
+    line-height: 1 !important;
+    margin-bottom: 4px !important;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8) !important;
+}
+
+.save-date-wrap .countdown .count-text {
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1.5px !important;
+    color: #D4AF37 !important;
+    font-weight: 600 !important;
+}
+
+.save-date-wrap .add-to-calendar-wrap {
+    margin-top: 6px !important;
+    width: 100% !important;
+}
+
+.save-date-wrap .add-to-calendar {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    padding: 12px 24px !important;
+    border-radius: 9999px !important;
+    background: linear-gradient(135deg, #A29166 0%, #766340 100%) !important;
+    color: #17130E !important;
+    font-family: 'Plus Jakarta Sans', sans-serif !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+    border: 1px solid rgba(251, 239, 211, 0.5) !important;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5) !important;
+    transition: all 0.3s ease !important;
+    text-decoration: none !important;
+    width: 100% !important;
+    max-width: 280px !important;
+}
+
+.save-date-wrap .add-to-calendar:hover {
+    background: linear-gradient(135deg, #FBEFD3 0%, #D4AF37 100%) !important;
+    transform: translateY(-2px) !important;
+    box-shadow: 0 12px 25px rgba(212, 175, 55, 0.35) !important;
+}
+
+/* Ornaments container: strictly background behind the content */
+.save-date-wrap > .ornaments-wrapper {
+    position: absolute !important;
+    inset: 0 !important;
+    z-index: 1 !important;
+    pointer-events: none !important;
+}
+
+/* Left & Right Roman Pillars */
+.save-date-wrap .orn-sd-2.left,
+.save-date-wrap .orn-sd-2.right {
+    position: absolute !important;
+    bottom: 0 !important;
+    width: 22% !important;
+    max-width: 130px !important;
+    z-index: 1 !important;
+    pointer-events: none !important;
+    opacity: 0.85 !important;
+}
+
+.save-date-wrap .orn-sd-2.left {
+    left: 0 !important;
+    transform: none !important;
+}
+
+.save-date-wrap .orn-sd-2.right {
+    right: 0 !important;
+    transform: scaleX(-1) !important;
+}
+
+/* Centerpiece Floral Bouquet: sits gracefully at the bottom under the card, never obscuring text */
+.save-date-wrap .orn-sd-3 {
+    position: absolute !important;
+    bottom: -15px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+    width: 52% !important;
+    max-width: 240px !important;
+    z-index: 1 !important;
+    pointer-events: none !important;
+    opacity: 0.88 !important;
+}
+
+.save-date-wrap .orn-sd-3 img {
+    display: block !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: 250px !important;
+    object-fit: contain !important;
+    margin: 0 auto !important;
+}
 </style>
