@@ -696,22 +696,22 @@ const notifications = [
     <!-- ========================================== -->
     <div v-else class="min-h-screen bg-stone-50 flex flex-col font-sans">
         <!-- Public Top Navigation Bar -->
-        <header class="bg-white border-b border-stone-200 sticky top-0 z-40">
+        <header class="bg-white/90 backdrop-blur-md border-b border-emerald-950/10 sticky top-0 z-40">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
                 <!-- Brand Logo -->
                 <div class="flex items-center gap-8">
                     <Link href="/" class="flex items-center gap-2 group">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-rose-500 to-amber-500 flex items-center justify-center text-white shadow-sm shadow-rose-200 group-hover:scale-105 transition-transform">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-800 to-emerald-600 flex items-center justify-center text-white shadow-sm shadow-emerald-900/20 group-hover:scale-105 transition-transform">
                             <span class="font-serif font-bold text-lg">U</span>
                         </div>
-                        <span class="font-serif font-bold text-xl tracking-tight text-stone-800">
-                            Undangan<span class="text-rose-600">.id</span>
+                        <span class="font-serif font-bold text-xl tracking-tight text-stone-900">
+                            Undangan<span class="text-emerald-700">.id</span>
                         </span>
                     </Link>
 
                     <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-stone-600">
-                        <Link href="/pricing" class="hover:text-stone-900 transition-colors">Paket & Harga</Link>
-                        <Link href="/bantu-buat" class="text-rose-600 hover:text-rose-700 font-semibold transition-colors flex items-center gap-1.5">
+                        <Link href="/pricing" class="hover:text-emerald-900 transition-colors">Paket & Harga</Link>
+                        <Link href="/bantu-buat" class="text-emerald-700 hover:text-emerald-800 font-semibold transition-colors flex items-center gap-1.5">
                             <span class="text-xs">✨</span>
                             Dibantu Tim Kami
                         </Link>
@@ -722,13 +722,13 @@ const notifications = [
                 <div class="flex items-center gap-3">
                     <Link
                         href="/login"
-                        class="text-sm font-medium text-stone-600 hover:text-stone-900 px-3 py-1.5 transition-colors"
+                        class="text-sm font-medium text-stone-600 hover:text-emerald-900 px-3 py-1.5 transition-colors"
                     >
                         Masuk
                     </Link>
                     <Link
                         href="/register"
-                        class="text-sm font-medium text-white bg-rose-600 hover:bg-rose-700 px-4 py-2 rounded-lg shadow-sm shadow-rose-200 transition-all hover:shadow"
+                        class="text-sm font-medium text-white bg-emerald-800 hover:bg-emerald-900 px-4 py-2 rounded-xl shadow-md shadow-emerald-900/20 transition-all hover:shadow-lg"
                     >
                         Buat Undangan
                     </Link>
@@ -750,15 +750,15 @@ const notifications = [
         </main>
 
         <!-- Public Footer -->
-        <footer class="bg-white border-t border-stone-200 py-8 text-center text-xs text-stone-500">
+        <footer class="bg-white border-t border-emerald-900/10 py-10 text-center text-xs text-stone-500">
             <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
                 <p>&copy; 2026 Platform Undangan Digital SaaS. Hak Cipta Dilindungi.</p>
                 <div class="flex gap-4">
-                    <Link href="/pricing" class="hover:text-stone-800">Paket Harga</Link>
+                    <Link href="/pricing" class="hover:text-emerald-800 transition-colors">Paket Harga</Link>
                     <span class="text-stone-300">•</span>
-                    <Link href="/bantu-buat" class="hover:text-stone-800">Jasa Terima Beres</Link>
+                    <Link href="/bantu-buat" class="hover:text-emerald-800 transition-colors">Jasa Terima Beres</Link>
                     <span class="text-stone-300">•</span>
-                    <Link href="/login" class="hover:text-stone-800 font-medium">Masuk Akun</Link>
+                    <Link href="/login" class="hover:text-emerald-800 font-medium transition-colors">Masuk Akun</Link>
                 </div>
             </div>
         </footer>
