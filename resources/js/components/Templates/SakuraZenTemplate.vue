@@ -176,42 +176,767 @@ const handleOpenInvitation = () => {
 };
 
 // ========================================================
-// 2. INTERACTIVE KOI POND ENGINE (Ripples & Fish Flutter)
+// 2. INTERACTIVE ZEN KOI POND ENGINE (60fps Canvas Mini-Game)
 // ========================================================
-interface WaterRipple {
-    id: number;
+const koiCanvasRef = ref<HTMLCanvasElement | null>(null);
+const koiContainerRef = ref<HTMLElement | null>(null);
+const koiFedCount = ref(0);
+let koiAnimFrameId: number | null = null;
+let cleanupKoiCanvas: (() => void) | undefined;
+
+interface PondFood {
     x: number;
     y: number;
+    r: number;
+    floatOffset: number;
 }
-const pondRipples = ref<WaterRipple[]>([]);
-let nextRippleId = 1;
+interface PondRipple {
+    x: number;
+    y: number;
+    r: number;
+    maxR: number;
+    alpha: number;
+    color: string;
+}
+interface PondBubble {
+    x: number;
+    y: number;
+    r: number;
+    alpha: number;
+    vy: number;
+}
 
-const triggerPondRipple = (e: MouseEvent) => {
-    const pond = e.currentTarget as HTMLElement;
-    const rect = pond.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const id = nextRippleId++;
-    pondRipples.value.push({ id, x, y });
-    setTimeout(() => {
-        pondRipples.value = pondRipples.value.filter(r => r.id !== id);
-    }, 1600);
+let triggerPondFoodDrop: ((clientX: number, clientY: number) => void) | null = null;
+
+const handlePondInteraction = (e: MouseEvent | TouchEvent) => {
+    if (!triggerPondFoodDrop) return;
+    const clientX = 'touches' in e && e.touches[0] ? e.touches[0].clientX : (e as MouseEvent).clientX;
+    const clientY = 'touches' in e && e.touches[0] ? e.touches[0].clientY : (e as MouseEvent).clientY;
+    if (clientX !== undefined && clientY !== undefined) {
+        triggerPondFoodDrop(clientX, clientY);
+    }
 };
 
-// Periodic gentle natural pond ripples
-let pondInterval: number | null = null;
-const startPeriodicRipples = () => {
-    pondInterval = window.setInterval(() => {
-        if (pondRipples.value.length < 5) {
-            const rx = Math.random() * 260 + 40;
-            const ry = Math.random() * 160 + 30;
-            const id = nextRippleId++;
-            pondRipples.value.push({ id, x: rx, y: ry });
-            setTimeout(() => {
-                pondRipples.value = pondRipples.value.filter(r => r.id !== id);
-            }, 1600);
+const initKoiCanvas = () => {
+    const canvas = koiCanvasRef.value;
+    const container = koiContainerRef.value;
+    if (!canvas || !container) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let width = 0;
+    let height = 0;
+    const foods: PondFood[] = [];
+    const ripples: PondRipple[] = [];
+    const bubbles: PondBubble[] = [];
+
+    const resize = () => {
+        if (!canvas || !container) return;
+        const rect = container.getBoundingClientRect();
+        width = rect.width;
+        height = rect.height;
+        const dpr = Math.min(window.devicePixelRatio || 1, 2);
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.resetTransform();
+        ctx.scale(dpr, dpr);
+    };
+    resize();
+
+    // Floating Lotus Leaves (Water Lilies)
+    const lilies = [
+        { x: 75, y: 70, r: 42, rot: 0.5, color: '#274b39' },
+        { x: width > 450 ? width - 80 : width - 50, y: height - 70, r: 48, rot: 2.3, color: '#1e3c2d' },
+        { x: width > 450 ? width - 70 : width - 40, y: 75, r: 36, rot: -0.9, color: '#2b523f' },
+        { x: 70, y: height - 65, r: 38, rot: 1.4, color: '#234433' },
+    ];
+
+    // Floating Sakura Petals
+    const pondPetals = [
+        { x: 120, y: 85, r: 6.5, rot: 0.4 },
+        { x: 260, y: 55, r: 5.5, rot: 1.1 },
+        { x: 420, y: 210, r: 7, rot: -0.5 },
+        { x: 190, y: 260, r: 6, rot: 2.2 },
+        { x: 340, y: 240, r: 6.5, rot: 0.9 },
+    ];
+
+    // River Pebbles on Pond Bed
+    const pebbles: { x: number; y: number; rx: number; ry: number; rot: number; color: string }[] = [];
+    for (let i = 0; i < 45; i++) {
+        pebbles.push({
+            x: Math.random() * (width || 600),
+            y: Math.random() * (height || 350),
+            rx: 6 + Math.random() * 10,
+            ry: 4 + Math.random() * 7,
+            rot: Math.random() * Math.PI,
+            color: ['#0f1e1a', '#0b1613', '#132621', '#172c26'][Math.floor(Math.random() * 4)],
+        });
+    }
+
+    // Realistic Nishikigoi Spine Simulation Class
+    class RealisticKoi {
+        type: 'kohaku' | 'sanke' | 'yamabuki' | 'tancho';
+        x: number;
+        y: number;
+        baseSpeed: number;
+        speed: number;
+        maxSpeed: number;
+        angle: number;
+        targetAngle: number;
+        scale: number;
+        swimCycle: number;
+        wiggleRate: number;
+        numSegments: number;
+        segDist: number;
+        spine: { x: number; y: number; angle: number }[];
+        widths: number[];
+
+        constructor(type: 'kohaku' | 'sanke' | 'yamabuki' | 'tancho', x: number, y: number, speed: number, scale = 1.0) {
+            this.type = type;
+            this.x = x;
+            this.y = y;
+            this.baseSpeed = speed || 1.25;
+            this.speed = this.baseSpeed;
+            this.maxSpeed = this.baseSpeed * 2.2;
+            this.angle = Math.random() * Math.PI * 2;
+            this.targetAngle = this.angle;
+            this.scale = scale;
+            this.swimCycle = Math.random() * 100;
+            this.wiggleRate = 0.08;
+
+            this.numSegments = 16;
+            this.segDist = 7.2 * this.scale;
+            this.spine = [];
+            for (let i = 0; i < this.numSegments; i++) {
+                this.spine.push({
+                    x: this.x - Math.cos(this.angle) * (i * this.segDist),
+                    y: this.y - Math.sin(this.angle) * (i * this.segDist),
+                    angle: this.angle,
+                });
+            }
+
+            const rawWidths = [5.5, 9.5, 13, 14, 13.5, 12.5, 11, 9.5, 8, 6.5, 5, 3.8, 2.8, 2.2, 1.6, 1.0];
+            this.widths = rawWidths.map(w => w * this.scale);
+        }
+
+        update() {
+            this.swimCycle += this.wiggleRate;
+
+            if (foods.length > 0) {
+                let closest: PondFood | null = null;
+                let minDist = 9999;
+                for (const f of foods) {
+                    const d = Math.hypot(f.x - this.x, f.y - this.y);
+                    if (d < minDist) {
+                        minDist = d;
+                        closest = f;
+                    }
+                }
+
+                if (closest) {
+                    const desiredAngle = Math.atan2(closest.y - this.y, closest.x - this.x);
+                    let diff = desiredAngle - this.angle;
+                    while (diff < -Math.PI) diff += Math.PI * 2;
+                    while (diff > Math.PI) diff -= Math.PI * 2;
+
+                    this.angle += diff * 0.09;
+                    this.speed = Math.min(this.speed + 0.06, this.maxSpeed);
+                    this.wiggleRate = 0.16;
+
+                    // Eat food!
+                    if (minDist < 16 * this.scale) {
+                        const idx = foods.indexOf(closest);
+                        if (idx !== -1) {
+                            foods.splice(idx, 1);
+                            koiFedCount.value++;
+
+                            ripples.push({ x: closest.x, y: closest.y, r: 2, maxR: 26, alpha: 0.9, color: '#a7f3d0' });
+                            for (let b = 0; b < 4; b++) {
+                                bubbles.push({
+                                    x: closest.x + (Math.random() - 0.5) * 12,
+                                    y: closest.y + (Math.random() - 0.5) * 12,
+                                    r: 1.5 + Math.random() * 2,
+                                    alpha: 1,
+                                    vy: -0.7 - Math.random() * 0.7,
+                                });
+                            }
+                        }
+                    }
+                }
+            } else {
+                this.speed = Math.max(this.speed - 0.02, this.baseSpeed);
+                this.wiggleRate = 0.08;
+
+                this.targetAngle += (Math.random() - 0.5) * 0.12;
+                let diff = this.targetAngle - this.angle;
+                while (diff < -Math.PI) diff += Math.PI * 2;
+                while (diff > Math.PI) diff -= Math.PI * 2;
+                this.angle += diff * 0.035;
+
+                const pad = 45;
+                if (this.x < pad) this.angle += 0.08;
+                if (this.x > width - pad) this.angle -= 0.08;
+                if (this.y < pad) this.angle += 0.08;
+                if (this.y > height - pad) this.angle -= 0.08;
+            }
+
+            this.x = Math.max(20, Math.min(width - 20, this.x));
+            this.y = Math.max(20, Math.min(height - 20, this.y));
+
+            const headWiggle = Math.sin(this.swimCycle) * 0.07;
+            const moveAngle = this.angle + headWiggle;
+            this.x += Math.cos(moveAngle) * this.speed;
+            this.y += Math.sin(moveAngle) * this.speed;
+
+            this.spine[0].x = this.x;
+            this.spine[0].y = this.y;
+            this.spine[0].angle = moveAngle;
+
+            for (let i = 1; i < this.numSegments; i++) {
+                const prev = this.spine[i - 1];
+                const cur = this.spine[i];
+                const dx = cur.x - prev.x;
+                const dy = cur.y - prev.y;
+                const dist = Math.hypot(dx, dy) || 1;
+
+                const waveAmp = Math.pow(i / this.numSegments, 1.6) * 3.2 * this.scale;
+                const lateralOffset = Math.sin(this.swimCycle - i * 0.45) * waveAmp;
+                const perpAngle = prev.angle + Math.PI / 2;
+
+                const targetX = prev.x + (dx / dist) * this.segDist + Math.cos(perpAngle) * lateralOffset;
+                const targetY = prev.y + (dy / dist) * this.segDist + Math.sin(perpAngle) * lateralOffset;
+
+                cur.x += (targetX - cur.x) * 0.88;
+                cur.y += (targetY - cur.y) * 0.88;
+                cur.angle = Math.atan2(prev.y - cur.y, prev.x - cur.x);
+            }
+        }
+
+        draw(isShadow = false) {
+            ctx.save();
+
+            if (isShadow) {
+                ctx.translate(16 * this.scale, 20 * this.scale);
+                ctx.filter = 'blur(6px)';
+                ctx.fillStyle = 'rgba(2, 12, 10, 0.42)';
+                ctx.strokeStyle = 'rgba(2, 12, 10, 0.42)';
+            }
+
+            // Pectoral Fins (Shoulder, seg 2)
+            const shoulder = this.spine[2];
+            const finFlap = Math.sin(this.swimCycle * 1.5);
+            const finLen = 30 * this.scale;
+            const finW = 13 * this.scale;
+
+            const drawPectoralFin = (side: number) => {
+                const finAngle = shoulder.angle + (side * (Math.PI / 2.2) + finFlap * 0.28 * side);
+                const fx = shoulder.x + Math.cos(shoulder.angle + (side * Math.PI / 2)) * this.widths[2];
+                const fy = shoulder.y + Math.sin(shoulder.angle + (side * Math.PI / 2)) * this.widths[2];
+
+                ctx.save();
+                ctx.translate(fx, fy);
+                ctx.rotate(finAngle);
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(finLen * 0.3, side * finW * 0.8, finLen * 0.7, side * finW, finLen, side * finW * 0.3);
+                ctx.bezierCurveTo(finLen * 0.85, -side * finW * 0.2, finLen * 0.4, 0, 0, 0);
+                ctx.closePath();
+
+                if (isShadow) {
+                    ctx.fill();
+                } else {
+                    const finGrad = ctx.createLinearGradient(0, 0, finLen, 0);
+                    finGrad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+                    if (this.type === 'yamabuki') {
+                        finGrad.addColorStop(0.7, 'rgba(255, 215, 100, 0.4)');
+                        finGrad.addColorStop(1, 'rgba(255, 235, 150, 0.15)');
+                    } else {
+                        finGrad.addColorStop(0.7, 'rgba(255, 235, 235, 0.35)');
+                        finGrad.addColorStop(1, 'rgba(255, 255, 255, 0.1)');
+                    }
+                    ctx.fillStyle = finGrad;
+                    ctx.fill();
+
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+                    ctx.lineWidth = 0.75;
+                    for (let r = 0.25; r <= 0.85; r += 0.2) {
+                        ctx.beginPath();
+                        ctx.moveTo(0, 0);
+                        ctx.quadraticCurveTo(finLen * 0.5, side * finW * r * 0.7, finLen * 0.9, side * finW * r * 0.4);
+                        ctx.stroke();
+                    }
+                }
+                ctx.restore();
+            };
+
+            drawPectoralFin(1);
+            drawPectoralFin(-1);
+
+            // Ventral/Pelvic Fins (Mid-body, seg 8)
+            const pelvis = this.spine[8];
+            const pelvLen = 15 * this.scale;
+            const pelvW = 6.5 * this.scale;
+
+            const drawPelvicFin = (side: number) => {
+                const pelvAngle = pelvis.angle + (side * (Math.PI / 2.1) + finFlap * 0.2 * side);
+                const px = pelvis.x + Math.cos(pelvis.angle + (side * Math.PI / 2)) * this.widths[8];
+                const py = pelvis.y + Math.sin(pelvis.angle + (side * Math.PI / 2)) * this.widths[8];
+
+                ctx.save();
+                ctx.translate(px, py);
+                ctx.rotate(pelvAngle);
+
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.bezierCurveTo(pelvLen * 0.4, side * pelvW, pelvLen * 0.8, side * pelvW * 0.5, pelvLen, 0);
+                ctx.bezierCurveTo(pelvLen * 0.5, -side * pelvW * 0.3, 0, 0, 0, 0);
+                ctx.closePath();
+
+                if (isShadow) {
+                    ctx.fill();
+                } else {
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                    ctx.fill();
+                }
+                ctx.restore();
+            };
+
+            drawPelvicFin(1);
+            drawPelvicFin(-1);
+
+            // Caudal Tail Fin
+            const tailWrist = this.spine[this.numSegments - 1];
+            const tailAngle = tailWrist.angle + Math.sin(this.swimCycle - 1.4) * 0.4;
+            const tailLen = 38 * this.scale;
+            const tailSpan = 20 * this.scale;
+
+            ctx.save();
+            ctx.translate(tailWrist.x, tailWrist.y);
+            ctx.rotate(tailAngle);
+
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.bezierCurveTo(tailLen * 0.4, tailSpan * 0.8, tailLen * 0.8, tailSpan * 1.1, tailLen, tailSpan * 0.4);
+            ctx.bezierCurveTo(tailLen * 0.75, tailSpan * 0.1, tailLen * 0.75, -tailSpan * 0.1, tailLen, -tailSpan * 0.4);
+            ctx.bezierCurveTo(tailLen * 0.8, -tailSpan * 1.1, tailLen * 0.4, -tailSpan * 0.8, 0, 0);
+            ctx.closePath();
+
+            if (isShadow) {
+                ctx.fill();
+            } else {
+                const tailGrad = ctx.createLinearGradient(0, 0, tailLen, 0);
+                if (this.type === 'yamabuki') {
+                    tailGrad.addColorStop(0, 'rgba(255, 200, 70, 0.9)');
+                    tailGrad.addColorStop(0.6, 'rgba(255, 220, 110, 0.4)');
+                    tailGrad.addColorStop(1, 'rgba(255, 240, 160, 0.1)');
+                } else if (this.type === 'kohaku' || this.type === 'sanke') {
+                    tailGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+                    tailGrad.addColorStop(0.5, 'rgba(248, 205, 205, 0.4)');
+                    tailGrad.addColorStop(1, 'rgba(255, 255, 255, 0.12)');
+                } else {
+                    tailGrad.addColorStop(0, 'rgba(255, 255, 255, 0.95)');
+                    tailGrad.addColorStop(0.6, 'rgba(255, 255, 255, 0.35)');
+                    tailGrad.addColorStop(1, 'rgba(255, 255, 255, 0.08)');
+                }
+                ctx.fillStyle = tailGrad;
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+                ctx.lineWidth = 0.8;
+                for (let a = -0.7; a <= 0.7; a += 0.28) {
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.quadraticCurveTo(tailLen * 0.5, a * tailSpan * 0.8, tailLen * 0.95, a * tailSpan * 0.4);
+                    ctx.stroke();
+                }
+            }
+            ctx.restore();
+
+            // Full Body Contour
+            const leftPts: { x: number; y: number }[] = [];
+            const rightPts: { x: number; y: number }[] = [];
+
+            for (let i = 0; i < this.numSegments; i++) {
+                const seg = this.spine[i];
+                const w = this.widths[i];
+                const normAngle = seg.angle + Math.PI / 2;
+
+                leftPts.push({
+                    x: seg.x + Math.cos(normAngle) * w,
+                    y: seg.y + Math.sin(normAngle) * w,
+                });
+                rightPts.push({
+                    x: seg.x - Math.cos(normAngle) * w,
+                    y: seg.y - Math.sin(normAngle) * w,
+                });
+            }
+
+            const head = this.spine[0];
+            const snoutX = head.x + Math.cos(head.angle) * (11 * this.scale);
+            const snoutY = head.y + Math.sin(head.angle) * (11 * this.scale);
+
+            ctx.beginPath();
+            ctx.moveTo(snoutX, snoutY);
+
+            for (let i = 0; i < leftPts.length - 1; i++) {
+                const xc = (leftPts[i].x + leftPts[i + 1].x) / 2;
+                const yc = (leftPts[i].y + leftPts[i + 1].y) / 2;
+                ctx.quadraticCurveTo(leftPts[i].x, leftPts[i].y, xc, yc);
+            }
+            ctx.lineTo(leftPts[leftPts.length - 1].x, leftPts[leftPts.length - 1].y);
+            ctx.lineTo(rightPts[rightPts.length - 1].x, rightPts[rightPts.length - 1].y);
+
+            for (let i = rightPts.length - 1; i > 0; i--) {
+                const xc = (rightPts[i].x + rightPts[i - 1].x) / 2;
+                const yc = (rightPts[i].y + rightPts[i - 1].y) / 2;
+                ctx.quadraticCurveTo(rightPts[i].x, rightPts[i].y, xc, yc);
+            }
+            ctx.lineTo(snoutX, snoutY);
+            ctx.closePath();
+
+            if (isShadow) {
+                ctx.fill();
+                ctx.restore();
+                return;
+            }
+
+            // Body Base Gradient
+            if (this.type === 'yamabuki') {
+                const bodyGrad = ctx.createRadialGradient(head.x, head.y, 6, head.x, head.y, 75 * this.scale);
+                bodyGrad.addColorStop(0, '#FFF08A');
+                bodyGrad.addColorStop(0.3, '#F5A623');
+                bodyGrad.addColorStop(0.7, '#D97706');
+                bodyGrad.addColorStop(1, '#92400E');
+                ctx.fillStyle = bodyGrad;
+            } else {
+                const bodyGrad = ctx.createLinearGradient(leftPts[3].x, leftPts[3].y, rightPts[3].x, rightPts[3].y);
+                bodyGrad.addColorStop(0, '#ECE8E1');
+                bodyGrad.addColorStop(0.5, '#FFFFFF');
+                bodyGrad.addColorStop(1, '#DFD9CE');
+                ctx.fillStyle = bodyGrad;
+            }
+            ctx.fill();
+
+            // 3D Volume Shading
+            const shadeGrad = ctx.createLinearGradient(leftPts[3].x, leftPts[3].y, rightPts[3].x, rightPts[3].y);
+            shadeGrad.addColorStop(0, 'rgba(0, 0, 0, 0.22)');
+            shadeGrad.addColorStop(0.4, 'rgba(255, 255, 255, 0.55)');
+            shadeGrad.addColorStop(1, 'rgba(0, 0, 0, 0.28)');
+            ctx.fillStyle = shadeGrad;
+            ctx.fill();
+
+            // Nishikigoi Patterns
+            ctx.save();
+            ctx.clip();
+
+            if (this.type === 'kohaku') {
+                ctx.fillStyle = '#C21807';
+                const p1 = this.spine[1];
+                ctx.beginPath();
+                ctx.ellipse(p1.x, p1.y, 16 * this.scale, 13 * this.scale, p1.angle, 0, Math.PI * 2);
+                ctx.fill();
+
+                const p2 = this.spine[5];
+                ctx.beginPath();
+                ctx.ellipse(p2.x, p2.y, 15 * this.scale, 11 * this.scale, p2.angle + 0.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                const p3 = this.spine[10];
+                ctx.beginPath();
+                ctx.ellipse(p3.x, p3.y, 9 * this.scale, 6.5 * this.scale, p3.angle, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (this.type === 'tancho') {
+                ctx.fillStyle = '#C21807';
+                const crown = this.spine[0];
+                const cx = crown.x + Math.cos(crown.angle) * (4 * this.scale);
+                const cy = crown.y + Math.sin(crown.angle) * (4 * this.scale);
+                ctx.beginPath();
+                ctx.arc(cx, cy, 8.5 * this.scale, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (this.type === 'sanke') {
+                ctx.fillStyle = '#C21807';
+                const p1 = this.spine[1];
+                ctx.beginPath();
+                ctx.ellipse(p1.x, p1.y, 16 * this.scale, 12 * this.scale, p1.angle, 0, Math.PI * 2);
+                ctx.fill();
+
+                const p2 = this.spine[6];
+                ctx.beginPath();
+                ctx.ellipse(p2.x, p2.y, 13 * this.scale, 9.5 * this.scale, p2.angle - 0.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#1C1917';
+                const b1 = this.spine[4];
+                ctx.beginPath();
+                ctx.ellipse(b1.x + Math.cos(b1.angle + 1.2) * (6.5 * this.scale), b1.y + Math.sin(b1.angle + 1.2) * (6.5 * this.scale), 6.5 * this.scale, 4 * this.scale, b1.angle, 0, Math.PI * 2);
+                ctx.fill();
+
+                const b2 = this.spine[9];
+                ctx.beginPath();
+                ctx.ellipse(b2.x - Math.cos(b2.angle - 1.2) * (5 * this.scale), b2.y - Math.sin(b2.angle - 1.2) * (5 * this.scale), 5 * this.scale, 3.5 * this.scale, b2.angle, 0, Math.PI * 2);
+                ctx.fill();
+            } else if (this.type === 'yamabuki') {
+                ctx.strokeStyle = 'rgba(255, 245, 200, 0.4)';
+                ctx.lineWidth = 1.1;
+                for (let s = 2; s < 11; s++) {
+                    const sp = this.spine[s];
+                    ctx.beginPath();
+                    ctx.arc(sp.x, sp.y, this.widths[s] * 0.75, sp.angle - 0.9, sp.angle + 0.9);
+                    ctx.stroke();
+                }
+            }
+
+            ctx.restore();
+
+            // Dorsal fin ridge
+            ctx.beginPath();
+            ctx.moveTo(this.spine[3].x, this.spine[3].y);
+            for (let i = 4; i <= 10; i++) {
+                ctx.lineTo(this.spine[i].x, this.spine[i].y);
+            }
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.lineWidth = 1.5 * this.scale;
+            ctx.stroke();
+
+            // Eyes & Barbels
+            const eyeDist = 8 * this.scale;
+            const eyeX1 = head.x + Math.cos(head.angle + Math.PI / 2.4) * eyeDist;
+            const eyeY1 = head.y + Math.sin(head.angle + Math.PI / 2.4) * eyeDist;
+            const eyeX2 = head.x + Math.cos(head.angle - Math.PI / 2.4) * eyeDist;
+            const eyeY2 = head.y + Math.sin(head.angle - Math.PI / 2.4) * eyeDist;
+
+            ctx.fillStyle = '#D4AF37';
+            ctx.beginPath();
+            ctx.arc(eyeX1, eyeY1, 2.4 * this.scale, 0, Math.PI * 2);
+            ctx.arc(eyeX2, eyeY2, 2.4 * this.scale, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#0F172A';
+            ctx.beginPath();
+            ctx.arc(eyeX1, eyeY1, 1.5 * this.scale, 0, Math.PI * 2);
+            ctx.arc(eyeX2, eyeY2, 1.5 * this.scale, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.strokeStyle = this.type === 'yamabuki' ? '#F5A623' : '#FFFFFF';
+            ctx.lineWidth = 0.85 * this.scale;
+            ctx.beginPath();
+            ctx.moveTo(snoutX, snoutY);
+            ctx.quadraticCurveTo(snoutX + Math.cos(head.angle + 0.9) * 9 * this.scale, snoutY + Math.sin(head.angle + 0.9) * 9 * this.scale, snoutX + Math.cos(head.angle + 1.3) * 13 * this.scale, snoutY + Math.sin(head.angle + 1.3) * 13 * this.scale);
+            ctx.moveTo(snoutX, snoutY);
+            ctx.quadraticCurveTo(snoutX + Math.cos(head.angle - 0.9) * 9 * this.scale, snoutY + Math.sin(head.angle - 0.9) * 9 * this.scale, snoutX + Math.cos(head.angle - 1.3) * 13 * this.scale, snoutY + Math.sin(head.angle - 1.3) * 13 * this.scale);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+    }
+
+    const koiSchool = [
+        new RealisticKoi('kohaku', 180, 140, 1.3, 1.12),
+        new RealisticKoi('tancho', 310, 210, 1.1, 1.0),
+        new RealisticKoi('sanke', 380, 120, 1.35, 1.08),
+        new RealisticKoi('yamabuki', 140, 230, 1.18, 1.15),
+    ];
+
+    triggerPondFoodDrop = (clientX: number, clientY: number) => {
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+
+        ripples.push({ x, y, r: 2, maxR: 60, alpha: 0.9, color: '#f0fdf4' });
+        ripples.push({ x, y, r: 2, maxR: 30, alpha: 0.6, color: '#38bdf8' });
+
+        for (let i = 0; i < 2; i++) {
+            foods.push({
+                x: x + (Math.random() - 0.5) * 16,
+                y: y + (Math.random() - 0.5) * 16,
+                r: 2.8,
+                floatOffset: Math.random() * 10,
+            });
+        }
+    };
+
+    const rippleTimer = setInterval(() => {
+        if (Math.random() < 0.6 && koiSchool.length > 0) {
+            const f = koiSchool[Math.floor(Math.random() * koiSchool.length)];
+            ripples.push({ x: f.x, y: f.y, r: 2, maxR: 26, alpha: 0.4, color: '#a7f3d0' });
         }
     }, 2200);
+
+    const renderKoiPond = () => {
+        ctx.clearRect(0, 0, width, height);
+
+        for (const p of pebbles) {
+            ctx.save();
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, p.rx, p.ry, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        }
+
+        const time = Date.now() * 0.001;
+        ctx.save();
+        ctx.fillStyle = 'rgba(74, 222, 128, 0.035)';
+        for (let i = 0; i < 3; i++) {
+            ctx.beginPath();
+            ctx.arc(
+                width * 0.5 + Math.sin(time + i * 2) * 120,
+                height * 0.5 + Math.cos(time * 0.8 + i) * 80,
+                140 + Math.sin(time + i) * 35,
+                0,
+                Math.PI * 2
+            );
+            ctx.fill();
+        }
+        ctx.restore();
+
+        for (let i = foods.length - 1; i >= 0; i--) {
+            const f = foods[i];
+            f.floatOffset += 0.05;
+            const fy = f.y + Math.sin(f.floatOffset) * 1.5;
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+            ctx.beginPath();
+            ctx.arc(f.x + 3, fy + 7, f.r, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#FBBF24';
+            ctx.beginPath();
+            ctx.arc(f.x, fy, f.r, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#D97706';
+            ctx.lineWidth = 0.8;
+            ctx.stroke();
+        }
+
+        for (const fish of koiSchool) {
+            fish.update();
+        }
+
+        for (const fish of koiSchool) {
+            fish.draw(true);
+        }
+
+        for (const fish of koiSchool) {
+            fish.draw(false);
+        }
+
+        for (let i = bubbles.length - 1; i >= 0; i--) {
+            const b = bubbles[i];
+            b.y += b.vy;
+            b.alpha -= 0.02;
+            if (b.alpha <= 0) {
+                bubbles.splice(i, 1);
+                continue;
+            }
+            ctx.fillStyle = `rgba(255, 255, 255, ${b.alpha * 0.7})`;
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        for (let i = ripples.length - 1; i >= 0; i--) {
+            const r = ripples[i];
+            r.r += 1.0;
+            r.alpha -= 0.015;
+            if (r.alpha <= 0) {
+                ripples.splice(i, 1);
+                continue;
+            }
+            ctx.save();
+            ctx.strokeStyle = `rgba(240, 253, 244, ${r.alpha})`;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2);
+            ctx.stroke();
+
+            if (r.r > 10) {
+                ctx.strokeStyle = `rgba(56, 189, 248, ${r.alpha * 0.45})`;
+                ctx.lineWidth = 1.0;
+                ctx.beginPath();
+                ctx.arc(r.x, r.y, r.r * 0.65, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+            ctx.restore();
+        }
+
+        for (const lily of lilies) {
+            ctx.save();
+            ctx.translate(lily.x, lily.y);
+            ctx.rotate(lily.rot);
+
+            ctx.fillStyle = 'rgba(0, 10, 8, 0.45)';
+            ctx.beginPath();
+            ctx.arc(6, 8, lily.r, 0.25, Math.PI * 2 - 0.25);
+            ctx.lineTo(6, 8);
+            ctx.fill();
+
+            const leafGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, lily.r);
+            leafGrad.addColorStop(0, '#3e6b52');
+            leafGrad.addColorStop(0.7, lily.color);
+            leafGrad.addColorStop(1, '#15291f');
+            ctx.fillStyle = leafGrad;
+
+            ctx.beginPath();
+            ctx.arc(0, 0, lily.r, 0.25, Math.PI * 2 - 0.25);
+            ctx.lineTo(0, 0);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+            ctx.lineWidth = 1.2;
+            for (let a = 0.5; a < Math.PI * 2 - 0.5; a += 0.7) {
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.lineTo(Math.cos(a) * (lily.r - 2), Math.sin(a) * (lily.r - 2));
+                ctx.stroke();
+            }
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.65)';
+            ctx.beginPath();
+            ctx.arc(lily.r * 0.35, -lily.r * 0.2, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        for (const petal of pondPetals) {
+            ctx.save();
+            ctx.translate(petal.x, petal.y);
+            ctx.rotate(petal.rot);
+
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.25)';
+            ctx.beginPath();
+            ctx.ellipse(3, 4, petal.r, petal.r * 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#F4C2C2';
+            ctx.beginPath();
+            ctx.ellipse(0, 0, petal.r, petal.r * 0.6, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#E89CAE';
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        koiAnimFrameId = requestAnimationFrame(renderKoiPond);
+    };
+
+    renderKoiPond();
+
+    window.addEventListener('resize', resize);
+
+    return () => {
+        window.removeEventListener('resize', resize);
+        clearInterval(rippleTimer);
+        if (koiAnimFrameId) cancelAnimationFrame(koiAnimFrameId);
+    };
 };
 
 // ========================================================
@@ -328,10 +1053,9 @@ onMounted(() => {
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('touchmove', handleTouchMove, { passive: true });
 
-    startPeriodicRipples();
-
     nextTick(() => {
         cleanupCanvas = initSakuraCanvas();
+        cleanupKoiCanvas = initKoiCanvas();
 
         // GSAP ScrollTrigger Animations
         const sections = document.querySelectorAll('.zen-fade-up');
@@ -358,8 +1082,8 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('mousemove', handleMouseMove);
     window.removeEventListener('touchmove', handleTouchMove);
-    if (pondInterval) clearInterval(pondInterval);
     if (cleanupCanvas) cleanupCanvas();
+    if (cleanupKoiCanvas) cleanupKoiCanvas();
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     ScrollTrigger.getAll().forEach((t) => t.kill());
 });
@@ -861,30 +1585,28 @@ onBeforeUnmount(() => {
                         <p class="text-xs text-stone-600 mt-1">Sentuh kolam air untuk menciptakan riak ketenangan</p>
                     </div>
 
-                    <!-- Interactive Koi Pond Card with Real Crystal Clear Pond Backdrop -->
+                    <!-- Interactive Koi Pond Mini-Game Card with Real-time 60fps Swimming Nishikigoi -->
                     <div
-                        @click="triggerPondRipple"
-                        class="relative h-64 sm:h-72 rounded-3xl border-2 border-[#D4AF37]/60 shadow-2xl overflow-hidden cursor-pointer select-none group"
+                        ref="koiContainerRef"
+                        @click="handlePondInteraction"
+                        class="relative h-72 sm:h-80 rounded-3xl border-2 border-[#D4AF37]/60 shadow-2xl overflow-hidden cursor-pointer select-none bg-[#091512]"
                     >
-                        <!-- Photographic Koi Pond Waterbed -->
-                        <img
-                            src="/images/templates/sakura/koi-fish-real.jpg"
-                            alt="Koi Fish in Clear Pond"
-                            class="w-full h-full object-cover filter brightness-95 group-hover:scale-105 transition-transform duration-1000"
-                        />
-                        <div class="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/20 pointer-events-none"></div>
-
-                        <!-- Animated Concentric Water Ripples from Click / Auto -->
+                        <!-- Deep Clear Pond Water Backdrop -->
                         <div
-                            v-for="r in pondRipples"
-                            :key="r.id"
-                            class="absolute pointer-events-none rounded-full border-2 border-white/80 animate-pond-ripple"
-                            :style="{ left: r.x + 'px', top: r.y + 'px', transform: 'translate(-50%, -50%)' }"
+                            class="absolute inset-0 pointer-events-none filter brightness-75 contrast-110"
+                            style="background: radial-gradient(circle at 50% 40%, rgba(16, 44, 37, 0.78) 0%, rgba(8, 20, 17, 0.94) 100%), url('/images/templates/sakura/koi-fish-real.jpg') center/cover;"
                         ></div>
 
-                        <!-- Floating Golden Calligraphy Badge in Water -->
-                        <div class="absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-amber-300/60 text-amber-200 text-xs font-serif font-semibold tracking-widest shadow-lg">
-                            和 • KETENANGAN &amp; HARMONI
+                        <!-- 60fps Interactive HTML5 Canvas for Swimming Nishikigoi Fish Simulation & Feeding -->
+                        <canvas
+                            ref="koiCanvasRef"
+                            class="relative z-10 w-full h-full block"
+                        ></canvas>
+
+                        <!-- Floating Golden Interactive Mini-Game Badge -->
+                        <div class="absolute z-20 bottom-3.5 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-amber-300/60 text-amber-200 text-xs font-serif font-semibold tracking-wider shadow-lg flex items-center gap-2 pointer-events-none whitespace-nowrap">
+                            <span>🌸 Sentuh kolam untuk memberi makan</span>
+                            <span class="text-emerald-400 font-bold">({{ koiFedCount }} dimakan 🐟)</span>
                         </div>
                     </div>
                 </section>
