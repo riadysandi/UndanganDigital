@@ -23,6 +23,7 @@ class InvitationController extends Controller
     {
         $masterSlugs = [
             'ningrum-fairytale-3d',
+            'celestia-starlight-3d',
             'victoria-luxury-3d',
             'alsa-royal-adat-3d',
             'bianca-botanical-3d',

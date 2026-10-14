@@ -783,6 +783,121 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // 6. CELESTIA (Royal 3D Celestial & Emerald Conservatory) - Cosmic Starlight & 3D Astrolabe
+        $designCelestia = $makeDesign(
+            theme: [
+                'palette' => 'celestia',
+                'isLight' => false,
+                'primaryColor' => '#E6CA65',
+                'secondaryColor' => '#6EE7B7',
+                'bgColor' => '#040D0A',
+                'cardBgColor' => '#0B221A',
+                'envelopeBg' => '#0F2A21',
+                'envelopePocketL' => '#081C15',
+                'envelopePocketR' => '#05140F',
+                'envelopePocketB' => '#0D241C',
+                'envelopeFlap' => '#14382B',
+                'sealColor' => '#D4AF37',
+                'sealSecondary' => '#6EE7B7',
+                'textColor' => '#F8FAFC',
+                'fontFamily' => 'Cinzel',
+                'fallingPetals' => true,
+                'petalColors' => ['#FEF08A', '#6EE7B7', '#E6CA65'],
+            ],
+            content: [
+                'coverBadge' => 'Royal 3D Celestial Astrolabe Edition',
+                'coverSubtitle' => 'The Celestial Starlight & Royal Conservatory',
+                'weddingTitle' => 'Arkan & Nadia',
+                'weddingDateText' => 'Sabtu, 28 November 2026',
+                'coverImage' => 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80',
+                'quote' => 'Dan di antara tanda-tanda kekuasaan-Nya ialah Dia menciptakan untukmu isteri-isteri dari jenismu sendiri, supaya kamu cenderung dan merasa tenteram kepadanya, dan dijadikan-Nya diantaramu rasa kasih dan sayang.',
+                'quoteSource' => 'QS. Ar-Rum: 21',
+                'groom' => [
+                    'nickname' => 'Arkan',
+                    'fullName' => 'Muhammad Arkan Pratama, S.T., M.Sc.',
+                    'parents' => 'Putra pertama dari Bpk. Ir. H. Bambang Pratama & Ibu Hj. Retno Wardani',
+                    'photo' => 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=600&q=80',
+                    'instagram' => '@arkan.pratama',
+                ],
+                'bride' => [
+                    'nickname' => 'Nadia',
+                    'fullName' => 'Nadia Sekar Maharani, B.Des., M.Arch.',
+                    'parents' => 'Putri kedua dari Bpk. Dr. H. Faisal Anwar & Ibu Hj. Dewi Sartika',
+                    'photo' => 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80',
+                    'instagram' => '@nadiasekar',
+                ],
+                'gallery' => [
+                    'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=800&q=80',
+                    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=800&q=80',
+                    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=800&q=80',
+                    'https://images.unsplash.com/photo-1520854221256-17451cc331bf?auto=format&fit=crop&w=800&q=80',
+                ],
+            ],
+            events: [
+                [
+                    'id' => 1,
+                    'name' => 'Akad Nikah Sakral',
+                    'starts_at' => now()->addDays(45)->setTime(8, 0)->toIso8601String(),
+                    'ends_at' => now()->addDays(45)->setTime(10, 0)->toIso8601String(),
+                    'timezone' => 'WIB',
+                    'venue_name' => 'Masjid Raya Al-Bukhari',
+                    'address' => 'Jl. Dr. Saharjo No. 112, Tebet, Jakarta Selatan',
+                    'maps_url' => 'https://maps.google.com',
+                ],
+                [
+                    'id' => 2,
+                    'name' => 'Resepsi Royal Celestial',
+                    'starts_at' => now()->addDays(45)->setTime(18, 30)->toIso8601String(),
+                    'ends_at' => now()->addDays(45)->setTime(21, 30)->toIso8601String(),
+                    'timezone' => 'WIB',
+                    'venue_name' => 'The Starlight Glasshouse Grand Pavilion',
+                    'address' => 'Jl. Jenderal Sudirman Kav. 52-53, SCBD, Jakarta Selatan',
+                    'maps_url' => 'https://maps.google.com',
+                ],
+            ],
+            giftAccounts: [
+                [
+                    'bank' => 'BCA',
+                    'account_number' => '8210984721',
+                    'account_name' => 'Muhammad Arkan Pratama',
+                    'qr_image' => 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=BCA_8210984721_ARKAN',
+                ],
+                [
+                    'bank' => 'Bank Mandiri',
+                    'account_number' => '1370018829104',
+                    'account_name' => 'Nadia Sekar Maharani',
+                    'qr_image' => 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=MANDIRI_1370018829104_NADIA',
+                ],
+            ],
+            guestbook: [
+                [
+                    'id' => 1,
+                    'guest_name' => 'Prof. Dr. Ir. H. Bambang & Keluarga',
+                    'message' => 'Selamat menempuh hidup baru Arkan & Nadia. Semoga menjadi keluarga yang sakinah mawaddah warahmah, dilimpahi berkah dan cinta seumur hidup.',
+                    'created_at' => '30 menit yang lalu',
+                ],
+                [
+                    'id' => 2,
+                    'guest_name' => 'Alumni ITB 2017 & Arsitektur UI',
+                    'message' => 'Happy wedding Arkan & Nadia! Wishing you endless happiness, laughter, and joy in your new journey together.',
+                    'created_at' => '1 jam yang lalu',
+                ],
+            ]
+        );
+
+        $tplCelestia = Template::updateOrCreate(
+            ['slug' => 'celestia-starlight-3d'],
+            [
+                'name' => 'Celestia (Royal 3D Celestial & Emerald)',
+                'category' => '3d',
+                'thumbnail_path' => '/images/templates/ningrum-original.jpeg',
+                'default_design_json' => $designCelestia,
+                'schema_version' => 1,
+                'is_premium' => true,
+                'is_active' => true,
+            ]
+        );
+
         // 6. MODERN MINIMALIST (Clean Scandinavian White & Royal Blue)
         $designModern = $makeDesign(
             theme: [

@@ -7,6 +7,7 @@ import VictoriaEnvelopeTemplate from '@/components/Templates/VictoriaEnvelopeTem
 import AlsaTraditionalTemplate from '@/components/Templates/AlsaTraditionalTemplate.vue';
 import BiancaBotanicalTemplate from '@/components/Templates/BiancaBotanicalTemplate.vue';
 import EloiseRomanceTemplate from '@/components/Templates/EloiseRomanceTemplate.vue';
+import Celestia3DTemplate from '@/components/Templates/Celestia3DTemplate.vue';
 
 const props = defineProps<{
     invitation: {
@@ -203,6 +204,11 @@ const isBianca = computed(() => {
 const isEloise = computed(() => {
     const slug = (props.template?.slug || '').toLowerCase();
     return slug.includes('eloise') || slug.includes('rustic') || slug.includes('emerald') || slug.includes('floral');
+});
+
+const isCelestia = computed(() => {
+    const slug = (props.template?.slug || '').toLowerCase();
+    return slug.includes('celestia') || slug.includes('starlight') || slug.includes('astrolabe') || slug.includes('conservatory');
 });
 
 // Authentic Katsudoto Assets Resolution
@@ -886,7 +892,34 @@ const digitalGift = computed(() => {
         @toggle-music="toggleMusic"
     />
 
-    <!-- 6. STANDARD INVITATION TEMPLATE (Fallback / Minimalist) -->
+    <!-- 6. CELESTIA (ROYAL 3D CELESTIAL & EMERALD ASTROLABE) -->
+    <Celestia3DTemplate
+        v-else-if="isCelestia"
+        :invitation-data="invitationData"
+        :events="events"
+        :guestbook="localGuestbook"
+        :digital-gift="digitalGift"
+        :guest-name="guestName"
+        :guest-token="guestToken"
+        :is-demo="props.isDemo"
+        :template="props.template"
+        :is-open="isOpen"
+        :is-playing-music="isPlayingMusic"
+        :time-left="timeLeft"
+        :format-display-date="formatDisplayDate"
+        :format-event-time="formatEventTime"
+        :copy-address="copyAddress"
+        :open-qris="openQris"
+        :submit-rsvp="submitRsvp"
+        :rsvp-form="rsvpForm"
+        :rsvp-submitting="rsvpSubmitting"
+        :rsvp-success="rsvpSuccess"
+        :rsvp-error-message="rsvpErrorMessage"
+        @open-invitation="openInvitation"
+        @toggle-music="toggleMusic"
+    />
+
+    <!-- 7. STANDARD INVITATION TEMPLATE (Fallback / Minimalist) -->
     <div
         v-else
         class="min-h-screen w-full relative transition-colors duration-500 overflow-x-hidden selection:bg-amber-400 selection:text-stone-900"
