@@ -4,7 +4,6 @@ import { Head } from '@inertiajs/vue3';
 import confetti from 'canvas-confetti';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import Lenis from 'lenis';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -64,16 +63,16 @@ const safeFormatDisplayDate = (d: string) => {
     return d || 'Sabtu, 28 November 2026';
 };
 
-// Canvas ref for 3D stardust & fireflies
+// Canvas ref for 3D stardust & celestial fireflies
 const canvasRef = ref<HTMLCanvasElement | null>(null);
 let animationFrameId: number | null = null;
 
-// Smooth scroll instance
-let lenisInstance: Lenis | null = null;
+// Forward wheel events on the left fixed stage to window scroll so the whole page scrolls anywhere
+const handleStageWheel = (e: WheelEvent) => {
+    window.scrollBy({ top: e.deltaY, behavior: 'auto' });
+};
 
 // 3D Parallax Mouse tilt state for Left Pane
-const mouseX = ref(0);
-const mouseY = ref(0);
 const targetRotateX = ref(0);
 const targetRotateY = ref(0);
 
@@ -81,8 +80,8 @@ const handleMouseMove = (e: MouseEvent) => {
     const { innerWidth, innerHeight } = window;
     const x = (e.clientX / innerWidth - 0.5) * 2;
     const y = (e.clientY / innerHeight - 0.5) * 2;
-    targetRotateY.value = x * 15;
-    targetRotateX.value = -y * 15;
+    targetRotateY.value = x * 14;
+    targetRotateX.value = -y * 14;
 };
 
 // 3D Tilt for Interactive Hologram Cards
@@ -94,8 +93,8 @@ const handleCardTilt = (e: MouseEvent, target: 'groom' | 'bride') => {
     const rect = card.getBoundingClientRect();
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
-    const rotX = (y - 0.5) * -22;
-    const rotY = (x - 0.5) * 22;
+    const rotX = (y - 0.5) * -20;
+    const rotY = (x - 0.5) * 20;
 
     if (target === 'groom') {
         cardGroomTilt.value = { x: rotX, y: rotY, glareX: x * 100, glareY: y * 100 };
@@ -131,13 +130,23 @@ const copyBankNumber = (num: string, index: number) => {
     }, 2500);
 };
 
-// Google Calendar URL
+// Google Calendar URL with complete date range
 const googleCalendarUrl = computed(() => {
     const title = encodeURIComponent((props.invitationData?.content?.weddingTitle || 'Royal') + ' Wedding');
     const firstEvent = props.events?.[0];
     const location = encodeURIComponent((firstEvent?.venue_name || '') + ' - ' + (firstEvent?.address || ''));
-    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&location=${location}`;
+    // Standard ISO dates format for Google Calendar: 20261128T010000Z/20261128T140000Z
+    return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&location=${location}&dates=20261128T010000Z/20261128T140000Z`;
 });
+
+// Google Maps resolver
+const getMapsUrl = (ev: any) => {
+    if (ev.maps_url && ev.maps_url.startsWith('http') && !ev.maps_url.includes('google.com/maps?q=') && ev.maps_url !== 'https://maps.google.com') {
+        return ev.maps_url;
+    }
+    const q = encodeURIComponent(`${ev.venue_name || ''} ${ev.address || ''}`);
+    return `https://www.google.com/maps/search/?api=1&query=${q}`;
+};
 
 // Particle system setup
 const initStardustCanvas = () => {
@@ -149,11 +158,12 @@ const initStardustCanvas = () => {
     let width = (canvas.width = window.innerWidth);
     let height = (canvas.height = window.innerHeight);
 
-    window.addEventListener('resize', () => {
+    const onResize = () => {
         if (!canvasRef.value) return;
         width = canvasRef.value.width = window.innerWidth;
         height = canvasRef.value.height = window.innerHeight;
-    });
+    };
+    window.addEventListener('resize', onResize);
 
     const particles: Array<{
         x: number;
@@ -169,15 +179,15 @@ const initStardustCanvas = () => {
 
     const colors = ['#E6CA65', '#F9E79F', '#6EE7B7', '#A7F3D0', '#FFFFFF'];
 
-    for (let i = 0; i < 65; i++) {
+    for (let i = 0; i < 55; i++) {
         particles.push({
             x: Math.random() * width,
             y: Math.random() * height,
             z: Math.random() * 2 + 0.5,
             radius: Math.random() * 2.2 + 0.6,
             color: colors[Math.floor(Math.random() * colors.length)],
-            vy: -(Math.random() * 0.4 + 0.15),
-            vx: (Math.random() - 0.5) * 0.3,
+            vy: -(Math.random() * 0.35 + 0.1),
+            vx: (Math.random() - 0.5) * 0.25,
             alpha: Math.random() * 0.7 + 0.2,
             alphaSpeed: (Math.random() - 0.5) * 0.015,
         });
@@ -203,7 +213,7 @@ const initStardustCanvas = () => {
             ctx.save();
             ctx.globalAlpha = Math.max(0, Math.min(1, p.alpha));
             ctx.fillStyle = p.color;
-            ctx.shadowBlur = 10 * p.z;
+            ctx.shadowBlur = 8 * p.z;
             ctx.shadowColor = p.color;
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.radius * p.z, 0, Math.PI * 2);
@@ -218,7 +228,12 @@ const initStardustCanvas = () => {
 };
 
 // Initialize GSAP ScrollTrigger Animations
+let scrollTriggersList: ScrollTrigger[] = [];
+
 const initScrollAnimations = () => {
+    ScrollTrigger.getAll().forEach(t => t.kill());
+    scrollTriggersList = [];
+
     // 1. Hero Couple 3D Prism Tilt Scrub
     const heroPrism = document.querySelector('.celestia-hero-prism');
     if (heroPrism) {
@@ -227,8 +242,8 @@ const initScrollAnimations = () => {
             {
                 rotateX: 18,
                 rotateY: -8,
-                scale: 0.9,
-                y: 40,
+                scale: 0.92,
+                y: 35,
                 transformPerspective: 1200,
             },
             {
@@ -253,10 +268,10 @@ const initScrollAnimations = () => {
         gsap.fromTo(
             verseCard,
             {
-                rotateX: 32,
-                scale: 0.9,
-                opacity: 0.7,
-                y: 60,
+                rotateX: 28,
+                scale: 0.92,
+                opacity: 0.75,
+                y: 50,
                 transformPerspective: 1000,
             },
             {
@@ -283,9 +298,9 @@ const initScrollAnimations = () => {
         gsap.fromTo(
             groomCard,
             {
-                x: -70,
-                rotateY: -25,
-                opacity: 0,
+                x: -50,
+                rotateY: -22,
+                opacity: 0.3,
                 transformPerspective: 1000,
             },
             {
@@ -307,9 +322,9 @@ const initScrollAnimations = () => {
         gsap.fromTo(
             brideCard,
             {
-                x: 70,
-                rotateY: 25,
-                opacity: 0,
+                x: 50,
+                rotateY: 22,
+                opacity: 0.3,
                 transformPerspective: 1000,
             },
             {
@@ -331,12 +346,12 @@ const initScrollAnimations = () => {
     const chronoBoxes = document.querySelectorAll('.celestia-chrono-box');
     if (chronoBoxes.length > 0) {
         gsap.from(chronoBoxes, {
-            y: 40,
-            scale: 0.85,
+            y: 35,
+            scale: 0.88,
             opacity: 0,
-            stagger: 0.1,
-            duration: 0.8,
-            ease: 'back.out(1.7)',
+            stagger: 0.08,
+            duration: 0.7,
+            ease: 'back.out(1.5)',
             scrollTrigger: {
                 trigger: '.celestia-countdown-section',
                 start: 'top 80%',
@@ -346,14 +361,14 @@ const initScrollAnimations = () => {
 
     // 5. Event Portals (Akad & Resepsi) 3D Elevation
     const eventCards = document.querySelectorAll('.celestia-event-card');
-    eventCards.forEach((card, idx) => {
+    eventCards.forEach((card) => {
         gsap.fromTo(
             card,
             {
-                rotateX: 20,
-                y: 50,
-                scale: 0.92,
-                opacity: 0.4,
+                rotateX: 18,
+                y: 45,
+                scale: 0.94,
+                opacity: 0.5,
                 transformPerspective: 1200,
             },
             {
@@ -379,9 +394,9 @@ const initScrollAnimations = () => {
         gsap.fromTo(
             item,
             {
-                rotateY: isOdd ? 14 : -14,
-                y: 40,
-                scale: 0.94,
+                rotateY: isOdd ? 12 : -12,
+                y: 35,
+                scale: 0.95,
                 opacity: 0.6,
                 transformPerspective: 1000,
             },
@@ -408,9 +423,9 @@ const initScrollAnimations = () => {
         gsap.fromTo(
             m,
             {
-                x: isLeft ? -50 : 50,
+                x: isLeft ? -40 : 40,
                 opacity: 0,
-                rotateY: isLeft ? -15 : 15,
+                rotateY: isLeft ? -12 : 12,
                 transformPerspective: 1000,
             },
             {
@@ -434,9 +449,9 @@ const initScrollAnimations = () => {
         gsap.fromTo(
             b,
             {
-                rotateX: 25,
-                y: 50,
-                scale: 0.9,
+                rotateX: 20,
+                y: 40,
+                scale: 0.92,
                 opacity: 0.5,
                 transformPerspective: 1000,
             },
@@ -464,26 +479,7 @@ onMounted(() => {
     // 2. Listen to mousemove for 3D parallax on Left Pane
     window.addEventListener('mousemove', handleMouseMove);
 
-    // 3. Setup Lenis Smooth Scroll
-    try {
-        lenisInstance = new Lenis({
-            duration: 1.2,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-            touchMultiplier: 1.5,
-        });
-
-        lenisInstance.on('scroll', ScrollTrigger.update);
-
-        gsap.ticker.add((time) => {
-            lenisInstance?.raf(time * 1000);
-        });
-
-        gsap.ticker.lagSmoothing(0);
-    } catch (e) {
-        console.warn('Lenis smooth scroll initialized with fallback:', e);
-    }
-
-    // 4. Initialize GSAP ScrollTrigger after DOM is ready
+    // 3. Initialize GSAP ScrollTrigger after DOM is ready
     nextTick(() => {
         setTimeout(() => {
             initScrollAnimations();
@@ -494,10 +490,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('mousemove', handleMouseMove);
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
-    if (lenisInstance) {
-        lenisInstance.destroy();
-        lenisInstance = null;
-    }
     ScrollTrigger.getAll().forEach((t) => t.kill());
 });
 
@@ -511,18 +503,21 @@ const handleOpenInvitation = () => {
     });
 
     setTimeout(() => {
-        const el = document.getElementById('celestia-content-start');
-        if (el) {
-            el.scrollIntoView({ behavior: 'smooth' });
-        }
-    }, 200);
+        // Trigger smooth native window scroll to content
+        const targetY = window.innerWidth >= 1024 ? 0 : 200;
+        window.scrollTo({
+            top: targetY,
+            behavior: 'smooth'
+        });
+        // Refresh ScrollTrigger after cover has slid out
+        setTimeout(() => {
+            ScrollTrigger.refresh();
+        }, 600);
+    }, 250);
 };
 
-const scrollToSection = (id: string) => {
-    const el = document.getElementById(id);
-    if (el) {
-        el.scrollIntoView({ behavior: 'smooth' });
-    }
+const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 </script>
 
@@ -542,7 +537,7 @@ const scrollToSection = (id: string) => {
         <!-- ======================================================== -->
         <!-- 1. DESKTOP PRIMARY PANE (Fixed Left 58% on Large Screens)-->
         <!-- ======================================================== -->
-        <aside class="celestia-desktop-stage hidden lg:flex">
+        <aside class="celestia-desktop-stage hidden lg:flex" @wheel="handleStageWheel">
             <!-- 3D Gyroscope / Astrolabe System -->
             <div
                 class="celestia-astrolabe-viewport"
@@ -592,7 +587,7 @@ const scrollToSection = (id: string) => {
                 <div class="mt-6 pt-4 border-t border-white/10 flex items-center justify-center gap-4 text-xs text-stone-300 font-light">
                     <span>Kepada Yth.</span>
                     <strong class="text-amber-300 font-semibold px-2 py-0.5 rounded bg-emerald-950/80 border border-amber-500/20">
-                        {{ guestName || 'Tamu Kehormatan' }}
+                        {{ guestName || 'Tamu Undangan Spesial' }}
                     </strong>
                 </div>
             </div>
@@ -648,7 +643,7 @@ const scrollToSection = (id: string) => {
                     <div class="celestia-guest-card mt-6">
                         <p class="text-[11px] text-stone-400 uppercase tracking-widest">Kepada Yth. Bapak/Ibu/Saudara/i</p>
                         <h3 class="text-lg font-serif text-amber-200 font-semibold mt-1">
-                            {{ guestName || 'Tamu Kehormatan' }}
+                            {{ guestName || 'Tamu Undangan Spesial' }}
                         </h3>
                         <p class="text-[10px] text-stone-400 mt-1 italic">
                             *Mohon maaf apabila ada kesalahan penulisan nama/gelar
@@ -776,13 +771,13 @@ const scrollToSection = (id: string) => {
                                     </span>
                                 </div>
                                 <h3 class="text-2xl font-serif text-white font-semibold">
-                                    {{ invitationData.content.groom?.fullName || 'Dimas Prasetyo, S.Kom' }}
+                                    {{ invitationData.content.groom?.fullName || 'Muhammad Arkan Pratama, S.T., M.Sc.' }}
                                 </h3>
                                 <p class="text-xs text-amber-300/90 font-serif tracking-widest uppercase mt-0.5">
                                     - The Groom -
                                 </p>
                                 <p class="text-xs text-stone-300 mt-3 font-light max-w-xs leading-relaxed">
-                                    {{ invitationData.content.groom?.parents || 'Putra pertama dari Bpk. Bambang Prasetyo & Ibu Sri Wahyuni' }}
+                                    {{ invitationData.content.groom?.parents || 'Putra pertama dari Bpk. Ir. H. Bambang Pratama & Ibu Hj. Retno Wardani' }}
                                 </p>
                                 <a
                                     v-if="invitationData.content.groom?.instagram"
@@ -823,7 +818,7 @@ const scrollToSection = (id: string) => {
                             <div class="flex flex-col items-center text-center">
                                 <div class="relative w-36 h-36 rounded-full p-1 bg-gradient-to-tr from-amber-400 via-rose-400 to-amber-200 shadow-[0_0_25px_rgba(212,175,55,0.4)] mb-4">
                                     <img
-                                        :src="invitationData.content.bride?.photo || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=400&q=80'"
+                                        :src="invitationData.content.bride?.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80'"
                                         alt="Bride Photo"
                                         class="w-full h-full object-cover rounded-full"
                                     />
@@ -832,13 +827,13 @@ const scrollToSection = (id: string) => {
                                     </span>
                                 </div>
                                 <h3 class="text-2xl font-serif text-white font-semibold">
-                                    {{ invitationData.content.bride?.fullName || 'Anisa Rahmawati, S.E' }}
+                                    {{ invitationData.content.bride?.fullName || 'Nadia Sekar Maharani, B.Des., M.Arch.' }}
                                 </h3>
                                 <p class="text-xs text-amber-300/90 font-serif tracking-widest uppercase mt-0.5">
                                     - The Bride -
                                 </p>
                                 <p class="text-xs text-stone-300 mt-3 font-light max-w-xs leading-relaxed">
-                                    {{ invitationData.content.bride?.parents || 'Putri kedua dari Bpk. H. Rahmat Hidayat & Ibu Siti Aminah' }}
+                                    {{ invitationData.content.bride?.parents || 'Putri kedua dari Bpk. Dr. H. Faisal Anwar & Ibu Hj. Dewi Sartika' }}
                                 </p>
                                 <a
                                     v-if="invitationData.content.bride?.instagram"
@@ -865,25 +860,25 @@ const scrollToSection = (id: string) => {
                         <div class="grid grid-cols-4 gap-2.5 sm:gap-3 mt-8">
                             <div class="celestia-chrono-box p-3 rounded-xl bg-emerald-950/60 backdrop-blur-md border border-amber-400/30 text-center shadow-lg">
                                 <span class="text-2xl sm:text-3xl font-serif font-bold text-amber-300 block">
-                                    {{ timeLeft.days }}
+                                    {{ timeLeft?.days ?? 0 }}
                                 </span>
                                 <span class="text-[10px] tracking-widest uppercase text-stone-400 font-sans mt-0.5 block">Hari</span>
                             </div>
                             <div class="celestia-chrono-box p-3 rounded-xl bg-emerald-950/60 backdrop-blur-md border border-amber-400/30 text-center shadow-lg">
                                 <span class="text-2xl sm:text-3xl font-serif font-bold text-amber-300 block">
-                                    {{ timeLeft.hours }}
+                                    {{ timeLeft?.hours ?? 0 }}
                                 </span>
                                 <span class="text-[10px] tracking-widest uppercase text-stone-400 font-sans mt-0.5 block">Jam</span>
                             </div>
                             <div class="celestia-chrono-box p-3 rounded-xl bg-emerald-950/60 backdrop-blur-md border border-amber-400/30 text-center shadow-lg">
                                 <span class="text-2xl sm:text-3xl font-serif font-bold text-amber-300 block">
-                                    {{ timeLeft.minutes }}
+                                    {{ timeLeft?.minutes ?? 0 }}
                                 </span>
                                 <span class="text-[10px] tracking-widest uppercase text-stone-400 font-sans mt-0.5 block">Menit</span>
                             </div>
                             <div class="celestia-chrono-box p-3 rounded-xl bg-emerald-950/60 backdrop-blur-md border border-amber-400/30 text-center shadow-lg">
                                 <span class="text-2xl sm:text-3xl font-serif font-bold text-amber-300 block animate-pulse">
-                                    {{ timeLeft.seconds }}
+                                    {{ timeLeft?.seconds ?? 0 }}
                                 </span>
                                 <span class="text-[10px] tracking-widest uppercase text-stone-400 font-sans mt-0.5 block">Detik</span>
                             </div>
@@ -915,7 +910,7 @@ const scrollToSection = (id: string) => {
 
                     <div class="max-w-md mx-auto space-y-6">
                         <div
-                            v-for="(ev, idx) in events"
+                            v-for="(ev, idx) in (events || [])"
                             :key="ev.id || idx"
                             class="celestia-event-card relative rounded-2xl p-6 sm:p-7 bg-emerald-950/60 backdrop-blur-xl border border-amber-400/35 shadow-[0_20px_45px_rgba(0,0,0,0.6)]"
                         >
@@ -954,10 +949,10 @@ const scrollToSection = (id: string) => {
                                     <div>
                                         <p class="text-xs text-stone-400 uppercase tracking-wider">Lokasi / Tempat</p>
                                         <p class="font-serif text-base text-amber-200 font-semibold">
-                                            {{ ev.venue_name || 'Grand Ballroom Hotel Arya' }}
+                                            {{ ev.venue_name || 'The Starlight Glasshouse Grand Pavilion' }}
                                         </p>
                                         <p class="text-xs text-stone-300 mt-0.5 leading-relaxed font-light">
-                                            {{ ev.address || 'Jl. Jenderal Sudirman Kav. 52-53, Jakarta Selatan' }}
+                                            {{ ev.address || 'Jl. Jenderal Sudirman Kav. 52-53, SCBD, Jakarta Selatan' }}
                                         </p>
                                     </div>
                                 </div>
@@ -966,8 +961,7 @@ const scrollToSection = (id: string) => {
                             <!-- Action Buttons -->
                             <div class="mt-6 flex flex-wrap gap-2.5 pt-4 border-t border-white/10">
                                 <a
-                                    v-if="ev.maps_url"
-                                    :href="ev.maps_url"
+                                    :href="getMapsUrl(ev)"
                                     target="_blank"
                                     class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-amber-400 hover:bg-amber-300 text-stone-900 font-serif font-bold text-xs uppercase tracking-wider transition-colors shadow"
                                 >
@@ -1137,45 +1131,66 @@ const scrollToSection = (id: string) => {
                 <!-- SECTION 9: RSVP & GUESTBOOK (WISHES WALL) -->
                 <section class="celestia-rsvp-section py-16 px-4 md:px-8 relative">
                     <div class="max-w-md mx-auto text-center mb-10">
-                        <span class="text-xs uppercase tracking-[0.3em] text-amber-300/80 font-medium">Doa & Kehadiran</span>
+                        <span class="text-xs uppercase tracking-[0.3em] text-amber-300/80 font-medium">Doa &amp; Kehadiran</span>
                         <h2 class="text-3xl sm:text-4xl font-serif text-white mt-1">Konfirmasi &amp; Doa Restu</h2>
                         <div class="w-12 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto mt-3"></div>
                     </div>
 
                     <div class="max-w-md mx-auto">
                         <!-- RSVP Form -->
+                        <div v-if="rsvpSuccess" class="p-6 rounded-2xl border border-emerald-500/50 bg-emerald-950/80 text-emerald-200 text-center shadow-xl mb-6">
+                            <span class="text-3xl block mb-2">✨</span>
+                            <h4 class="font-serif text-lg font-bold text-amber-300">Terima Kasih!</h4>
+                            <p class="text-xs text-stone-200 mt-1">Konfirmasi kehadiran dan doa restu Anda telah berhasil tersimpan dengan indah.</p>
+                        </div>
+
                         <form
+                            v-else
                             @submit.prevent="submitRsvp"
                             class="p-6 rounded-2xl bg-emerald-950/60 backdrop-blur-xl border border-amber-400/30 shadow-[0_20px_45px_rgba(0,0,0,0.6)] space-y-4 text-left"
                         >
+                            <div v-if="rsvpErrorMessage" class="p-3 rounded-xl border border-rose-500/50 bg-rose-950/70 text-rose-200 text-xs">
+                                {{ rsvpErrorMessage }}
+                            </div>
+
                             <div>
-                                <label class="block text-xs uppercase tracking-wider text-stone-300 mb-1 font-medium">Nama Anda</label>
+                                <label class="block text-xs uppercase tracking-wider text-amber-200/90 mb-1.5 font-medium">Nama Anda</label>
                                 <input
                                     v-model="rsvpForm.guest_name"
                                     type="text"
-                                    placeholder="Masukkan nama Anda"
+                                    placeholder="Masukkan nama lengkap Anda"
                                     required
-                                    class="w-full px-4 py-2.5 rounded-xl bg-stone-900/80 border border-white/15 text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 text-sm"
+                                    class="w-full px-4 py-2.5 rounded-xl bg-stone-900/90 border border-white/15 text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 text-sm"
                                 />
                             </div>
 
                             <div>
-                                <label class="block text-xs uppercase tracking-wider text-stone-300 mb-1 font-medium">Konfirmasi Kehadiran</label>
-                                <select
-                                    v-model="rsvpForm.attendance_status"
-                                    class="w-full px-4 py-2.5 rounded-xl bg-stone-900/80 border border-white/15 text-white focus:outline-none focus:border-amber-400 text-sm"
-                                >
-                                    <option value="attending">✓ Ya, Saya Akan Hadir</option>
-                                    <option value="not_attending">✗ Maaf, Belum Bisa Hadir</option>
-                                    <option value="uncertain">? Masih Ragu</option>
-                                </select>
+                                <label class="block text-xs uppercase tracking-wider text-amber-200/90 mb-1.5 font-medium">Konfirmasi Kehadiran</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button
+                                        type="button"
+                                        @click="rsvpForm.attendance_status = 'attending'"
+                                        class="py-2.5 px-3 rounded-xl border text-xs font-serif font-bold transition-all text-center"
+                                        :class="rsvpForm.attendance_status === 'attending' ? 'bg-amber-400 text-stone-950 border-amber-300 shadow-md font-extrabold' : 'bg-stone-900/80 text-stone-300 border-white/15'"
+                                    >
+                                        ✓ Ya, Hadir
+                                    </button>
+                                    <button
+                                        type="button"
+                                        @click="rsvpForm.attendance_status = 'declined'"
+                                        class="py-2.5 px-3 rounded-xl border text-xs font-serif font-bold transition-all text-center"
+                                        :class="rsvpForm.attendance_status === 'declined' ? 'bg-stone-700 text-white border-stone-500 shadow-md font-extrabold' : 'bg-stone-900/80 text-stone-300 border-white/15'"
+                                    >
+                                        ✕ Berhalangan
+                                    </button>
+                                </div>
                             </div>
 
                             <div v-if="rsvpForm.attendance_status === 'attending'">
-                                <label class="block text-xs uppercase tracking-wider text-stone-300 mb-1 font-medium">Jumlah Hadir</label>
+                                <label class="block text-xs uppercase tracking-wider text-amber-200/90 mb-1.5 font-medium">Jumlah Tamu</label>
                                 <select
-                                    v-model="rsvpForm.attendee_count"
-                                    class="w-full px-4 py-2.5 rounded-xl bg-stone-900/80 border border-white/15 text-white focus:outline-none focus:border-amber-400 text-sm"
+                                    v-model.number="rsvpForm.attendee_count"
+                                    class="w-full px-4 py-2.5 rounded-xl bg-stone-900/90 border border-white/15 text-white focus:outline-none focus:border-amber-400 text-sm"
                                 >
                                     <option :value="1">1 Orang</option>
                                     <option :value="2">2 Orang</option>
@@ -1185,41 +1200,33 @@ const scrollToSection = (id: string) => {
                             </div>
 
                             <div>
-                                <label class="block text-xs uppercase tracking-wider text-stone-300 mb-1 font-medium">Ucapan &amp; Doa Restu</label>
+                                <label class="block text-xs uppercase tracking-wider text-amber-200/90 mb-1.5 font-medium">Ucapan &amp; Doa Restu</label>
                                 <textarea
                                     v-model="rsvpForm.message"
                                     rows="3"
-                                    placeholder="Tuliskan ucapan dan doa Anda untuk kedua mempelai..."
-                                    class="w-full px-4 py-2.5 rounded-xl bg-stone-900/80 border border-white/15 text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 text-sm resize-none"
+                                    placeholder="Tuliskan untaian doa dan ucapan selamat untuk kedua mempelai..."
+                                    class="w-full px-4 py-2.5 rounded-xl bg-stone-900/90 border border-white/15 text-white placeholder-stone-500 focus:outline-none focus:border-amber-400 text-sm resize-none"
                                 ></textarea>
                             </div>
-
-                            <p v-if="rsvpErrorMessage" class="text-xs text-rose-400 font-medium">
-                                {{ rsvpErrorMessage }}
-                            </p>
-
-                            <p v-if="rsvpSuccess" class="text-xs text-emerald-400 font-medium">
-                                ✓ Terima kasih, konfirmasi dan doa Anda telah tersimpan!
-                            </p>
 
                             <button
                                 type="submit"
                                 :disabled="rsvpSubmitting"
                                 class="w-full py-3 rounded-xl bg-gradient-to-r from-amber-400 to-amber-500 hover:from-amber-300 hover:to-amber-400 text-stone-900 font-serif font-bold text-xs uppercase tracking-wider transition-all shadow-lg disabled:opacity-50"
                             >
-                                <span v-if="rsvpSubmitting">Mengirim...</span>
-                                <span v-else>Kirim Konfirmasi &amp; Doa</span>
+                                <span v-if="rsvpSubmitting">Mengirim Doa...</span>
+                                <span v-else>Kirim Konfirmasi &amp; Doa Restu</span>
                             </button>
                         </form>
 
                         <!-- Guestbook Messages List -->
                         <div class="mt-8 space-y-3.5">
                             <h4 class="text-sm font-serif text-amber-300 uppercase tracking-wider text-center">
-                                Doa Restu Sahabat &amp; Keluarga ({{ guestbook.length }})
+                                Doa Restu Sahabat &amp; Keluarga ({{ (guestbook || []).length }})
                             </h4>
 
                             <div
-                                v-for="g in guestbook"
+                                v-for="g in (guestbook || [])"
                                 :key="g.id"
                                 class="p-4 rounded-xl bg-emerald-950/40 border border-white/10 text-left"
                             >
@@ -1267,7 +1274,7 @@ const scrollToSection = (id: string) => {
             </button>
             <div class="dock-divider"></div>
             <button
-                @click="scrollToSection('celestia-content-start')"
+                @click="scrollToTop"
                 class="dock-btn"
                 title="Kembali ke Atas"
             >
@@ -1314,29 +1321,25 @@ const scrollToSection = (id: string) => {
 .celestia-page-root {
     position: relative;
     min-height: 100vh;
+    width: 100%;
     background-color: #040D0A;
     background-image: 
         radial-gradient(circle at 50% 0%, #0F2A21 0%, transparent 60%),
         radial-gradient(circle at 100% 100%, #071712 0%, transparent 70%),
         radial-gradient(circle at 0% 80%, #081C15 0%, transparent 60%);
     color: #F8FAFC;
-    overflow-x: hidden;
     font-family: 'Plus Jakarta Sans', sans-serif;
 }
 
-/* Split Pane Layout */
+/* Split Pane Layout (Desktop) - Uses position fixed on left, natural window scroll on right */
 @media (min-width: 1024px) {
-    .celestia-page-root {
-        display: flex;
-        width: 100vw;
-        height: 100vh;
-        overflow: hidden;
-    }
-
     .celestia-desktop-stage {
-        flex: 0 0 58%;
-        position: relative;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 58%;
         height: 100vh;
+        z-index: 10;
         display: flex;
         flex-direction: column;
         align-items: center;
@@ -1347,18 +1350,23 @@ const scrollToSection = (id: string) => {
     }
 
     .celestia-main-scrollable {
-        flex: 0 0 42%;
-        height: 100vh;
-        overflow-y: auto;
+        margin-left: 58%;
+        width: 42%;
+        min-height: 100vh;
         position: relative;
-        scroll-behavior: smooth;
+        z-index: 20;
     }
 }
 
 @media (max-width: 1023px) {
+    .celestia-desktop-stage {
+        display: none !important;
+    }
+
     .celestia-main-scrollable {
         width: 100%;
         min-height: 100vh;
+        margin-left: 0;
         position: relative;
     }
 }
@@ -1445,7 +1453,7 @@ const scrollToSection = (id: string) => {
 .prism-photo {
     width: 100%;
     height: 100%;
-    object-cover: cover;
+    object-fit: cover;
     border-radius: 18px;
 }
 
@@ -1490,7 +1498,7 @@ const scrollToSection = (id: string) => {
         url('/images/templates/ningrum/texture-sd.png');
     background-size: cover, 180px;
     background-repeat: no-repeat, repeat;
-    transition: transform 1.1s cubic-bezier(0.85, 0, 0.15, 1), opacity 0.9s ease;
+    transition: transform 0.9s cubic-bezier(0.85, 0, 0.15, 1), opacity 0.7s ease, visibility 0.9s;
 }
 
 @media (min-width: 1024px) {
@@ -1501,9 +1509,10 @@ const scrollToSection = (id: string) => {
 }
 
 .celestia-top-cover.is-opened {
-    transform: translateY(-105%) scale(0.95);
+    transform: translateY(-110%) scale(0.95);
     opacity: 0;
     pointer-events: none;
+    visibility: hidden;
 }
 
 .celestia-cover-inner {
