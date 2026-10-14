@@ -20,8 +20,23 @@ use Inertia\Inertia;
 
 // Landing Page
 Route::get('/', function () {
+    $masterSlugs = [
+        'ningrum-fairytale-3d',
+        'victoria-luxury-3d',
+        'alsa-royal-adat-3d',
+        'bianca-botanical-3d',
+        'eloise-romance-3d',
+    ];
+    $templates = Template::where('is_active', true)
+        ->get()
+        ->sortBy(function ($t) use ($masterSlugs) {
+            $idx = array_search($t->slug, $masterSlugs);
+            return $idx === false ? 999 : $idx;
+        })
+        ->values();
+
     return Inertia::render('Welcome', [
-        'templates' => Template::where('is_active', true)->take(8)->get(),
+        'templates' => $templates,
     ]);
 })->name('home');
 

@@ -44,28 +44,23 @@ const emit = defineEmits<{
     (e: 'toggleMusic'): void;
 }>();
 
-// 3D Gebyok Doors Opening State
-const isDoorOpening = ref(false);
-const isDoorFullyOpened = ref(false);
+const isOpening = ref(false);
 
-const handleOpenGebyok = () => {
-    if (isDoorOpening.value) return;
-    isDoorOpening.value = true;
-
+const handleOpen = () => {
+    if (isOpening.value) return;
+    isOpening.value = true;
     confetti({
-        particleCount: 60,
-        spread: 70,
+        particleCount: 70,
+        spread: 80,
         origin: { y: 0.6 },
-        colors: ['#D4AF37', '#996515', '#FFE082']
+        colors: ['#F5BD47', '#581825', '#FFDF73', '#FFFFFF']
     });
 
     setTimeout(() => {
-        isDoorFullyOpened.value = true;
         emit('openInvitation');
-    }, 1200);
+    }, 700);
 };
 
-// Formatting helpers
 const safeFormatEventTime = (startsAt: string, endsAt: string | null, tz: string = 'WIB') => {
     if (typeof props.formatEventTime === 'function') {
         return props.formatEventTime(startsAt, endsAt, tz);
@@ -77,10 +72,9 @@ const safeFormatDisplayDate = (d: string) => {
     if (typeof props.formatDisplayDate === 'function') {
         return props.formatDisplayDate(d);
     }
-    return d || 'Minggu, 28 Desember 2026';
+    return d || 'Minggu, 20 Desember 2026';
 };
 
-// Copy bank number
 const copiedBankIndex = ref<number | null>(null);
 const copyBankNumber = (num: string, index: number) => {
     navigator.clipboard.writeText(num);
@@ -92,364 +86,364 @@ const copyBankNumber = (num: string, index: number) => {
 
 const bride = computed(() => props.invitationData?.content?.bride || {});
 const groom = computed(() => props.invitationData?.content?.groom || {});
-const weddingTitle = computed(() => props.invitationData?.content?.weddingTitle || 'Nusantara Romance');
-const weddingDate = computed(() => props.invitationData?.content?.weddingDateText || 'Desember 2026');
-const coverImg = computed(() => props.invitationData?.content?.coverImage || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1200&q=80');
+const weddingTitle = computed(() => {
+    if (groom.value?.nickname && bride.value?.nickname) {
+        return `${groom.value.nickname} & ${bride.value.nickname}`;
+    }
+    return props.invitationData?.content?.weddingTitle || 'Sutan Alif & Siti Alsa';
+});
+const weddingDate = computed(() => props.invitationData?.content?.weddingDateText || 'Minggu, 20 Desember 2026');
+const coverImg = computed(() => props.invitationData?.content?.coverImage || 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1000&q=80');
 </script>
 
 <template>
-    <div class="alsa-nusantara-theme min-h-screen bg-[#1A120B] text-[#F3E9DD] font-serif selection:bg-[#C5A059] selection:text-stone-900 overflow-x-hidden relative">
-
-        <!-- Authentic Golden Batik Parang / Mega Mendung Background Motifs -->
-        <div class="pointer-events-none fixed inset-0 opacity-10 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:28px_28px] -z-10"></div>
-        <div class="pointer-events-none fixed inset-0 bg-gradient-to-b from-[#24170E]/80 via-transparent to-[#150D07] -z-10"></div>
+    <div class="alsa-theme min-h-screen bg-[#1A120B] text-[#FFF6E5] font-serif selection:bg-[#F5BD47] selection:text-stone-900 relative overflow-x-hidden">
 
         <!-- ======================================================== -->
-        <!-- 1. 3D CARVED GEBYOK PALACE GATE (Opening Cover)          -->
+        <!-- 1. AUTHENTIC ALSA NUSANTARA COVER (Before Opened)        -->
         <!-- ======================================================== -->
-        <div
+        <section
             v-if="!isOpen"
-            class="fixed inset-0 z-50 flex flex-col items-center justify-between py-10 px-4 bg-[#1C130B] transition-opacity duration-1000"
-            :class="{ 'opacity-0 pointer-events-none': isDoorFullyOpened }"
+            class="fixed inset-0 z-50 flex flex-col items-center justify-between p-4 sm:p-6 transition-all duration-700 overflow-hidden bg-center bg-cover"
+            :class="isOpening ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'"
+            style="background-image: url('/images/templates/alsa-original.png');"
         >
-            <!-- Top Gunungan Emblem & Serat Ulem Title -->
-            <div class="text-center z-20">
-                <div class="text-3xl text-[#D4AF37] mb-1">
-                    ⛰️
+            <!-- Atmospheric Vignette Overlay -->
+            <div class="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/70 pointer-events-none"></div>
+
+            <!-- Cover Top Header -->
+            <div class="pt-10 text-center relative z-10 animate-fade-in">
+                <div class="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-black/50 backdrop-blur-md border border-[#F5BD47]/40 text-[#F5BD47] text-[10px] sm:text-xs tracking-[0.25em] font-sans font-bold uppercase mb-2 shadow-lg">
+                    <span>🏛️</span> SERAT ULEM PAWIWAHAN AGENG
                 </div>
-                <div class="text-[10px] tracking-[0.4em] uppercase text-[#D4AF37] font-sans font-bold">
-                    Serat Ulem Pawiwahan Ageng
-                </div>
-                <h1 class="text-3xl sm:text-4xl font-serif italic text-amber-100 mt-1 font-bold">
+                <h1 class="text-4xl sm:text-5xl font-serif text-[#FFF8E7] italic font-bold tracking-tight drop-shadow-[0_2px_10px_rgba(0,0,0,0.9)]">
                     {{ weddingTitle }}
                 </h1>
+                <p class="text-xs sm:text-sm text-[#F5BD47] font-sans tracking-widest mt-1 uppercase font-semibold drop-shadow-md">
+                    {{ weddingDate }}
+                </p>
             </div>
 
-            <!-- Double 3D Carved Gebyok Wooden Doors -->
-            <div class="relative w-full max-w-sm sm:max-w-md aspect-[3/4] perspective-[1400px] my-auto select-none rounded-2xl shadow-2xl shadow-black border-4 border-[#5E4228]">
-                
-                <!-- Inside Revealed Palace Stage (Shows behind doors) -->
-                <div class="absolute inset-0 bg-gradient-to-b from-[#2B1B10] to-[#120A05] flex flex-col items-center justify-center p-6 text-center">
-                    <div class="w-32 h-32 rounded-full overflow-hidden border-2 border-[#D4AF37] shadow-xl mb-3">
-                        <img :src="coverImg" :alt="weddingTitle" class="w-full h-full object-cover" />
-                    </div>
-                    <div class="text-xs uppercase tracking-widest text-[#D4AF37] font-sans">Sugeng Rawuh</div>
-                    <h3 class="font-serif italic text-xl text-white font-bold mt-1">{{ weddingTitle }}</h3>
+            <!-- Cover Center: Joglo Archway Atmosphere Space -->
+            <div class="my-auto relative z-10 text-center pointer-events-none">
+                <!-- Floating Gunungan Emblem -->
+                <div class="w-16 h-16 mx-auto rounded-full bg-black/40 backdrop-blur-md border border-[#F5BD47]/60 flex items-center justify-center text-3xl shadow-xl">
+                    ⛰️
                 </div>
-
-                <!-- Left Wooden Door (3D RotateY Open) -->
-                <div
-                    class="absolute inset-y-0 left-0 w-1/2 bg-[#3A2617] border-r-2 border-[#1E1208] origin-left transition-transform duration-1000 ease-in-out shadow-2xl flex flex-col items-end justify-center pr-3"
-                    :style="{
-                        transform: isDoorOpening ? 'rotateY(-110deg)' : 'rotateY(0deg)',
-                        transformStyle: 'preserve-3d'
-                    }"
-                >
-                    <!-- Intricate Carving Inset -->
-                    <div class="w-full h-full p-2 flex flex-col justify-between">
-                        <div class="h-1/3 border border-[#8C5D36]/40 rounded-t-lg bg-[#2D1D11]/60 flex items-center justify-center text-[#D4AF37]/50 text-xl">⚜️</div>
-                        <div class="h-1/3 border border-[#8C5D36]/40 my-1 bg-[#2D1D11]/60 flex items-center justify-end pr-2">
-                            <!-- Brass Door Ring Knocker -->
-                            <div class="w-7 h-7 rounded-full border-2 border-[#D4AF37] flex items-center justify-center shadow-md">
-                                <div class="w-4 h-4 rounded-full border border-[#D4AF37]/60"></div>
-                            </div>
-                        </div>
-                        <div class="h-1/3 border border-[#8C5D36]/40 rounded-b-lg bg-[#2D1D11]/60 flex items-center justify-center text-[#D4AF37]/50 text-xl">⚜️</div>
-                    </div>
-                </div>
-
-                <!-- Right Wooden Door (3D RotateY Open) -->
-                <div
-                    class="absolute inset-y-0 right-0 w-1/2 bg-[#3A2617] border-l-2 border-[#1E1208] origin-right transition-transform duration-1000 ease-in-out shadow-2xl flex flex-col items-start justify-center pl-3"
-                    :style="{
-                        transform: isDoorOpening ? 'rotateY(110deg)' : 'rotateY(0deg)',
-                        transformStyle: 'preserve-3d'
-                    }"
-                >
-                    <!-- Intricate Carving Inset -->
-                    <div class="w-full h-full p-2 flex flex-col justify-between">
-                        <div class="h-1/3 border border-[#8C5D36]/40 rounded-t-lg bg-[#2D1D11]/60 flex items-center justify-center text-[#D4AF37]/50 text-xl">⚜️</div>
-                        <div class="h-1/3 border border-[#8C5D36]/40 my-1 bg-[#2D1D11]/60 flex items-center justify-start pl-2">
-                            <!-- Brass Door Ring Knocker -->
-                            <div class="w-7 h-7 rounded-full border-2 border-[#D4AF37] flex items-center justify-center shadow-md">
-                                <div class="w-4 h-4 rounded-full border border-[#D4AF37]/60"></div>
-                            </div>
-                        </div>
-                        <div class="h-1/3 border border-[#8C5D36]/40 rounded-b-lg bg-[#2D1D11]/60 flex items-center justify-center text-[#D4AF37]/50 text-xl">⚜️</div>
-                    </div>
-                </div>
-
             </div>
 
-            <!-- Bottom Guest Info & Trigger Button -->
-            <div class="text-center z-20 space-y-4 max-w-sm">
-                <div>
-                    <p class="text-[11px] text-stone-400 font-sans tracking-wider">
+            <!-- Cover Bottom: Guest Card & Open Button -->
+            <div class="w-full max-w-[340px] text-center pb-6 z-20 space-y-3">
+                <div class="px-5 py-3 rounded-2xl bg-black/65 backdrop-blur-md border border-[#F5BD47]/40 shadow-xl">
+                    <p class="text-[10px] text-[#E0C097] font-sans uppercase tracking-widest font-medium">
                         Katur Dhumateng Panjenenganipun:
                     </p>
-                    <h3 class="text-lg sm:text-xl font-bold text-amber-200 mt-1 font-serif">
-                        {{ guestName || 'Tamu Undangan Yang Berbahagia' }}
-                    </h3>
+                    <p class="text-base font-bold text-[#FFF8E7] font-serif mt-0.5 truncate">
+                        {{ guestName || 'Tamu Undangan Kinasih' }}
+                    </p>
                 </div>
 
                 <button
-                    @click="handleOpenGebyok"
-                    class="px-8 py-3 rounded-full text-xs font-sans uppercase tracking-[0.25em] font-bold bg-gradient-to-r from-[#D4AF37] via-[#F4D06F] to-[#D4AF37] text-stone-950 shadow-xl shadow-amber-950/50 hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                    :disabled="isDoorOpening"
+                    @click="handleOpen"
+                    type="button"
+                    class="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-[#581825] via-[#7A1F32] to-[#581825] border-2 border-[#F5BD47]/80 text-[#FFF8E7] text-xs sm:text-sm font-serif tracking-[0.2em] uppercase font-bold shadow-2xl hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
                 >
-                    {{ isDoorOpening ? 'Membuka Pintu Keraton...' : 'Buka Undangan' }}
+                    <span>📜</span>
+                    <span>{{ isOpening ? 'Membuka Serat...' : 'Buka Undangan' }}</span>
                 </button>
             </div>
-        </div>
+        </section>
 
         <!-- ======================================================== -->
-        <!-- 2. TRADITIONAL ROYAL PALACE CONTENT (When Opened)        -->
+        <!-- 2. FULL NUSANTARA ROYAL OPENED INVITATION CONTENT        -->
         <!-- ======================================================== -->
-        <div class="max-w-2xl mx-auto px-4 sm:px-6 py-14 space-y-16">
+        <main v-show="isOpen" class="max-w-2xl mx-auto px-4 sm:px-6 py-12 space-y-16 relative">
 
-            <!-- Floating Music Player Gamelan Disc -->
+            <!-- Floating Music Player Button -->
             <div class="fixed bottom-6 right-6 z-40">
                 <button
                     @click="emit('toggleMusic')"
-                    class="w-13 h-13 rounded-full bg-[#352112] border-2 border-[#D4AF37] shadow-2xl flex items-center justify-center text-xl text-[#D4AF37] hover:scale-110 transition-transform"
+                    type="button"
+                    class="w-12 h-12 rounded-full bg-[#581825] text-[#F5BD47] border-2 border-[#F5BD47] shadow-2xl flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-all"
                     :class="{ 'animate-spin': isPlayingMusic }"
                     style="animation-duration: 5s;"
-                    aria-label="Toggle Musik"
+                    title="Putar / Hentikan Gamelan Musik"
                 >
-                    <span v-if="isPlayingMusic">🎵</span>
-                    <span v-else>🔇</span>
+                    <span>🎵</span>
                 </button>
             </div>
 
-            <!-- Header Cover -->
-            <header class="text-center space-y-4 border-b border-[#D4AF37]/20 pb-8">
-                <div class="text-4xl text-[#D4AF37]">⛰️</div>
-                <div class="text-xs uppercase tracking-[0.4em] text-[#D4AF37] font-sans font-semibold">
-                    Serat Palakrama & Pawiwahan
+            <!-- Opened Hero Section with Royal Gunungan -->
+            <header class="text-center pt-8 space-y-4">
+                <div class="w-16 h-16 mx-auto rounded-full bg-[#2E1D13] border-2 border-[#F5BD47] flex items-center justify-center text-2xl shadow-xl text-[#F5BD47]">
+                    ⚜️
                 </div>
-                <h1 class="text-4xl sm:text-6xl font-serif italic text-amber-100 font-bold leading-tight">
+                <div class="text-[11px] tracking-[0.3em] uppercase text-[#F5BD47] font-sans font-bold">
+                    Pernikahan Adat Keraton Nusantara
+                </div>
+                <h1 class="text-4xl sm:text-6xl font-serif text-[#FFF8E7] italic font-bold leading-tight">
                     {{ weddingTitle }}
                 </h1>
-                <p class="text-sm sm:text-base text-stone-300 font-sans">
+                <p class="text-sm sm:text-base text-[#D4AF37] font-sans tracking-wide">
                     {{ weddingDate }}
                 </p>
 
-                <!-- Frame Photo with Javanese Golden Arch -->
-                <div class="mt-6 relative max-w-md mx-auto aspect-[3/4] rounded-3xl overflow-hidden border-4 border-[#8C5D36] shadow-2xl">
+                <!-- Couple Photo in Royal Carved Wood Frame -->
+                <div class="mt-6 relative max-w-sm mx-auto aspect-[3/4] rounded-3xl overflow-hidden border-4 border-[#F5BD47]/80 shadow-[0_0_30px_rgba(245,189,71,0.25)]">
                     <img :src="coverImg" :alt="weddingTitle" class="w-full h-full object-cover" />
                     <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent flex items-end justify-center p-6">
-                        <span class="text-xs tracking-widest uppercase text-amber-300 font-sans">Pawiwahan Ageng 2026</span>
+                        <span class="text-xs tracking-widest uppercase text-[#F5BD47] font-serif font-bold">Pawiwahan Ageng</span>
                     </div>
                 </div>
             </header>
 
-            <!-- Salam & Doa Pembuka (Adat Jawa / Nusantara) -->
-            <section class="p-8 rounded-3xl bg-[#25180F] border border-[#8C5D36]/40 text-center space-y-3">
-                <div class="font-serif text-lg text-amber-200 italic">
-                    Assalamu’alaikum Warahmatullahi Wabarakatuh
-                </div>
-                <p class="text-xs sm:text-sm text-stone-300 font-sans leading-relaxed max-w-lg mx-auto">
-                    Kanthi nyuwun berkahing Gusti Ingkang Maha Agung, kula sakulawarga nyuwun lumunturing sih wilasa panjenengan sami, kersaa rawuh paring donga pamuji dhumateng dhauping putra-putri kula:
+            <!-- Sacred Javanese Blessing Quote -->
+            <section class="p-8 rounded-3xl bg-[#261A13]/90 border border-[#F5BD47]/30 shadow-xl text-center space-y-3 relative">
+                <div class="text-3xl text-[#F5BD47]">“</div>
+                <p class="text-base sm:text-lg italic text-[#FFF8E7] leading-relaxed max-w-md mx-auto">
+                    {{ invitationData?.content?.quote || 'Bulek aia dek pambuluah, bulek kato dek mupakaik. Sauh saundang sarangkai budi, basatu janji suci sampai ka akia hayat.' }}
                 </p>
+                <div class="text-xs tracking-widest text-[#F5BD47] font-sans font-bold uppercase">
+                    {{ invitationData?.content?.quoteSource || 'Pepatah Adat Luhur' }}
+                </div>
             </section>
 
-            <!-- Pasangan Mempelai (Adat Nusantara) -->
+            <!-- Mempelai Adat Nusantara -->
             <section class="space-y-8">
                 <div class="text-center">
-                    <div class="text-[10px] tracking-[0.3em] uppercase text-[#D4AF37] font-sans font-bold">
-                        Panganten Kakung & Putri
-                    </div>
-                    <h2 class="text-3xl font-serif italic text-amber-100 font-bold mt-1">Dua Insan yang Berbahagia</h2>
+                    <div class="text-[10px] tracking-[0.3em] uppercase text-[#F5BD47] font-sans font-bold">Mempelai Kersaning Pengantin</div>
+                    <h2 class="text-3xl font-serif text-[#FFF8E7] italic mt-1">Dua Jiwa Bersatu Janji Suci</h2>
                 </div>
 
                 <div class="grid sm:grid-cols-2 gap-6">
-                    <!-- Pengantin Pria -->
-                    <div class="p-6 rounded-3xl bg-[#22160D] border border-[#8C5D36]/50 text-center">
-                        <div class="w-32 h-32 mx-auto rounded-full overflow-hidden border-2 border-[#D4AF37] shadow-xl mb-4">
-                            <img :src="groom.photo || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80'" alt="Groom" class="w-full h-full object-cover" />
+                    <!-- Groom -->
+                    <div class="p-6 rounded-3xl bg-[#261A13]/80 border border-[#F5BD47]/30 shadow-lg text-center space-y-3">
+                        <div class="w-32 h-32 mx-auto rounded-full overflow-hidden border-2 border-[#F5BD47] shadow-xl">
+                            <img :src="groom.photo || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80'" alt="Groom" class="w-full h-full object-cover" />
                         </div>
-                        <h3 class="text-2xl font-serif italic text-amber-100 font-bold">{{ groom.fullName || groom.nickname || 'Raden Dimas' }}</h3>
-                        <p class="text-xs text-stone-400 font-sans mt-2">{{ groom.parents || 'Putra Bpk. Ir. Suryadi & Ibu Desi' }}</p>
-                        <div v-if="groom.instagram" class="mt-3 text-xs text-[#D4AF37] font-sans font-semibold">
+                        <h3 class="text-2xl font-serif text-[#FFF8E7] font-bold">{{ groom.fullName || groom.nickname || 'Sutan Alif Firdaus' }}</h3>
+                        <p class="text-xs text-[#D8C4B6] font-sans leading-relaxed">{{ groom.parents || 'Putra sulung dari Bpk. Dt. Bagindo Marajo & Ibu Hj. Rosdiana' }}</p>
+                        <div v-if="groom.instagram" class="pt-1 text-xs text-[#F5BD47] font-sans font-semibold">
                             {{ groom.instagram }}
                         </div>
                     </div>
 
-                    <!-- Pengantin Wanita -->
-                    <div class="p-6 rounded-3xl bg-[#22160D] border border-[#8C5D36]/50 text-center">
-                        <div class="w-32 h-32 mx-auto rounded-full overflow-hidden border-2 border-[#D4AF37] shadow-xl mb-4">
-                            <img :src="bride.photo || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80'" alt="Bride" class="w-full h-full object-cover" />
+                    <!-- Bride -->
+                    <div class="p-6 rounded-3xl bg-[#261A13]/80 border border-[#F5BD47]/30 shadow-lg text-center space-y-3">
+                        <div class="w-32 h-32 mx-auto rounded-full overflow-hidden border-2 border-[#F5BD47] shadow-xl">
+                            <img :src="bride.photo || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=400&q=80'" alt="Bride" class="w-full h-full object-cover" />
                         </div>
-                        <h3 class="text-2xl font-serif italic text-amber-100 font-bold">{{ bride.fullName || bride.nickname || 'Putri Anisa' }}</h3>
-                        <p class="text-xs text-stone-400 font-sans mt-2">{{ bride.parents || 'Putri Bpk. Harun & Ibu Melly' }}</p>
-                        <div v-if="bride.instagram" class="mt-3 text-xs text-[#D4AF37] font-sans font-semibold">
+                        <h3 class="text-2xl font-serif text-[#FFF8E7] font-bold">{{ bride.fullName || bride.nickname || 'Siti Sarah Alsa' }}</h3>
+                        <p class="text-xs text-[#D8C4B6] font-sans leading-relaxed">{{ bride.parents || 'Putri kedua dari Bpk. H. Syamsul Bahri & Ibu Hj. Nurmaida' }}</p>
+                        <div v-if="bride.instagram" class="pt-1 text-xs text-[#F5BD47] font-sans font-semibold">
                             {{ bride.instagram }}
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Rangkaian Acara (Wanci Palakrama) -->
+            <!-- Countdown Timer -->
+            <section class="p-8 rounded-3xl bg-[#2E1D13] border border-[#F5BD47]/40 text-center shadow-2xl space-y-4">
+                <div class="text-[10px] tracking-[0.3em] uppercase text-[#F5BD47] font-sans font-bold">Ngentosi Dinten Pawiwahan</div>
+                <div class="grid grid-cols-4 gap-2 sm:gap-4 max-w-sm mx-auto">
+                    <div class="p-3 rounded-2xl bg-black/40 border border-[#F5BD47]/30">
+                        <span class="block text-2xl sm:text-3xl font-bold font-serif text-[#FFF8E7]">{{ timeLeft.days }}</span>
+                        <span class="text-[9px] uppercase tracking-wider text-[#F5BD47]">Dinten</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-black/40 border border-[#F5BD47]/30">
+                        <span class="block text-2xl sm:text-3xl font-bold font-serif text-[#FFF8E7]">{{ timeLeft.hours }}</span>
+                        <span class="text-[9px] uppercase tracking-wider text-[#F5BD47]">Tabuh</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-black/40 border border-[#F5BD47]/30">
+                        <span class="block text-2xl sm:text-3xl font-bold font-serif text-[#FFF8E7]">{{ timeLeft.minutes }}</span>
+                        <span class="text-[9px] uppercase tracking-wider text-[#F5BD47]">Menit</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-black/40 border border-[#F5BD47]/30">
+                        <span class="block text-2xl sm:text-3xl font-bold font-serif text-[#FFF8E7]">{{ timeLeft.seconds }}</span>
+                        <span class="text-[9px] uppercase tracking-wider text-[#F5BD47]">Detik</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Agenda Acara / Pranatacara -->
             <section class="space-y-6">
                 <div class="text-center">
-                    <div class="text-[10px] tracking-[0.3em] uppercase text-[#D4AF37] font-sans font-bold">
-                        Wanci Palakrama
-                    </div>
-                    <h2 class="text-3xl font-serif italic text-amber-100 font-bold mt-1">Rangkaian Acara Adat</h2>
+                    <div class="text-[10px] tracking-[0.3em] uppercase text-[#F5BD47] font-sans font-bold">Pranatacara Pahargyan</div>
+                    <h2 class="text-3xl font-serif text-[#FFF8E7] italic mt-1">Rangkaian Titimangsa</h2>
                 </div>
 
                 <div class="space-y-6">
                     <div
                         v-for="ev in events"
                         :key="ev.id"
-                        class="p-8 rounded-3xl bg-[#24170E] border border-[#D4AF37]/40 text-center shadow-xl relative"
+                        class="p-8 rounded-3xl bg-[#261A13]/90 border border-[#F5BD47]/30 shadow-xl text-center space-y-4"
                     >
-                        <div class="text-2xl text-[#D4AF37] mb-2">📜</div>
-                        <h3 class="text-2xl font-serif italic text-amber-100 font-bold">{{ ev.name }}</h3>
-                        <div class="my-3 py-2 border-y border-[#D4AF37]/20 inline-block px-6">
-                            <p class="text-sm font-bold text-amber-300 font-sans">{{ safeFormatDisplayDate(ev.starts_at) }}</p>
-                            <p class="text-xs text-stone-300 font-sans mt-0.5">{{ safeFormatEventTime(ev.starts_at, ev.ends_at, ev.timezone) }}</p>
+                        <div class="w-10 h-10 mx-auto rounded-full bg-[#1A120B] border border-[#F5BD47]/60 flex items-center justify-center text-[#F5BD47]">
+                            🏛️
                         </div>
-                        <h4 class="text-base font-semibold text-white">{{ ev.venue_name }}</h4>
-                        <p class="text-xs text-stone-400 mt-1 max-w-md mx-auto font-sans leading-relaxed">{{ ev.address }}</p>
-                        <div class="mt-5">
+                        <h3 class="text-2xl font-serif text-[#FFF8E7] font-bold">{{ ev.name }}</h3>
+                        <div class="py-2 border-y border-[#F5BD47]/20 inline-block px-6">
+                            <p class="text-sm font-bold text-[#F5BD47] font-sans">{{ safeFormatDisplayDate(ev.starts_at) }}</p>
+                            <p class="text-xs text-[#D8C4B6] font-sans mt-0.5">{{ safeFormatEventTime(ev.starts_at, ev.ends_at, ev.timezone) }}</p>
+                        </div>
+                        <div>
+                            <h4 class="text-base font-bold text-[#FFF8E7]">{{ ev.venue_name }}</h4>
+                            <p class="text-xs text-[#D8C4B6] font-sans mt-1 max-w-sm mx-auto leading-relaxed">{{ ev.address }}</p>
+                        </div>
+                        <div class="pt-2">
                             <a
                                 :href="ev.maps_url || 'https://maps.google.com'"
                                 target="_blank"
-                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-sans uppercase tracking-widest font-bold bg-[#D4AF37] hover:bg-[#F2CD5C] text-stone-950 shadow-md transition-transform hover:scale-105"
+                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-sans uppercase tracking-widest font-bold bg-[#F5BD47] text-stone-950 hover:bg-[#FFDF73] shadow-lg transition-all hover:scale-105"
                             >
-                                <span>📍 Petunjuk Lokasi Maps</span>
+                                <span>📍 Pitedah Margi (Google Maps)</span>
                             </a>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Tanda Asih (Amplop Digital) -->
-            <section v-if="digitalGift?.enabled" class="p-8 rounded-3xl bg-[#22160D] border border-[#8C5D36]/50 text-center space-y-6">
-                <div class="text-[10px] tracking-[0.3em] uppercase text-[#D4AF37] font-sans font-bold">
-                    Tanda Katresnan
+            <!-- Tanda Asih / Digital Gift -->
+            <section v-if="digitalGift?.enabled" class="p-8 rounded-3xl bg-[#261A13]/90 border border-[#F5BD47]/30 shadow-xl text-center space-y-6">
+                <div>
+                    <div class="text-[10px] tracking-[0.3em] uppercase text-[#F5BD47] font-sans font-bold">Kado Digital</div>
+                    <h2 class="text-3xl font-serif text-[#FFF8E7] italic mt-1">Tandha Asih & Doa Restu</h2>
+                    <p class="text-xs text-[#D8C4B6] font-sans max-w-md mx-auto mt-2 leading-relaxed">
+                        Kanthi raos tulus sanget maturnuwun dhumateng doa restu panjenengan. Menawi kepareng maringi kado kanthi digital:
+                    </p>
                 </div>
-                <h2 class="text-3xl font-serif italic text-amber-100 font-bold">Kado & Hadiah Digital</h2>
-                <p class="text-xs text-stone-300 font-sans max-w-md mx-auto">
-                    Matur nuwun awit saking sih pasedherekan panjenengan sami. Bilih kepareng paring tanda tresna lumantar transfer:
-                </p>
 
-                <div class="grid sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+                <div class="space-y-4 max-w-md mx-auto">
                     <div
-                        v-for="(acc, idx) in digitalGift.accounts"
+                        v-for="(acc, idx) in (digitalGift?.accounts || [])"
                         :key="idx"
-                        class="p-5 rounded-2xl bg-[#170E08] border border-[#D4AF37]/30 text-left flex flex-col justify-between"
+                        class="p-5 rounded-2xl bg-black/40 border border-[#F5BD47]/30 text-left flex items-center justify-between"
                     >
                         <div>
-                            <div class="text-[10px] text-stone-400 font-sans uppercase">Bank Tujuan</div>
-                            <div class="text-lg font-bold text-amber-200">{{ acc.bank }}</div>
-                            <div class="text-sm font-mono text-white mt-1">{{ acc.account_number }}</div>
-                            <div class="text-xs text-stone-400">a.n. {{ acc.account_name }}</div>
+                            <span class="text-[10px] uppercase font-bold tracking-wider text-[#F5BD47]">{{ acc.bank_name || 'Bank' }}</span>
+                            <div class="text-base font-mono font-bold text-[#FFF8E7] mt-0.5">{{ acc.account_number }}</div>
+                            <div class="text-xs text-[#D8C4B6]">a.n {{ acc.holder_name }}</div>
                         </div>
-                        <button
-                            @click="copyBankNumber(acc.account_number, idx)"
-                            class="mt-4 w-full py-2 rounded-xl text-xs font-sans font-semibold bg-[#D4AF37]/20 hover:bg-[#D4AF37] text-amber-200 hover:text-stone-900 border border-[#D4AF37]/40 transition-colors"
-                        >
-                            {{ copiedBankIndex === idx ? '✓ Sampun Kaserat!' : 'Salin Nomer Rekening' }}
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button
+                                v-if="acc.qris_image_url"
+                                @click="openQris(acc)"
+                                type="button"
+                                class="px-3 py-1.5 rounded-lg bg-[#2E1D13] border border-[#F5BD47]/50 text-xs font-sans font-semibold text-[#F5BD47] hover:bg-[#3D271A]"
+                            >
+                                QRIS
+                            </button>
+                            <button
+                                @click="copyBankNumber(acc.account_number, idx)"
+                                type="button"
+                                class="px-3 py-1.5 rounded-lg bg-[#F5BD47] text-stone-950 text-xs font-sans font-bold hover:bg-[#FFDF73]"
+                            >
+                                {{ copiedBankIndex === idx ? '✓ Kasanten' : 'Turun' }}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Konfirmasi Kehadiran & Doa Restu -->
-            <section class="p-8 rounded-3xl bg-[#24170E] border border-[#D4AF37]/40 space-y-6">
+            <!-- RSVP Form & Buku Tamu -->
+            <section class="p-8 rounded-3xl bg-[#261A13]/90 border border-[#F5BD47]/30 shadow-xl space-y-6">
                 <div class="text-center">
-                    <div class="text-[10px] tracking-[0.3em] uppercase text-[#D4AF37] font-sans font-bold">
-                        Buku Tamu
-                    </div>
-                    <h2 class="text-3xl font-serif italic text-amber-100 font-bold">Konfirmasi Rawuh & Donga</h2>
+                    <div class="text-[10px] tracking-[0.3em] uppercase text-[#F5BD47] font-sans font-bold">Pawartos Rawuh</div>
+                    <h2 class="text-3xl font-serif text-[#FFF8E7] italic mt-1">Konfirmasi Rawuh & Panyuwun</h2>
                 </div>
 
-                <form @submit.prevent="submitRsvp" class="space-y-4 max-w-lg mx-auto font-sans">
-                    <div v-if="rsvpSuccess" class="p-4 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs text-center">
-                        ✓ Matur nuwun sanget, konfirmasi rawuh panjenengan sampun katampi kanthi sae.
-                    </div>
-                    <div v-if="rsvpErrorMessage" class="p-4 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs text-center">
-                        {{ rsvpErrorMessage }}
-                    </div>
-
+                <form @submit.prevent="submitRsvp" class="space-y-4 max-w-lg mx-auto">
                     <div>
-                        <label class="block text-xs text-stone-300 mb-1">Asma Jangkep (Nama Lengkap)</label>
+                        <label class="block text-xs font-bold text-[#F5BD47] font-sans mb-1">Asma Jangkep</label>
                         <input
                             v-model="rsvpForm.guest_name"
                             type="text"
                             required
                             placeholder="Serat asma panjenengan..."
-                            class="w-full px-4 py-2.5 rounded-xl bg-[#170E08] border border-[#8C5D36] text-white text-xs focus:outline-none focus:border-[#D4AF37]"
+                            class="w-full px-4 py-2.5 rounded-xl border border-[#F5BD47]/30 bg-black/40 text-[#FFF8E7] text-xs font-sans focus:outline-none focus:ring-2 focus:ring-[#F5BD47]"
                         />
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs text-stone-300 mb-1">Kepareng Rawuh</label>
+                            <label class="block text-xs font-bold text-[#F5BD47] font-sans mb-1">Katrangan Rawuh</label>
                             <select
                                 v-model="rsvpForm.status"
-                                class="w-full px-3 py-2.5 rounded-xl bg-[#170E08] border border-[#8C5D36] text-white text-xs focus:outline-none focus:border-[#D4AF37]"
+                                class="w-full px-4 py-2.5 rounded-xl border border-[#F5BD47]/30 bg-[#1A120B] text-[#FFF8E7] text-xs font-sans focus:outline-none focus:ring-2 focus:ring-[#F5BD47]"
                             >
-                                <option value="attending">Inggih, Badhe Rawuh</option>
-                                <option value="declined">Nyuwun Pangapunten Mboten Saged</option>
+                                <option value="attending">Insya Allah Rawuh</option>
+                                <option value="tentative">Dereng Tamtu</option>
+                                <option value="declined">Mboten Saged Rawuh</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs text-stone-300 mb-1">Cacahing Rawuh</label>
+                            <label class="block text-xs font-bold text-[#F5BD47] font-sans mb-1">Gunggunging Tamu</label>
                             <input
                                 v-model.number="rsvpForm.attendees_count"
                                 type="number"
                                 min="1"
                                 max="10"
-                                class="w-full px-4 py-2.5 rounded-xl bg-[#170E08] border border-[#8C5D36] text-white text-xs focus:outline-none focus:border-[#D4AF37]"
+                                class="w-full px-4 py-2.5 rounded-xl border border-[#F5BD47]/30 bg-black/40 text-[#FFF8E7] text-xs font-sans focus:outline-none focus:ring-2 focus:ring-[#F5BD47]"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs text-stone-300 mb-1">Donga Pamuji (Doa & Ucapan)</label>
+                        <label class="block text-xs font-bold text-[#F5BD47] font-sans mb-1">Panyuwun & Doa Restu</label>
                         <textarea
                             v-model="rsvpForm.wishes"
                             rows="3"
-                            placeholder="Serat donga pamuji kagem temanten kekalih..."
-                            class="w-full px-4 py-2.5 rounded-xl bg-[#170E08] border border-[#8C5D36] text-white text-xs focus:outline-none focus:border-[#D4AF37]"
+                            placeholder="Kintun doa restu kagem temanten kekalih..."
+                            class="w-full px-4 py-2.5 rounded-xl border border-[#F5BD47]/30 bg-black/40 text-[#FFF8E7] text-xs font-sans focus:outline-none focus:ring-2 focus:ring-[#F5BD47]"
                         ></textarea>
                     </div>
 
                     <button
                         type="submit"
                         :disabled="rsvpSubmitting"
-                        class="w-full py-3 rounded-xl bg-[#D4AF37] hover:bg-[#F2CD5C] text-stone-950 font-bold text-xs uppercase tracking-widest shadow-md transition-all disabled:opacity-50"
+                        class="w-full py-3 rounded-xl bg-gradient-to-r from-[#581825] to-[#7A1F32] border border-[#F5BD47]/80 text-[#FFF8E7] text-xs font-sans uppercase tracking-widest font-bold hover:brightness-110 shadow-lg transition-all cursor-pointer"
                     >
-                        {{ rsvpSubmitting ? 'Ngirim...' : 'Kirim RSVP & Donga' }}
+                        {{ rsvpSubmitting ? 'Ngintun Katrangan...' : 'Kirim Konfirmasi Rawuh' }}
                     </button>
+                    <p v-if="rsvpSuccess" class="text-xs text-emerald-400 font-semibold text-center">
+                        ✓ Maturnuwun sanget, konfirmasi panjenengan sampun katampi!
+                    </p>
                 </form>
 
-                <!-- Daftar Ucapan -->
-                <div class="mt-8 pt-6 border-t border-[#D4AF37]/20 max-w-lg mx-auto space-y-3 max-h-72 overflow-y-auto pr-2">
-                    <div
-                        v-for="gb in guestbook"
-                        :key="gb.id"
-                        class="p-4 rounded-xl bg-[#170E08] border border-[#8C5D36]/60 text-left font-sans"
-                    >
-                        <div class="flex items-center justify-between text-[11px]">
-                            <span class="font-bold text-amber-200">{{ gb.guest_name }}</span>
-                            <span class="text-stone-500 text-[10px]">{{ gb.created_at }}</span>
+                <!-- Guestbook List -->
+                <div class="pt-6 border-t border-[#F5BD47]/20 space-y-3 max-w-lg mx-auto">
+                    <h4 class="text-xs font-bold text-[#F5BD47] font-sans uppercase tracking-wider text-center">Doa Restu Para Sederek</h4>
+                    <div class="max-h-60 overflow-y-auto space-y-2 pr-1">
+                        <div
+                            v-for="entry in guestbook"
+                            :key="entry.id"
+                            class="p-3.5 rounded-xl bg-black/40 border border-[#F5BD47]/20 text-left"
+                        >
+                            <div class="flex items-center justify-between text-[11px] font-bold text-[#F5BD47]">
+                                <span>{{ entry.guest_name }}</span>
+                                <span class="text-[9px] text-[#D8C4B6] font-normal">{{ entry.created_at }}</span>
+                            </div>
+                            <p class="text-xs text-[#FFF8E7] mt-1 italic leading-relaxed">"{{ entry.message }}"</p>
                         </div>
-                        <p class="text-xs text-stone-300 mt-1 leading-relaxed">{{ gb.message }}</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Penutup -->
-            <footer class="text-center py-8 border-t border-[#D4AF37]/20 text-xs text-stone-500 font-sans">
-                <p>Matur nuwun awit saking sih kadarman panjenengan sami.</p>
-                <div class="text-[#D4AF37] font-serif italic text-lg mt-2">{{ weddingTitle }}</div>
+            <!-- Footer Closing -->
+            <footer class="text-center pt-8 pb-12 space-y-3">
+                <div class="w-12 h-12 mx-auto rounded-full bg-[#2E1D13] border border-[#F5BD47] flex items-center justify-center text-xl text-[#F5BD47]">
+                    ⛰️
+                </div>
+                <h3 class="text-2xl font-serif text-[#FFF8E7] italic font-bold">Maturnuwun</h3>
+                <p class="text-xs text-[#D8C4B6] font-sans max-w-xs mx-auto">
+                    Kaping pungkasan, minangka panyuwunan ageng saking kulawarga kekalih dhumateng rawuh lan doa restu panjenengan.
+                </p>
+                <div class="pt-4 text-[10px] text-[#F5BD47]/80 font-sans tracking-widest uppercase">
+                    Undangan Digital • Royal Nusantara Heritage Edition
+                </div>
             </footer>
 
-        </div>
+        </main>
 
     </div>
 </template>

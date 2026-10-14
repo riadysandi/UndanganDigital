@@ -397,7 +397,7 @@ class DatabaseSeeder extends Seeder
                 'coverSubtitle' => 'The Grand Black-Tie Celebration',
                 'weddingTitle' => 'Jonathan & Victoria',
                 'weddingDateText' => 'Sabtu, 28 November 2026',
-                'coverImage' => '/images/templates/victoria-original.png',
+                'coverImage' => 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80',
                 'quote' => 'Two lives, two hearts, joined together in friendship, united forever in love and sophistication.',
                 'quoteSource' => 'John Keats',
                 'groom' => [
@@ -500,7 +500,7 @@ class DatabaseSeeder extends Seeder
                 'coverSubtitle' => 'A Sunlit Nature Romance',
                 'weddingTitle' => 'Bintang & Bianca',
                 'weddingDateText' => 'Minggu, 6 Desember 2026',
-                'coverImage' => '/images/templates/bianca-original.png',
+                'coverImage' => 'https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?auto=format&fit=crop&w=1000&q=80',
                 'quote' => 'Seperti pepohonan yang tumbuh beriringan, cinta kita berakar kuat dalam harmoni dan keteduhan alam semesta.',
                 'quoteSource' => 'Kahlil Gibran',
                 'groom' => [
@@ -603,7 +603,7 @@ class DatabaseSeeder extends Seeder
                 'coverSubtitle' => 'An Enchanted Fairy Tale of Love',
                 'weddingTitle' => 'Gabriel & Eloise',
                 'weddingDateText' => 'Sabtu, 19 Desember 2026',
-                'coverImage' => '/images/templates/eloise-original.png',
+                'coverImage' => 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1000&q=80',
                 'quote' => 'Every love story is beautiful, but ours is my favorite fairy tale come true.',
                 'quoteSource' => 'A Beautiful Romance',
                 'groom' => [
@@ -706,7 +706,7 @@ class DatabaseSeeder extends Seeder
                 'coverSubtitle' => 'Baralek Gadang & Pernikahan Adat Nusantara',
                 'weddingTitle' => 'Sutan Alif & Siti Alsa',
                 'weddingDateText' => 'Minggu, 20 Desember 2026',
-                'coverImage' => '/images/templates/alsa-original.png',
+                'coverImage' => 'https://images.unsplash.com/photo-1583939003579-730e3918a45a?auto=format&fit=crop&w=1000&q=80',
                 'quote' => 'Bulek aia dek pambuluah, bulek kato dek mupakaik. Sauh saundang sarangkai budi, basatu janji suci sampai ka akia hayat.',
                 'quoteSource' => 'Pepatah Adat Minangkabau',
                 'groom' => [

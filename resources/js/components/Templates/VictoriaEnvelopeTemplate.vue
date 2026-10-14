@@ -44,40 +44,23 @@ const emit = defineEmits<{
     (e: 'toggleMusic'): void;
 }>();
 
-// Envelope 3D Animation States
-const isFlapOpen = ref(false);
-const isLetterExtracted = ref(false);
-const isWaxBroken = ref(false);
+const isOpening = ref(false);
 
-const handleOpenEnvelope = () => {
-    if (isWaxBroken.value) return;
-    
-    // 1. Break wax seal with gold spark confetti
-    isWaxBroken.value = true;
+const handleOpen = () => {
+    if (isOpening.value) return;
+    isOpening.value = true;
     confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.5 },
-        colors: ['#D4AF37', '#B38728', '#FBF5B7']
+        particleCount: 65,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#D4AF37', '#9E2A2B', '#FFF0F5', '#800020']
     });
 
-    // 2. Open Flap 3D
-    setTimeout(() => {
-        isFlapOpen.value = true;
-    }, 400);
-
-    // 3. Extract letter upwards
-    setTimeout(() => {
-        isLetterExtracted.value = true;
-    }, 900);
-
-    // 4. Trigger global audio and invitation open
     setTimeout(() => {
         emit('openInvitation');
-    }, 1800);
+    }, 700);
 };
 
-// Safe formatting helpers
 const safeFormatEventTime = (startsAt: string, endsAt: string | null, tz: string = 'WIB') => {
     if (typeof props.formatEventTime === 'function') {
         return props.formatEventTime(startsAt, endsAt, tz);
@@ -92,7 +75,6 @@ const safeFormatDisplayDate = (d: string) => {
     return d || 'Sabtu, 28 Desember 2026';
 };
 
-// Copy bank number feedback
 const copiedBankIndex = ref<number | null>(null);
 const copyBankNumber = (num: string, index: number) => {
     navigator.clipboard.writeText(num);
@@ -104,393 +86,394 @@ const copyBankNumber = (num: string, index: number) => {
 
 const bride = computed(() => props.invitationData?.content?.bride || {});
 const groom = computed(() => props.invitationData?.content?.groom || {});
-const weddingTitle = computed(() => props.invitationData?.content?.weddingTitle || 'Royal Wedding');
-const weddingDate = computed(() => props.invitationData?.content?.weddingDateText || 'Desember 2026');
-const coverImg = computed(() => props.invitationData?.content?.coverImage || 'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?auto=format&fit=crop&w=1200&q=80');
+const weddingTitle = computed(() => {
+    if (groom.value?.nickname && bride.value?.nickname) {
+        return `${groom.value.nickname} & ${bride.value.nickname}`;
+    }
+    return props.invitationData?.content?.weddingTitle || 'Theodore & Victoria';
+});
+const weddingDate = computed(() => props.invitationData?.content?.weddingDateText || 'Sabtu, 19 Desember 2026');
+const coverImg = computed(() => props.invitationData?.content?.coverImage || 'https://images.unsplash.com/photo-1519741497674-611481863552?auto=format&fit=crop&w=1000&q=80');
 </script>
 
 <template>
-    <div class="victoria-envelope-theme min-h-screen bg-[#1F1914] text-[#EFE7DA] font-serif selection:bg-[#B68D40] selection:text-stone-900 overflow-x-hidden relative">
+    <div class="victoria-theme min-h-screen bg-[#FBF3F5] text-[#3D2529] font-serif selection:bg-[#9E2A2B] selection:text-white relative overflow-x-hidden">
 
-        <!-- Ambient Royal Lighting -->
-        <div class="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-[#4A3728]/40 via-transparent to-transparent -z-10"></div>
-        <div class="pointer-events-none fixed inset-0 opacity-15 bg-[radial-gradient(#D4AF37_1px,transparent_1px)] [background-size:24px_24px] -z-10"></div>
+        <!-- Top Lace Trim Banner -->
+        <div class="fixed top-0 inset-x-0 z-40 pointer-events-none opacity-90 h-8 sm:h-12 bg-repeat-x bg-contain" style="background-image: url('/images/templates/victoria/Orn-16.png');"></div>
 
         <!-- ======================================================== -->
-        <!-- 1. PHYSICAL 3D ENVELOPE OPENING STAGE (Before Opened)    -->
+        <!-- 1. AUTHENTIC VICTORIA COVER EXPERIENCE (Before Opened)   -->
         <!-- ======================================================== -->
-        <div
+        <section
             v-if="!isOpen"
-            class="fixed inset-0 z-50 flex flex-col items-center justify-center p-4 bg-gradient-to-b from-[#18130F] via-[#231A14] to-[#14100D] transition-opacity duration-1000"
-            :class="{ 'opacity-0 pointer-events-none': isLetterExtracted }"
+            class="fixed inset-0 z-50 flex flex-col items-center justify-between p-4 sm:p-6 transition-all duration-700 overflow-hidden"
+            :class="isOpening ? '-translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100'"
+            style="background: repeating-linear-gradient(90deg, #F8E5EB 0px, #F8E5EB 38px, #FCF1F4 38px, #FCF1F4 76px);"
         >
-            <!-- Top Subtitle / Royal Crest -->
-            <div class="text-center mb-8 animate-fade-in">
-                <div class="w-12 h-12 rounded-full border border-[#D4AF37]/50 flex items-center justify-center mx-auto mb-3 text-xl text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.3)]">
-                    ⚜️
+            <!-- Background Decorative Lace Heart -->
+            <div class="absolute -top-12 -right-12 w-64 h-64 opacity-10 pointer-events-none">
+                <img src="/images/templates/victoria/Orn-08.png" alt="Lace" class="w-full h-full object-contain" />
+            </div>
+
+            <!-- Cover Top: VVIP Crown & Title -->
+            <div class="pt-8 sm:pt-10 text-center relative z-10 animate-fade-in">
+                <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#5C1D27]/10 text-[#5C1D27] text-[10px] tracking-widest font-sans font-bold uppercase mb-2">
+                    <span>👑</span> VVIP GUEST INVITATION
                 </div>
-                <div class="text-[11px] tracking-[0.3em] uppercase text-[#D4AF37] font-sans font-semibold">
-                    Exclusive Royal Invitation
-                </div>
-                <h2 class="text-2xl sm:text-3xl font-serif italic text-[#FDF9F0] mt-1">
+                <h1 class="text-3xl sm:text-4xl font-serif text-[#4A1521] tracking-wider uppercase font-semibold leading-tight">
                     {{ weddingTitle }}
-                </h2>
-            </div>
-
-            <!-- 3D Realistic Envelope Assembly -->
-            <div class="relative w-full max-w-[360px] sm:max-w-[420px] aspect-[1.45/1] perspective-[1200px] select-none">
-                
-                <!-- Envelope Back Body -->
-                <div class="absolute inset-0 rounded-2xl bg-[#2D221A] border border-[#523E2F] shadow-2xl shadow-black/80 overflow-hidden">
-                    <!-- Gold Foil Stamp inside lining -->
-                    <div class="absolute inset-2 border border-[#D4AF37]/20 rounded-xl flex items-center justify-center opacity-30">
-                        <span class="text-7xl text-[#D4AF37] font-serif">V</span>
-                    </div>
-                </div>
-
-                <!-- Letter Inside sliding out -->
-                <div
-                    class="absolute inset-x-4 bottom-4 h-[90%] rounded-xl bg-[#FAF6EE] text-stone-900 p-6 shadow-xl transition-all duration-1000 flex flex-col justify-between items-center text-center"
-                    :class="isLetterExtracted ? '-translate-y-48 scale-105 z-30' : 'translate-y-0 z-10'"
-                >
-                    <div class="w-full flex justify-between items-center text-[10px] text-stone-500 font-sans tracking-widest border-b border-stone-200 pb-2">
-                        <span>THE WEDDING OF</span>
-                        <span>2026</span>
-                    </div>
-                    <div class="py-2">
-                        <h4 class="font-serif italic text-2xl text-stone-900 font-bold leading-tight">
-                            {{ weddingTitle }}
-                        </h4>
-                        <p class="text-xs text-stone-600 mt-1 font-sans">
-                            {{ weddingDate }}
-                        </p>
-                    </div>
-                    <div class="w-full border-t border-stone-200 pt-2 text-[10px] text-stone-600">
-                        Special Invitation for You
-                    </div>
-                </div>
-
-                <!-- Envelope Front Pockets (Triangle Left, Right, Bottom Fold) -->
-                <div class="absolute inset-0 z-20 pointer-events-none">
-                    <!-- Bottom Pocket Triangle -->
-                    <div class="absolute inset-x-0 bottom-0 h-full overflow-hidden rounded-b-2xl">
-                        <div class="w-full h-full bg-[#3B2D22] border-t border-[#6B533E] [clip-path:polygon(0_100%,_50%_45%,_100%_100%)] shadow-md"></div>
-                    </div>
-                    <!-- Left Pocket Triangle -->
-                    <div class="absolute inset-y-0 left-0 w-full overflow-hidden rounded-l-2xl">
-                        <div class="w-full h-full bg-[#33261C] border-r border-[#544030] [clip-path:polygon(0_0,_45%_50%,_0_100%)]"></div>
-                    </div>
-                    <!-- Right Pocket Triangle -->
-                    <div class="absolute inset-y-0 right-0 w-full overflow-hidden rounded-r-2xl">
-                        <div class="w-full h-full bg-[#33261C] border-l border-[#544030] [clip-path:polygon(100%_0,_55%_50%,_100%_100%)]"></div>
-                    </div>
-                </div>
-
-                <!-- Envelope Top Flap (Folds Open in 3D rotateX) -->
-                <div
-                    class="absolute inset-x-0 top-0 h-full z-20 origin-top transition-transform duration-700 pointer-events-none"
-                    :style="{
-                        transform: isFlapOpen ? 'rotateX(180deg)' : 'rotateX(0deg)',
-                        transformStyle: 'preserve-3d'
-                    }"
-                >
-                    <div class="w-full h-full bg-[#443326] border-b-2 border-[#D4AF37]/40 [clip-path:polygon(0_0,_50%_56%,_100%_0)] shadow-lg"></div>
-                </div>
-
-                <!-- Wax Seal Button (Click to Break & Open) -->
-                <button
-                    @click="handleOpenEnvelope"
-                    class="absolute top-[48%] left-1/2 -translate-x-1/2 -translate-y-1/2 z-30 group cursor-pointer focus:outline-none transition-transform active:scale-95"
-                    :disabled="isWaxBroken"
-                    aria-label="Buka Amplop Undangan"
-                >
-                    <div class="relative w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-gradient-to-tr from-[#8E1616] via-[#B31312] to-[#D42B2B] border-2 border-[#E9A178]/50 shadow-[0_4px_25px_rgba(179,19,18,0.7)] flex items-center justify-center group-hover:scale-105 transition-transform">
-                        <!-- Intricate Wax Stamping Ring -->
-                        <div class="w-12 h-12 rounded-full border border-dashed border-[#FAD02C]/60 flex items-center justify-center text-amber-200 text-lg font-serif">
-                            👑
-                        </div>
-                        <div class="absolute -bottom-6 text-[10px] uppercase tracking-widest font-sans font-bold text-[#D4AF37] whitespace-nowrap bg-black/60 px-2 py-0.5 rounded-full border border-[#D4AF37]/30">
-                            {{ isWaxBroken ? 'Membuka...' : 'Tekan Segel Lilin' }}
-                        </div>
-                    </div>
-                </button>
-
-            </div>
-
-            <!-- Guest Name Address on Envelope -->
-            <div class="mt-12 text-center max-w-sm px-4">
-                <p class="text-xs text-stone-400 font-sans uppercase tracking-wider">
-                    Kepada Yth. Bpk/Ibu/Saudara/i:
+                </h1>
+                <p class="text-xs sm:text-sm text-[#7D4F59] font-sans tracking-wide mt-1">
+                    {{ weddingDate }}
                 </p>
-                <h3 class="text-lg sm:text-xl font-bold text-amber-100 mt-1 font-serif">
-                    {{ guestName || 'Tamu Undangan Terhormat' }}
-                </h3>
             </div>
-        </div>
+
+            <!-- Cover Center: Chateau Portrait in Rich Burgundy Card -->
+            <div class="relative w-full max-w-[320px] sm:max-w-[360px] my-auto z-10">
+                <div class="relative rounded-2xl bg-[#4A1521] p-3 shadow-2xl shadow-[#4A1521]/30 text-center border border-[#7D2938]">
+                    <!-- Couple Photo -->
+                    <div class="aspect-[4/3] rounded-xl overflow-hidden bg-stone-200 shadow-inner relative">
+                        <img
+                            :src="coverImg"
+                            alt="Theodore & Victoria"
+                            class="w-full h-full object-cover"
+                        />
+                        <!-- Subtle lace corner stamp -->
+                        <div class="absolute bottom-1 right-1 px-2 py-0.5 rounded bg-black/40 text-[9px] text-pink-100 font-sans tracking-widest uppercase">
+                            Chateau Edition
+                        </div>
+                    </div>
+                    <div class="pt-3 pb-1 text-center">
+                        <div class="text-[13px] tracking-[0.25em] uppercase text-pink-100 font-serif font-bold">
+                            {{ weddingTitle }}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Floating Hanging Calla Lily on Left -->
+                <div class="absolute -bottom-8 -left-8 w-24 sm:w-28 pointer-events-none drop-shadow-xl z-20">
+                    <img src="/images/templates/victoria/Orn-04.png" alt="Calla Lily" class="w-full h-auto object-contain" />
+                </div>
+                <!-- Floating Amaranthus on Right -->
+                <div class="absolute -top-10 -right-6 w-20 sm:w-24 pointer-events-none drop-shadow-xl z-20">
+                    <img src="/images/templates/victoria/Orn-12.png" alt="Amaranthus" class="w-full h-auto object-contain" />
+                </div>
+            </div>
+
+            <!-- Cover Bottom: Pennant Card Pocket & Open Button -->
+            <div class="w-full max-w-[340px] text-center pb-4 z-20 space-y-3">
+                <div class="px-4 py-2.5 rounded-2xl bg-white/80 backdrop-blur-md border border-pink-200/80 shadow-md">
+                    <p class="text-[10px] text-[#7D4F59] font-sans uppercase tracking-widest">
+                        Kepada Yth. Bpk/Ibu/Saudara/i:
+                    </p>
+                    <p class="text-sm font-bold text-[#4A1521] font-serif mt-0.5 truncate">
+                        {{ guestName || 'Tamu Undangan Spesial' }}
+                    </p>
+                </div>
+
+                <button
+                    @click="handleOpen"
+                    type="button"
+                    class="w-full py-3.5 px-6 rounded-full bg-gradient-to-r from-[#5C1D27] via-[#7B2433] to-[#5C1D27] text-white text-xs sm:text-sm font-serif tracking-[0.2em] uppercase font-bold shadow-xl shadow-[#5C1D27]/30 hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer flex items-center justify-center gap-2"
+                >
+                    <span>💌</span>
+                    <span>{{ isOpening ? 'Membuka Undangan...' : 'Buka Undangan' }}</span>
+                </button>
+            </div>
+        </section>
 
         <!-- ======================================================== -->
-        <!-- 2. FULL ROYAL INVITATION EXPERIENCE (When Opened)        -->
+        <!-- 2. FULL VICTORIA OPENED INVITATION CONTENT               -->
         <!-- ======================================================== -->
-        <div class="max-w-2xl mx-auto px-4 sm:px-6 py-12 space-y-16">
+        <main v-show="isOpen" class="max-w-2xl mx-auto px-4 sm:px-6 py-12 space-y-16 relative">
 
-            <!-- Floating Music Toggle Record -->
+            <!-- Floating Music Player Button -->
             <div class="fixed bottom-6 right-6 z-40">
                 <button
                     @click="emit('toggleMusic')"
-                    class="w-13 h-13 rounded-full bg-[#2B2017] border-2 border-[#D4AF37] shadow-xl flex items-center justify-center text-xl text-[#D4AF37] hover:scale-110 transition-transform"
+                    type="button"
+                    class="w-12 h-12 rounded-full bg-[#4A1521] text-pink-100 border-2 border-pink-200 shadow-xl flex items-center justify-center text-lg hover:scale-110 active:scale-95 transition-all"
                     :class="{ 'animate-spin': isPlayingMusic }"
                     style="animation-duration: 4s;"
-                    aria-label="Toggle Musik"
+                    title="Putar / Hentikan Musik"
                 >
-                    <span v-if="isPlayingMusic">🎵</span>
-                    <span v-else>🔇</span>
+                    <span>🎵</span>
                 </button>
             </div>
 
-            <!-- Royal Cover Hero Section -->
-            <header class="text-center pt-8 pb-6 border-b border-[#D4AF37]/20 relative">
-                <div class="w-16 h-16 rounded-full border-2 border-[#D4AF37]/60 flex items-center justify-center mx-auto mb-4 text-2xl text-[#D4AF37] shadow-[0_0_20px_rgba(212,175,55,0.2)]">
-                    ⚜️
+            <!-- Opened Hero Section -->
+            <header class="text-center pt-8 space-y-4">
+                <div class="w-20 h-20 mx-auto rounded-full bg-white/70 border border-pink-300 shadow-md p-2 flex items-center justify-center">
+                    <img src="/images/templates/victoria/Orn-08.png" alt="Heart Lace" class="w-full h-full object-contain" />
                 </div>
-                <div class="text-[11px] tracking-[0.35em] uppercase text-[#D4AF37] font-sans font-bold mb-2">
-                    The Wedding Celebration
+                <div class="text-[11px] tracking-[0.3em] uppercase text-[#7D4F59] font-sans font-bold">
+                    The Wedding Celebration Of
                 </div>
-                <h1 class="text-4xl sm:text-6xl font-serif italic text-[#FDF9F0] tracking-tight leading-tight">
+                <h1 class="text-4xl sm:text-6xl font-serif text-[#4A1521] italic leading-tight">
                     {{ weddingTitle }}
                 </h1>
-                <p class="mt-3 text-sm sm:text-base text-stone-400 font-sans tracking-wide">
+                <p class="text-sm sm:text-base text-[#7D4F59] font-sans tracking-wide">
                     {{ weddingDate }}
                 </p>
 
-                <!-- Arch Frame Couple Photo -->
-                <div class="mt-8 relative max-w-md mx-auto aspect-[3/4] rounded-t-full rounded-b-2xl overflow-hidden border-4 border-[#D4AF37]/50 shadow-2xl shadow-black/80">
+                <!-- Hero Photo with Victorian Frame -->
+                <div class="mt-6 relative max-w-sm mx-auto aspect-[3/4] rounded-3xl overflow-hidden border-4 border-white shadow-2xl">
                     <img :src="coverImg" :alt="weddingTitle" class="w-full h-full object-cover" />
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-center p-6">
-                        <span class="text-xs tracking-widest uppercase text-amber-200 font-sans">Special Matrimony 2026</span>
+                    <div class="absolute inset-0 bg-gradient-to-t from-[#4A1521]/70 via-transparent to-transparent flex items-end justify-center p-6">
+                        <span class="text-xs tracking-widest uppercase text-pink-100 font-sans font-bold">Forever & Always</span>
                     </div>
                 </div>
             </header>
 
-            <!-- Holy Quote / Royal Blessing -->
-            <section class="text-center py-6 px-4 rounded-3xl bg-[#281F17]/60 border border-[#D4AF37]/20 backdrop-blur-md">
-                <div class="text-3xl text-[#D4AF37] mb-3">“</div>
-                <p class="text-base sm:text-lg italic text-stone-200 leading-relaxed max-w-lg mx-auto">
+            <!-- Holy Quote Card -->
+            <section class="p-8 rounded-3xl bg-white/90 border border-pink-200 shadow-lg text-center space-y-3 relative overflow-hidden">
+                <div class="text-3xl text-[#5C1D27]">“</div>
+                <p class="text-base sm:text-lg italic text-[#4A1521] leading-relaxed max-w-md mx-auto">
                     {{ invitationData?.content?.quote || 'Dan di antara tanda-tanda kebesaran-Nya ialah Dia menciptakan pasangan-pasangan untukmu dari jenismu sendiri, agar kamu cenderung dan merasa tenteram kepadanya.' }}
                 </p>
-                <div class="mt-3 text-xs tracking-widest text-[#D4AF37] font-sans font-bold uppercase">
+                <div class="text-xs tracking-widest text-[#7D4F59] font-sans font-bold uppercase">
                     {{ invitationData?.content?.quoteSource || 'Ar-Rum: 21' }}
                 </div>
             </section>
 
-            <!-- Bride and Groom Section (Classical Medallion Styling) -->
-            <section class="space-y-12">
+            <!-- Bride & Groom Profiles -->
+            <section class="space-y-8">
                 <div class="text-center">
-                    <div class="text-[11px] tracking-[0.3em] uppercase text-[#D4AF37] font-sans font-semibold mb-1">
-                        Groom & Bride
-                    </div>
-                    <h2 class="text-3xl font-serif italic text-white">Mempelai yang Berbahagia</h2>
+                    <div class="text-[10px] tracking-[0.3em] uppercase text-[#7D4F59] font-sans font-bold">The Happy Couple</div>
+                    <h2 class="text-3xl font-serif text-[#4A1521] italic mt-1">Mempelai yang Berbahagia</h2>
                 </div>
 
-                <div class="grid sm:grid-cols-2 gap-8">
+                <div class="grid sm:grid-cols-2 gap-6">
                     <!-- Groom -->
-                    <div class="text-center p-6 rounded-3xl bg-[#251D16] border border-[#523E2F] hover:border-[#D4AF37]/40 transition-colors">
-                        <div class="w-36 h-36 mx-auto rounded-full overflow-hidden border-2 border-[#D4AF37] shadow-xl mb-4">
-                            <img :src="groom.photo || 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=400&q=80'" alt="Groom" class="w-full h-full object-cover" />
+                    <div class="p-6 rounded-3xl bg-white/90 border border-pink-200 shadow-md text-center space-y-3 relative">
+                        <div class="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-pink-100 shadow-inner">
+                            <img :src="groom.photo || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=400&q=80'" alt="Groom" class="w-full h-full object-cover" />
                         </div>
-                        <h3 class="text-2xl font-serif italic text-amber-100 font-bold">{{ groom.fullName || groom.nickname || 'Reihan Pratama' }}</h3>
-                        <p class="text-xs text-stone-400 font-sans mt-2 leading-relaxed">{{ groom.parents || 'Putra tercinta dari Bpk. Ir. Suryadi & Ibu Desi' }}</p>
-                        <div v-if="groom.instagram" class="mt-3 inline-block text-xs text-[#D4AF37] font-sans">
+                        <h3 class="text-2xl font-serif text-[#4A1521] font-bold">{{ groom.fullName || groom.nickname || 'Theodore Alexander' }}</h3>
+                        <p class="text-xs text-[#7D4F59] font-sans leading-relaxed">{{ groom.parents || 'Putra pertama dari Bpk. Alexander & Ibu Diana' }}</p>
+                        <div v-if="groom.instagram" class="pt-1 text-xs text-[#5C1D27] font-sans font-semibold">
                             {{ groom.instagram }}
                         </div>
                     </div>
 
                     <!-- Bride -->
-                    <div class="text-center p-6 rounded-3xl bg-[#251D16] border border-[#523E2F] hover:border-[#D4AF37]/40 transition-colors">
-                        <div class="w-36 h-36 mx-auto rounded-full overflow-hidden border-2 border-[#D4AF37] shadow-xl mb-4">
-                            <img :src="bride.photo || 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=400&q=80'" alt="Bride" class="w-full h-full object-cover" />
+                    <div class="p-6 rounded-3xl bg-white/90 border border-pink-200 shadow-md text-center space-y-3 relative">
+                        <div class="w-32 h-32 mx-auto rounded-full overflow-hidden border-4 border-pink-100 shadow-inner">
+                            <img :src="bride.photo || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=400&q=80'" alt="Bride" class="w-full h-full object-cover" />
                         </div>
-                        <h3 class="text-2xl font-serif italic text-amber-100 font-bold">{{ bride.fullName || bride.nickname || 'Natasha Aurelia' }}</h3>
-                        <p class="text-xs text-stone-400 font-sans mt-2 leading-relaxed">{{ bride.parents || 'Putri tercinta dari Bpk. Harun & Ibu Melly' }}</p>
-                        <div v-if="bride.instagram" class="mt-3 inline-block text-xs text-[#D4AF37] font-sans">
+                        <h3 class="text-2xl font-serif text-[#4A1521] font-bold">{{ bride.fullName || bride.nickname || 'Victoria Clarissa' }}</h3>
+                        <p class="text-xs text-[#7D4F59] font-sans leading-relaxed">{{ bride.parents || 'Putri bungsu dari Bpk. Christian & Ibu Elizabeth' }}</p>
+                        <div v-if="bride.instagram" class="pt-1 text-xs text-[#5C1D27] font-sans font-semibold">
                             {{ bride.instagram }}
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Event Agenda Cards (Royal Certificate Style) -->
+            <!-- Countdown Timer -->
+            <section class="p-8 rounded-3xl bg-gradient-to-br from-[#4A1521] to-[#691E2E] text-white text-center shadow-xl space-y-4">
+                <div class="text-[10px] tracking-[0.3em] uppercase text-pink-200 font-sans font-bold">Menghitung Hari Bahagia</div>
+                <div class="grid grid-cols-4 gap-2 sm:gap-4 max-w-sm mx-auto">
+                    <div class="p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+                        <span class="block text-2xl sm:text-3xl font-bold font-serif">{{ timeLeft.days }}</span>
+                        <span class="text-[9px] uppercase tracking-wider text-pink-200">Hari</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+                        <span class="block text-2xl sm:text-3xl font-bold font-serif">{{ timeLeft.hours }}</span>
+                        <span class="text-[9px] uppercase tracking-wider text-pink-200">Jam</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+                        <span class="block text-2xl sm:text-3xl font-bold font-serif">{{ timeLeft.minutes }}</span>
+                        <span class="text-[9px] uppercase tracking-wider text-pink-200">Menit</span>
+                    </div>
+                    <div class="p-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20">
+                        <span class="block text-2xl sm:text-3xl font-bold font-serif">{{ timeLeft.seconds }}</span>
+                        <span class="text-[9px] uppercase tracking-wider text-pink-200">Detik</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Event Agenda Cards -->
             <section class="space-y-6">
                 <div class="text-center">
-                    <div class="text-[11px] tracking-[0.3em] uppercase text-[#D4AF37] font-sans font-semibold mb-1">
-                        Timeline of Events
-                    </div>
-                    <h2 class="text-3xl font-serif italic text-white">Rangkaian Acara</h2>
+                    <div class="text-[10px] tracking-[0.3em] uppercase text-[#7D4F59] font-sans font-bold">Wedding Timeline</div>
+                    <h2 class="text-3xl font-serif text-[#4A1521] italic mt-1">Rangkaian Acara</h2>
                 </div>
 
                 <div class="space-y-6">
                     <div
                         v-for="ev in events"
                         :key="ev.id"
-                        class="p-8 rounded-3xl bg-[#281F17] border border-[#D4AF37]/30 text-center relative overflow-hidden shadow-xl"
+                        class="p-8 rounded-3xl bg-white/95 border border-pink-200 shadow-md text-center space-y-4"
                     >
-                        <div class="w-10 h-10 rounded-full border border-[#D4AF37]/40 flex items-center justify-center mx-auto mb-3 text-[#D4AF37]">
+                        <div class="w-10 h-10 mx-auto rounded-full bg-pink-50 border border-pink-200 flex items-center justify-center text-[#5C1D27]">
                             📅
                         </div>
-                        <h3 class="text-2xl font-serif italic text-amber-100 font-bold">{{ ev.name }}</h3>
-                        <div class="my-4 py-2 border-y border-[#D4AF37]/20 inline-block px-6">
-                            <p class="text-sm font-bold text-amber-300 font-sans">{{ safeFormatDisplayDate(ev.starts_at) }}</p>
-                            <p class="text-xs text-stone-300 font-sans mt-0.5">{{ safeFormatEventTime(ev.starts_at, ev.ends_at, ev.timezone) }}</p>
+                        <h3 class="text-2xl font-serif text-[#4A1521] font-bold">{{ ev.name }}</h3>
+                        <div class="py-2 border-y border-pink-100 inline-block px-6">
+                            <p class="text-sm font-bold text-[#5C1D27] font-sans">{{ safeFormatDisplayDate(ev.starts_at) }}</p>
+                            <p class="text-xs text-[#7D4F59] font-sans mt-0.5">{{ safeFormatEventTime(ev.starts_at, ev.ends_at, ev.timezone) }}</p>
                         </div>
-                        <h4 class="text-base font-semibold text-white">{{ ev.venue_name }}</h4>
-                        <p class="text-xs text-stone-400 mt-1 max-w-md mx-auto font-sans leading-relaxed">{{ ev.address }}</p>
-                        <div class="mt-5">
+                        <div>
+                            <h4 class="text-base font-bold text-[#4A1521]">{{ ev.venue_name }}</h4>
+                            <p class="text-xs text-[#7D4F59] font-sans mt-1 max-w-sm mx-auto leading-relaxed">{{ ev.address }}</p>
+                        </div>
+                        <div class="pt-2">
                             <a
                                 :href="ev.maps_url || 'https://maps.google.com'"
                                 target="_blank"
-                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-sans uppercase tracking-widest font-bold bg-[#D4AF37] hover:bg-[#F2CD5C] text-stone-950 shadow-md transition-all hover:scale-105"
+                                class="inline-flex items-center gap-2 px-6 py-2.5 rounded-full text-xs font-sans uppercase tracking-widest font-bold bg-[#5C1D27] text-white hover:bg-[#7B2433] shadow-md transition-all hover:scale-105"
                             >
-                                <span>📍 Buka Petunjuk Arah Google Maps</span>
+                                <span>📍 Buka di Google Maps</span>
                             </a>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <!-- Digital Envelope & Gift Accounts -->
-            <section v-if="digitalGift?.enabled" class="p-8 rounded-3xl bg-[#251D16] border border-[#523E2F] text-center space-y-6">
-                <div class="text-[11px] tracking-[0.3em] uppercase text-[#D4AF37] font-sans font-semibold">
-                    Wedding Gift
+            <!-- Digital Gift / Bank Registry -->
+            <section v-if="digitalGift?.enabled" class="p-8 rounded-3xl bg-white/95 border border-pink-200 shadow-md text-center space-y-6">
+                <div>
+                    <div class="text-[10px] tracking-[0.3em] uppercase text-[#7D4F59] font-sans font-bold">Wedding Gift</div>
+                    <h2 class="text-3xl font-serif text-[#4A1521] italic mt-1">Tanda Kasih & Doa Restu</h2>
+                    <p class="text-xs text-[#7D4F59] font-sans max-w-md mx-auto mt-2 leading-relaxed">
+                        Doa restu Anda merupakan karunia terindah bagi kami. Namun jika ingin memberikan tanda kasih secara digital, Anda dapat melalui:
+                    </p>
                 </div>
-                <h2 class="text-3xl font-serif italic text-white">Tanda Kasih Digital</h2>
-                <p class="text-xs text-stone-400 font-sans max-w-md mx-auto">
-                    Doa restu Anda adalah karunia terindah bagi kami. Bagi Bapak/Ibu/Saudara/i yang ingin memberikan tanda kasih secara digital, dapat melalui:
-                </p>
 
-                <div class="grid sm:grid-cols-2 gap-4 max-w-lg mx-auto">
+                <div class="space-y-4 max-w-md mx-auto">
                     <div
-                        v-for="(acc, idx) in digitalGift.accounts"
+                        v-for="(acc, idx) in (digitalGift?.accounts || [])"
                         :key="idx"
-                        class="p-5 rounded-2xl bg-[#1C1510] border border-[#D4AF37]/30 text-left flex flex-col justify-between"
+                        class="p-5 rounded-2xl bg-pink-50/60 border border-pink-200 text-left flex items-center justify-between"
                     >
                         <div>
-                            <div class="text-[10px] text-stone-400 font-sans uppercase">Transfer Rekening</div>
-                            <div class="text-lg font-bold text-amber-200 mt-0.5">{{ acc.bank }}</div>
-                            <div class="text-sm font-mono text-white mt-1">{{ acc.account_number }}</div>
-                            <div class="text-xs text-stone-400 mt-0.5">a.n. {{ acc.account_name }}</div>
+                            <span class="text-[10px] uppercase font-bold tracking-wider text-[#7D4F59]">{{ acc.bank_name || 'Bank' }}</span>
+                            <div class="text-base font-mono font-bold text-[#4A1521] mt-0.5">{{ acc.account_number }}</div>
+                            <div class="text-xs text-[#7D4F59]">a.n {{ acc.holder_name }}</div>
                         </div>
-                        <button
-                            @click="copyBankNumber(acc.account_number, idx)"
-                            class="mt-4 w-full py-2 rounded-xl text-xs font-sans font-semibold bg-[#D4AF37]/20 hover:bg-[#D4AF37] text-amber-200 hover:text-stone-900 border border-[#D4AF37]/40 transition-colors"
-                        >
-                            {{ copiedBankIndex === idx ? '✓ Berhasil Disalin!' : 'Salin Nomor Rekening' }}
-                        </button>
+                        <div class="flex items-center gap-2">
+                            <button
+                                v-if="acc.qris_image_url"
+                                @click="openQris(acc)"
+                                type="button"
+                                class="px-3 py-1.5 rounded-lg bg-white border border-pink-300 text-xs font-sans font-semibold text-[#5C1D27] hover:bg-pink-100"
+                            >
+                                QRIS
+                            </button>
+                            <button
+                                @click="copyBankNumber(acc.account_number, idx)"
+                                type="button"
+                                class="px-3 py-1.5 rounded-lg bg-[#5C1D27] text-white text-xs font-sans font-semibold hover:bg-[#7B2433]"
+                            >
+                                {{ copiedBankIndex === idx ? '✓ Tersalin' : 'Salin' }}
+                            </button>
+                        </div>
                     </div>
                 </div>
             </section>
 
-            <!-- RSVP & Wishes Section -->
-            <section class="p-8 rounded-3xl bg-[#281F17] border border-[#D4AF37]/30 space-y-6">
+            <!-- RSVP Form & Wishes -->
+            <section class="p-8 rounded-3xl bg-white/95 border border-pink-200 shadow-md space-y-6">
                 <div class="text-center">
-                    <div class="text-[11px] tracking-[0.3em] uppercase text-[#D4AF37] font-sans font-semibold mb-1">
-                        RSVP & Guestbook
-                    </div>
-                    <h2 class="text-3xl font-serif italic text-white">Konfirmasi Kehadiran</h2>
+                    <div class="text-[10px] tracking-[0.3em] uppercase text-[#7D4F59] font-sans font-bold">RSVP & Wishes</div>
+                    <h2 class="text-3xl font-serif text-[#4A1521] italic mt-1">Konfirmasi Kehadiran & Ucapan</h2>
                 </div>
 
-                <form @submit.prevent="submitRsvp" class="space-y-4 max-w-lg mx-auto font-sans">
-                    <div v-if="rsvpSuccess" class="p-4 rounded-xl bg-emerald-950/80 border border-emerald-500/40 text-emerald-200 text-xs text-center">
-                        ✓ Terima kasih! Konfirmasi kehadiran Anda telah tersimpan dengan indah.
-                    </div>
-                    <div v-if="rsvpErrorMessage" class="p-4 rounded-xl bg-rose-950/80 border border-rose-500/40 text-rose-200 text-xs text-center">
-                        {{ rsvpErrorMessage }}
-                    </div>
-
+                <!-- Form -->
+                <form @submit.prevent="submitRsvp" class="space-y-4 max-w-lg mx-auto">
                     <div>
-                        <label class="block text-xs text-stone-300 mb-1">Nama Lengkap</label>
+                        <label class="block text-xs font-bold text-[#4A1521] font-sans mb-1">Nama Lengkap</label>
                         <input
                             v-model="rsvpForm.guest_name"
                             type="text"
                             required
                             placeholder="Tuliskan nama Anda"
-                            class="w-full px-4 py-2.5 rounded-xl bg-[#1C1510] border border-[#523E2F] text-white text-xs focus:outline-none focus:border-[#D4AF37]"
+                            class="w-full px-4 py-2.5 rounded-xl border border-pink-200 bg-pink-50/30 text-stone-900 text-xs font-sans focus:outline-none focus:ring-2 focus:ring-[#5C1D27]"
                         />
                     </div>
 
-                    <div class="grid grid-cols-2 gap-3">
+                    <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-xs text-stone-300 mb-1">Kehadiran</label>
+                            <label class="block text-xs font-bold text-[#4A1521] font-sans mb-1">Kehadiran</label>
                             <select
                                 v-model="rsvpForm.status"
-                                class="w-full px-3 py-2.5 rounded-xl bg-[#1C1510] border border-[#523E2F] text-white text-xs focus:outline-none focus:border-[#D4AF37]"
+                                class="w-full px-4 py-2.5 rounded-xl border border-pink-200 bg-pink-50/30 text-stone-900 text-xs font-sans focus:outline-none focus:ring-2 focus:ring-[#5C1D27]"
                             >
                                 <option value="attending">Hadir</option>
+                                <option value="tentative">Masih Ragu</option>
                                 <option value="declined">Tidak Hadir</option>
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs text-stone-300 mb-1">Jumlah Hadir</label>
+                            <label class="block text-xs font-bold text-[#4A1521] font-sans mb-1">Jumlah Tamu</label>
                             <input
                                 v-model.number="rsvpForm.attendees_count"
                                 type="number"
                                 min="1"
                                 max="10"
-                                class="w-full px-4 py-2.5 rounded-xl bg-[#1C1510] border border-[#523E2F] text-white text-xs focus:outline-none focus:border-[#D4AF37]"
+                                class="w-full px-4 py-2.5 rounded-xl border border-pink-200 bg-pink-50/30 text-stone-900 text-xs font-sans focus:outline-none focus:ring-2 focus:ring-[#5C1D27]"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label class="block text-xs text-stone-300 mb-1">Ucapan & Doa Restu</label>
+                        <label class="block text-xs font-bold text-[#4A1521] font-sans mb-1">Ucapan & Doa Restu</label>
                         <textarea
                             v-model="rsvpForm.wishes"
                             rows="3"
                             placeholder="Tuliskan doa restu untuk kedua mempelai..."
-                            class="w-full px-4 py-2.5 rounded-xl bg-[#1C1510] border border-[#523E2F] text-white text-xs focus:outline-none focus:border-[#D4AF37]"
+                            class="w-full px-4 py-2.5 rounded-xl border border-pink-200 bg-pink-50/30 text-stone-900 text-xs font-sans focus:outline-none focus:ring-2 focus:ring-[#5C1D27]"
                         ></textarea>
                     </div>
 
                     <button
                         type="submit"
                         :disabled="rsvpSubmitting"
-                        class="w-full py-3 rounded-xl bg-[#D4AF37] hover:bg-[#F2CD5C] text-stone-950 font-bold text-xs uppercase tracking-widest shadow-md transition-all disabled:opacity-50"
+                        class="w-full py-3 rounded-xl bg-[#5C1D27] text-white text-xs font-sans uppercase tracking-widest font-bold hover:bg-[#7B2433] shadow-md transition-all cursor-pointer"
                     >
-                        {{ rsvpSubmitting ? 'Mengirim...' : 'Kirim RSVP & Doa Restu' }}
+                        {{ rsvpSubmitting ? 'Mengirim Konfirmasi...' : 'Kirim Konfirmasi Kehadiran' }}
                     </button>
+                    <p v-if="rsvpSuccess" class="text-xs text-emerald-700 font-semibold text-center">
+                        ✓ Terima kasih, konfirmasi Anda telah tersimpan!
+                    </p>
                 </form>
 
-                <!-- Guestbook Messages List -->
-                <div class="mt-8 pt-6 border-t border-[#D4AF37]/20 max-w-lg mx-auto space-y-3 max-h-72 overflow-y-auto pr-2">
-                    <div
-                        v-for="gb in guestbook"
-                        :key="gb.id"
-                        class="p-4 rounded-xl bg-[#1C1510] border border-[#523E2F]/60 text-left font-sans"
-                    >
-                        <div class="flex items-center justify-between text-[11px]">
-                            <span class="font-bold text-amber-200">{{ gb.guest_name }}</span>
-                            <span class="text-stone-500 text-[10px]">{{ gb.created_at }}</span>
+                <!-- Guestbook List -->
+                <div class="pt-6 border-t border-pink-100 space-y-3 max-w-lg mx-auto">
+                    <h4 class="text-xs font-bold text-[#4A1521] font-sans uppercase tracking-wider text-center">Ucapan dari Para Sahabat</h4>
+                    <div class="max-h-60 overflow-y-auto space-y-2 pr-1">
+                        <div
+                            v-for="entry in guestbook"
+                            :key="entry.id"
+                            class="p-3.5 rounded-xl bg-pink-50/50 border border-pink-100 text-left"
+                        >
+                            <div class="flex items-center justify-between text-[11px] font-bold text-[#4A1521]">
+                                <span>{{ entry.guest_name }}</span>
+                                <span class="text-[9px] text-[#7D4F59] font-normal">{{ entry.created_at }}</span>
+                            </div>
+                            <p class="text-xs text-[#4A1521] mt-1 italic leading-relaxed">"{{ entry.message }}"</p>
                         </div>
-                        <p class="text-xs text-stone-300 mt-1 leading-relaxed">{{ gb.message }}</p>
                     </div>
                 </div>
             </section>
 
-            <!-- Royal Footer -->
-            <footer class="text-center py-8 border-t border-[#D4AF37]/20 text-xs text-stone-500 font-sans">
-                <p>Terima kasih atas doa restu Anda kepada kami berdua.</p>
-                <div class="text-[#D4AF37] font-serif italic text-lg mt-2">{{ weddingTitle }}</div>
+            <!-- Footer Closing -->
+            <footer class="text-center pt-8 pb-12 space-y-3">
+                <div class="w-12 h-12 mx-auto rounded-full bg-white/70 border border-pink-300 shadow-sm p-1.5 flex items-center justify-center">
+                    <img src="/images/templates/victoria/Orn-08.png" alt="Heart Lace" class="w-full h-full object-contain" />
+                </div>
+                <h3 class="text-2xl font-serif text-[#4A1521] italic font-bold">Terima Kasih</h3>
+                <p class="text-xs text-[#7D4F59] font-sans max-w-xs mx-auto">
+                    Merupakan suatu kehormatan dan kebahagiaan bagi kami apabila Bapak/Ibu/Saudara/i berkenan hadir dan memberikan doa restu.
+                </p>
+                <div class="pt-4 text-[10px] text-pink-400 font-sans tracking-widest uppercase">
+                    Undangan Digital • Exclusive Chateau Edition
+                </div>
             </footer>
 
-        </div>
+        </main>
 
     </div>
 </template>
-
-<style scoped>
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(-10px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-.animate-fade-in {
-    animation: fadeIn 1s ease-out forwards;
-}
-</style>

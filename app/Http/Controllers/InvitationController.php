@@ -21,7 +21,21 @@ class InvitationController extends Controller
 
     public function create(Request $request): Response
     {
-        $templates = Template::where('is_active', true)->get();
+        $masterSlugs = [
+            'ningrum-fairytale-3d',
+            'victoria-luxury-3d',
+            'alsa-royal-adat-3d',
+            'bianca-botanical-3d',
+            'eloise-romance-3d',
+        ];
+        $templates = Template::where('is_active', true)
+            ->get()
+            ->sortBy(function ($t) use ($masterSlugs) {
+                $idx = array_search($t->slug, $masterSlugs);
+                return $idx === false ? 999 : $idx;
+            })
+            ->values();
+
         return Inertia::render('Invitations/Create', [
             'templates' => $templates,
             'isPremium' => $request->user()->hasActivePremium(),

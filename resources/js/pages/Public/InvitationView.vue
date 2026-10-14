@@ -5,8 +5,8 @@ import confetti from 'canvas-confetti';
 import NingrumTemplate from '@/components/Templates/NingrumTemplate.vue';
 import VictoriaEnvelopeTemplate from '@/components/Templates/VictoriaEnvelopeTemplate.vue';
 import AlsaTraditionalTemplate from '@/components/Templates/AlsaTraditionalTemplate.vue';
-import ArunaBotanicalTemplate from '@/components/Templates/ArunaBotanicalTemplate.vue';
-import EmeraldArtDecoTemplate from '@/components/Templates/EmeraldArtDecoTemplate.vue';
+import BiancaBotanicalTemplate from '@/components/Templates/BiancaBotanicalTemplate.vue';
+import EloiseRomanceTemplate from '@/components/Templates/EloiseRomanceTemplate.vue';
 
 const props = defineProps<{
     invitation: {
@@ -181,28 +181,28 @@ const invitationData = computed(() => {
 });
 
 const isNingrum = computed(() => {
-    const slug = props.template?.slug || '';
-    return slug.includes('ningrum') || slug.includes('fairytale-3d');
+    const slug = (props.template?.slug || '').toLowerCase();
+    return slug.includes('ningrum') || slug.includes('fairytale');
 });
 
 const isVictoria = computed(() => {
-    const slug = props.template?.slug || '';
+    const slug = (props.template?.slug || '').toLowerCase();
     return slug.includes('victoria') || slug.includes('royal-3d-envelope') || slug.includes('envelope');
 });
 
 const isAlsa = computed(() => {
-    const slug = props.template?.slug || '';
-    return slug.includes('alsa') || slug.includes('nusantara-romance') || slug.includes('traditional');
+    const slug = (props.template?.slug || '').toLowerCase();
+    return slug.includes('alsa') || slug.includes('nusantara') || slug.includes('traditional') || slug.includes('adat');
 });
 
-const isAruna = computed(() => {
-    const slug = props.template?.slug || '';
-    return slug.includes('aruna') || slug.includes('rustic-floral') || slug.includes('rustic');
+const isBianca = computed(() => {
+    const slug = (props.template?.slug || '').toLowerCase();
+    return slug.includes('bianca') || slug.includes('modern-minimalist') || slug.includes('modern');
 });
 
-const isEmerald = computed(() => {
-    const slug = props.template?.slug || '';
-    return slug.includes('royal-emerald-gold') || slug.includes('emerald');
+const isEloise = computed(() => {
+    const slug = (props.template?.slug || '').toLowerCase();
+    return slug.includes('eloise') || slug.includes('rustic') || slug.includes('emerald') || slug.includes('floral');
 });
 
 // Authentic Katsudoto Assets Resolution
@@ -832,9 +832,9 @@ const digitalGift = computed(() => {
         @toggle-music="toggleMusic"
     />
 
-    <!-- 4. RUSTIC FLORAL & BOTANICAL GLASSHOUSE (ARUNA) -->
-    <ArunaBotanicalTemplate
-        v-else-if="isAruna"
+    <!-- 4. WARM BOHEMIAN LINE ART & FAIRY LIGHTS (BIANCA) -->
+    <BiancaBotanicalTemplate
+        v-else-if="isBianca"
         :invitation-data="invitationData"
         :events="events"
         :guestbook="localGuestbook"
@@ -859,9 +859,9 @@ const digitalGift = computed(() => {
         @toggle-music="toggleMusic"
     />
 
-    <!-- 5. ROYAL EMERALD & GOLD ART DECO LUXURY -->
-    <EmeraldArtDecoTemplate
-        v-else-if="isEmerald"
+    <!-- 5. MISTY MOUNTAIN & ROMANTIC PEARL ENVELOPE (ELOISE) -->
+    <EloiseRomanceTemplate
+        v-else-if="isEloise"
         :invitation-data="invitationData"
         :events="events"
         :guestbook="localGuestbook"
@@ -871,7 +871,7 @@ const digitalGift = computed(() => {
         :is-demo="props.isDemo"
         :template="props.template"
         :is-open="isOpen"
-        :is-playing-music="isPlayingMusic"
+        :isPlayingMusic="isPlayingMusic"
         :time-left="timeLeft"
         :format-display-date="formatDisplayDate"
         :format-event-time="formatEventTime"
@@ -886,7 +886,7 @@ const digitalGift = computed(() => {
         @toggle-music="toggleMusic"
     />
 
-    <!-- 6. STANDARD INVITATION TEMPLATE (Fallback / Modern Minimalist) -->
+    <!-- 6. STANDARD INVITATION TEMPLATE (Fallback / Minimalist) -->
     <div
         v-else
         class="min-h-screen w-full relative transition-colors duration-500 overflow-x-hidden selection:bg-amber-400 selection:text-stone-900"
