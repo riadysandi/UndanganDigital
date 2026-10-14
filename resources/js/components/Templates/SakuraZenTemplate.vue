@@ -148,26 +148,74 @@ const googleCalendarUrl = computed(() => {
     return `https://www.google.com/calendar/render?action=TEMPLATE&text=${title}&location=${location}&dates=20261212T010000Z/20261212T140000Z`;
 });
 
-// Shoji Door opening state
+// ========================================================
+// 1. SHOJI SLIDING DOOR TRANSITION ENGINE
+// ========================================================
+const isCoverVisible = ref(!props.isOpen);
 const isShojiOpening = ref(false);
+
 const handleOpenInvitation = () => {
     if (isShojiOpening.value) return;
     isShojiOpening.value = true;
-    
-    // Trigger audio & open emit
+
+    // Trigger parent audio playback immediately inside user gesture
     emit('openInvitation');
 
-    // Confetti with sakura tones (rose petal, soft blush, and gold)
+    // Confetti with sakura blossom tones & gold
     confetti({
-        particleCount: 50,
-        spread: 80,
+        particleCount: 65,
+        spread: 90,
         origin: { y: 0.6 },
         colors: ['#E89CAE', '#F4C2C2', '#D4AF37', '#FFF0F5', '#C23B22']
     });
+
+    // Keep doors sliding smoothly for 1300ms before removing the overlay from DOM
+    setTimeout(() => {
+        isCoverVisible.value = false;
+    }, 1300);
 };
 
 // ========================================================
-// SAKURA PETALS ENGINE (Canvas 2D, 60fps, 3D Flutter Physics)
+// 2. INTERACTIVE KOI POND ENGINE (Ripples & Fish Flutter)
+// ========================================================
+interface WaterRipple {
+    id: number;
+    x: number;
+    y: number;
+}
+const pondRipples = ref<WaterRipple[]>([]);
+let nextRippleId = 1;
+
+const triggerPondRipple = (e: MouseEvent) => {
+    const pond = e.currentTarget as HTMLElement;
+    const rect = pond.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const id = nextRippleId++;
+    pondRipples.value.push({ id, x, y });
+    setTimeout(() => {
+        pondRipples.value = pondRipples.value.filter(r => r.id !== id);
+    }, 1600);
+};
+
+// Periodic gentle natural pond ripples
+let pondInterval: number | null = null;
+const startPeriodicRipples = () => {
+    pondInterval = window.setInterval(() => {
+        if (pondRipples.value.length < 5) {
+            const rx = Math.random() * 260 + 40;
+            const ry = Math.random() * 160 + 30;
+            const id = nextRippleId++;
+            pondRipples.value.push({ id, x: rx, y: ry });
+            setTimeout(() => {
+                pondRipples.value = pondRipples.value.filter(r => r.id !== id);
+            }, 1600);
+        }
+    }, 2200);
+};
+
+// ========================================================
+// 3. SAKURA PETALS ENGINE (Canvas 2D, 60fps, 3D Flutter)
 // ========================================================
 interface SakuraPetal {
     x: number;
@@ -206,7 +254,7 @@ const initSakuraCanvas = () => {
         'rgba(217, 119, 127, 0.75)', // deeper rose
     ];
 
-    const petalCount = window.innerWidth < 768 ? 24 : 45;
+    const petalCount = window.innerWidth < 768 ? 25 : 48;
     const petals: SakuraPetal[] = [];
 
     for (let i = 0; i < petalCount; i++) {
@@ -214,12 +262,12 @@ const initSakuraCanvas = () => {
             x: Math.random() * width,
             y: Math.random() * height,
             size: Math.random() * 8 + 7,
-            speedX: Math.random() * 1.5 - 0.2, // slight drift to the right
-            speedY: Math.random() * 1.2 + 0.8, // gentle fall
+            speedX: Math.random() * 1.6 - 0.2, // slight wind drift to right
+            speedY: Math.random() * 1.3 + 0.8, // gentle downward flutter
             rotation: Math.random() * 360,
-            rotSpeed: (Math.random() - 0.5) * 1.5,
+            rotSpeed: (Math.random() - 0.5) * 1.8,
             swing: Math.random() * Math.PI * 2,
-            swingSpeed: Math.random() * 0.02 + 0.01,
+            swingSpeed: Math.random() * 0.025 + 0.01,
             opacity: Math.random() * 0.4 + 0.6,
             color: petalColors[Math.floor(Math.random() * petalColors.length)],
         });
@@ -233,7 +281,7 @@ const initSakuraCanvas = () => {
 
         ctx.fillStyle = p.color;
         ctx.beginPath();
-        // Authentic Sakura petal shape with curved tip and notch
+        // Authentic Sakura petal shape with curved tip and gentle notch
         ctx.moveTo(0, 0);
         ctx.bezierCurveTo(-p.size / 2, -p.size * 0.8, -p.size * 0.8, -p.size * 1.6, 0, -p.size * 2);
         ctx.bezierCurveTo(p.size * 0.8, -p.size * 1.6, p.size / 2, -p.size * 0.8, 0, 0);
@@ -253,12 +301,12 @@ const initSakuraCanvas = () => {
             p.y += p.speedY;
 
             // Screen wrap
-            if (p.y > height + 20) {
-                p.y = -20;
+            if (p.y > height + 25) {
+                p.y = -25;
                 p.x = Math.random() * width;
             }
-            if (p.x > width + 20) {
-                p.x = -20;
+            if (p.x > width + 25) {
+                p.x = -25;
             }
 
             drawPetal(p);
@@ -279,6 +327,8 @@ let cleanupCanvas: (() => void) | undefined;
 onMounted(() => {
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('touchmove', handleTouchMove, { passive: true });
+
+    startPeriodicRipples();
 
     nextTick(() => {
         cleanupCanvas = initSakuraCanvas();
@@ -308,6 +358,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
     window.removeEventListener('mousemove', handleMouseMove);
     window.removeEventListener('touchmove', handleTouchMove);
+    if (pondInterval) clearInterval(pondInterval);
     if (cleanupCanvas) cleanupCanvas();
     if (animationFrameId) cancelAnimationFrame(animationFrameId);
     ScrollTrigger.getAll().forEach((t) => t.kill());
@@ -335,29 +386,72 @@ onBeforeUnmount(() => {
         ></div>
 
         <!-- ========================================================
+             SWAYING CHERRY BLOSSOM TREE BRANCHES (Top Corners)
+             ======================================================== -->
+        <!-- Top Left Swaying Branch -->
+        <div class="fixed top-0 left-0 z-25 pointer-events-none w-48 sm:w-64 origin-top-left animate-sway-left drop-shadow-md">
+            <svg viewBox="0 0 200 150" class="w-full fill-none">
+                <!-- Branch Stem -->
+                <path d="M0,0 Q60,30 110,20 T190,60" stroke="#4A2E1B" stroke-width="4" stroke-linecap="round" />
+                <path d="M60,30 Q90,70 140,80" stroke="#4A2E1B" stroke-width="2.5" stroke-linecap="round" />
+                <!-- Blooming Sakura Clusters -->
+                <circle cx="110" cy="20" r="10" fill="#F4C2C2" stroke="#C23B22" stroke-width="0.75" />
+                <circle cx="110" cy="20" r="3" fill="#C23B22" />
+                <circle cx="140" cy="80" r="12" fill="#E89CAE" stroke="#C23B22" stroke-width="0.75" />
+                <circle cx="140" cy="80" r="3.5" fill="#8C1D0B" />
+                <circle cx="180" cy="55" r="9" fill="#FFF0F5" stroke="#E89CAE" stroke-width="0.75" />
+                <circle cx="85" cy="45" r="11" fill="#F4C2C2" stroke="#C23B22" stroke-width="0.75" />
+                <!-- Leaves -->
+                <path d="M115,15 Q125,5 130,12 T115,22 Z" fill="#8BA888" />
+                <path d="M145,85 Q155,95 148,102 T138,88 Z" fill="#759772" />
+            </svg>
+        </div>
+
+        <!-- Top Right Swaying Branch -->
+        <div class="fixed top-0 right-0 z-25 pointer-events-none w-48 sm:w-64 origin-top-right animate-sway-right drop-shadow-md">
+            <svg viewBox="0 0 200 150" class="w-full fill-none">
+                <path d="M200,0 Q140,30 90,20 T10,60" stroke="#4A2E1B" stroke-width="4" stroke-linecap="round" />
+                <path d="M140,30 Q110,70 60,80" stroke="#4A2E1B" stroke-width="2.5" stroke-linecap="round" />
+                <circle cx="90" cy="20" r="10" fill="#F4C2C2" stroke="#C23B22" stroke-width="0.75" />
+                <circle cx="90" cy="20" r="3" fill="#C23B22" />
+                <circle cx="60" cy="80" r="12" fill="#E89CAE" stroke="#C23B22" stroke-width="0.75" />
+                <circle cx="60" cy="80" r="3.5" fill="#8C1D0B" />
+                <circle cx="20" cy="55" r="9" fill="#FFF0F5" stroke="#E89CAE" stroke-width="0.75" />
+                <circle cx="115" cy="45" r="11" fill="#F4C2C2" stroke="#C23B22" stroke-width="0.75" />
+                <path d="M85,15 Q75,5 70,12 T85,22 Z" fill="#8BA888" />
+                <path d="M55,85 Q45,95 52,102 T62,88 Z" fill="#759772" />
+            </svg>
+        </div>
+
+        <!-- ========================================================
              1. INTERACTIVE SHOJI SLIDING SCREEN (GATE COVER)
              ======================================================== -->
         <div
-            v-if="!props.isOpen"
-            class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#1A1715]"
+            v-if="isCoverVisible"
+            class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#1A1715] transition-opacity duration-300"
+            :class="{ 'pointer-events-none': isShojiOpening }"
         >
             <!-- Left Shoji Door Panel -->
             <div
-                class="absolute inset-y-0 left-0 w-1/2 bg-[#F7F3E9] border-r-4 border-[#3D2817] shadow-2xl transition-transform duration-1000 ease-in-out flex flex-col justify-between p-6 overflow-hidden"
+                class="absolute inset-y-0 left-0 w-1/2 bg-[#F7F3E9] border-r-4 border-[#3D2817] shadow-2xl transition-transform duration-[1200ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col justify-between p-6 overflow-hidden"
                 :class="{ '-translate-x-full': isShojiOpening }"
             >
                 <!-- Shoji Wooden Grid Pattern -->
-                <div class="absolute inset-0 grid grid-cols-3 grid-rows-6 gap-2 p-4 pointer-events-none opacity-40">
-                    <div v-for="i in 18" :key="'left-grid-' + i" class="border border-[#7A5A43] bg-white/40"></div>
+                <div class="absolute inset-0 grid grid-cols-3 grid-rows-6 gap-2 p-4 pointer-events-none opacity-45">
+                    <div v-for="i in 18" :key="'left-grid-' + i" class="border border-[#7A5A43] bg-white/40 shadow-inner"></div>
                 </div>
                 <!-- Japanese Kanji Crest Watermark -->
                 <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[14rem] font-serif text-[#C23B22]/5 select-none pointer-events-none font-bold">
                     結
                 </div>
-                <div class="relative z-10 flex items-center space-x-2 text-xs tracking-widest text-[#7A5A43] uppercase">
+                <div class="relative z-10 flex items-center space-x-2 text-xs tracking-widest text-[#7A5A43] uppercase font-semibold">
                     <span>伝統と調和</span>
                 </div>
-                <!-- Subtle Traditional Cloud Motif -->
+                <!-- Japanese Ornate Door Pull (Hikite) -->
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 w-7 h-20 rounded-full border-2 border-[#D4AF37] bg-gradient-to-r from-[#2D2424] to-[#1A1715] shadow-lg flex items-center justify-center">
+                    <div class="w-2.5 h-10 rounded-full bg-[#D4AF37]/50"></div>
+                </div>
+                <!-- Traditional Cloud Motif -->
                 <div class="relative z-10 opacity-30">
                     <svg viewBox="0 0 100 20" class="w-24 fill-[#C23B22]">
                         <path d="M10,15 Q25,5 40,15 T70,15 T100,15 A5,5 0 0,1 95,20 L5,20 A5,5 0 0,1 10,15 Z" />
@@ -367,19 +461,23 @@ onBeforeUnmount(() => {
 
             <!-- Right Shoji Door Panel -->
             <div
-                class="absolute inset-y-0 right-0 w-1/2 bg-[#F7F3E9] border-l-4 border-[#3D2817] shadow-2xl transition-transform duration-1000 ease-in-out flex flex-col justify-between items-end p-6 overflow-hidden"
+                class="absolute inset-y-0 right-0 w-1/2 bg-[#F7F3E9] border-l-4 border-[#3D2817] shadow-2xl transition-transform duration-[1200ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] flex flex-col justify-between items-end p-6 overflow-hidden"
                 :class="{ 'translate-x-full': isShojiOpening }"
             >
                 <!-- Shoji Wooden Grid Pattern -->
-                <div class="absolute inset-0 grid grid-cols-3 grid-rows-6 gap-2 p-4 pointer-events-none opacity-40">
-                    <div v-for="i in 18" :key="'right-grid-' + i" class="border border-[#7A5A43] bg-white/40"></div>
+                <div class="absolute inset-0 grid grid-cols-3 grid-rows-6 gap-2 p-4 pointer-events-none opacity-45">
+                    <div v-for="i in 18" :key="'right-grid-' + i" class="border border-[#7A5A43] bg-white/40 shadow-inner"></div>
                 </div>
                 <!-- Japanese Kanji Crest Watermark -->
                 <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[14rem] font-serif text-[#C23B22]/5 select-none pointer-events-none font-bold">
                     寿
                 </div>
-                <div class="relative z-10 flex items-center space-x-2 text-xs tracking-widest text-[#7A5A43] uppercase">
+                <div class="relative z-10 flex items-center space-x-2 text-xs tracking-widest text-[#7A5A43] uppercase font-semibold">
                     <span>ZEN HARMONY</span>
+                </div>
+                <!-- Japanese Ornate Door Pull (Hikite) -->
+                <div class="absolute left-4 top-1/2 -translate-y-1/2 w-7 h-20 rounded-full border-2 border-[#D4AF37] bg-gradient-to-l from-[#2D2424] to-[#1A1715] shadow-lg flex items-center justify-center">
+                    <div class="w-2.5 h-10 rounded-full bg-[#D4AF37]/50"></div>
                 </div>
                 <div class="relative z-10 opacity-30">
                     <svg viewBox="0 0 100 20" class="w-24 fill-[#C23B22]">
@@ -393,11 +491,11 @@ onBeforeUnmount(() => {
                 class="relative z-20 max-w-sm w-full mx-4 p-8 rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl border border-[#D4AF37]/50 text-center transition-all duration-700 transform"
                 :class="{ 'scale-90 opacity-0': isShojiOpening }"
             >
-                <!-- Hanging Chochin Lantern Accent -->
+                <!-- Hanging Chochin Lantern Accent with Pendulum Sway -->
                 <div class="flex justify-center -mt-12 mb-3">
-                    <div class="relative flex flex-col items-center animate-bounce duration-1000">
+                    <div class="relative flex flex-col items-center animate-lantern-sway origin-top">
                         <div class="w-0.5 h-6 bg-[#D4AF37]"></div>
-                        <div class="w-12 h-14 bg-gradient-to-b from-[#C23B22] to-[#8C1D0B] rounded-full border-2 border-[#D4AF37] shadow-lg flex items-center justify-center text-white text-xs font-bold shadow-orange-500/20">
+                        <div class="w-12 h-14 bg-gradient-to-b from-[#C23B22] to-[#8C1D0B] rounded-full border-2 border-[#D4AF37] shadow-lg flex items-center justify-center text-white text-xs font-bold shadow-orange-500/30 animate-pulse">
                             寿
                         </div>
                         <div class="w-0.5 h-3 bg-[#D4AF37]"></div>
@@ -434,7 +532,7 @@ onBeforeUnmount(() => {
                 <!-- Open Button with Golden Glow -->
                 <button
                     @click="handleOpenInvitation"
-                    class="group relative w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full text-white bg-gradient-to-r from-[#C23B22] via-[#D9777F] to-[#C23B22] shadow-lg shadow-rose-900/20 hover:shadow-rose-900/40 hover:scale-[1.02] active:scale-95 transition-all duration-300 font-medium tracking-wider text-sm overflow-hidden"
+                    class="group relative w-full inline-flex items-center justify-center px-6 py-3.5 rounded-full text-white bg-gradient-to-r from-[#C23B22] via-[#D9777F] to-[#C23B22] shadow-lg shadow-rose-900/25 hover:shadow-rose-900/45 hover:scale-[1.02] active:scale-95 transition-all duration-300 font-medium tracking-wider text-sm overflow-hidden"
                 >
                     <span class="absolute inset-0 bg-white/20 transform -translate-x-full group-hover:translate-x-full transition-transform duration-700"></span>
                     <svg class="w-4 h-4 mr-2 text-amber-200 animate-spin-slow" viewBox="0 0 24 24" fill="currentColor">
@@ -459,6 +557,19 @@ onBeforeUnmount(() => {
                 <div class="absolute inset-0 pointer-events-none overflow-hidden opacity-40">
                     <!-- Sunrise Sun Disc -->
                     <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-80 h-80 rounded-full bg-gradient-to-b from-[#E89CAE]/40 via-[#C23B22]/30 to-transparent blur-2xl"></div>
+                    
+                    <!-- Drifting Japanese Golden Clouds -->
+                    <div class="absolute top-20 -left-20 w-64 opacity-50 animate-cloud-drift-1">
+                        <svg viewBox="0 0 200 60" class="fill-[#D4AF37]/30">
+                            <path d="M20,40 Q40,15 70,30 Q90,10 130,25 Q160,15 180,40 Q150,55 100,50 Q50,55 20,40 Z" />
+                        </svg>
+                    </div>
+                    <div class="absolute top-44 -right-16 w-56 opacity-40 animate-cloud-drift-2">
+                        <svg viewBox="0 0 200 60" class="fill-[#E89CAE]/25">
+                            <path d="M20,40 Q40,15 70,30 Q90,10 130,25 Q160,15 180,40 Q150,55 100,50 Q50,55 20,40 Z" />
+                        </svg>
+                    </div>
+
                     <!-- Fuji Mountain Polygon -->
                     <svg viewBox="0 0 500 300" class="absolute bottom-0 w-full fill-[#100D0B] opacity-80">
                         <polygon points="0,300 180,140 240,110 260,110 320,140 500,300" />
@@ -484,6 +595,22 @@ onBeforeUnmount(() => {
                         transform: `perspective(900px) rotateX(${targetRotateX}deg) rotateY(${targetRotateY}deg)`,
                     }"
                 >
+                    <!-- Hanging Left Chochin Lantern on Torii -->
+                    <div class="absolute top-12 left-2 z-20 flex flex-col items-center animate-lantern-sway origin-top">
+                        <div class="w-0.5 h-6 bg-[#D4AF37]"></div>
+                        <div class="w-9 h-12 rounded-full bg-gradient-to-b from-[#C23B22] to-[#8C1D0B] border border-[#D4AF37] shadow-lg flex items-center justify-center text-white text-[10px] font-bold shadow-orange-500/40">
+                            和
+                        </div>
+                    </div>
+
+                    <!-- Hanging Right Chochin Lantern on Torii -->
+                    <div class="absolute top-12 right-2 z-20 flex flex-col items-center animate-lantern-sway origin-top" style="animation-delay: -1.5s;">
+                        <div class="w-0.5 h-6 bg-[#D4AF37]"></div>
+                        <div class="w-9 h-12 rounded-full bg-gradient-to-b from-[#C23B22] to-[#8C1D0B] border border-[#D4AF37] shadow-lg flex items-center justify-center text-white text-[10px] font-bold shadow-orange-500/40">
+                            愛
+                        </div>
+                    </div>
+
                     <!-- Torii Gate Vector SVG -->
                     <svg viewBox="0 0 300 240" class="w-full drop-shadow-2xl">
                         <!-- Upper Lintels (Kasagi & Shimaki) -->
@@ -540,6 +667,20 @@ onBeforeUnmount(() => {
                     <!-- Sunrise background glow -->
                     <div class="absolute top-1/4 left-1/2 -translate-x-1/2 w-64 h-64 rounded-full bg-gradient-to-b from-[#E89CAE]/30 to-transparent blur-3xl pointer-events-none"></div>
 
+                    <!-- Hanging Chochin Lanterns on Mobile Top -->
+                    <div class="absolute top-4 left-6 z-10 animate-lantern-sway origin-top">
+                        <div class="w-0.5 h-5 bg-[#D4AF37]"></div>
+                        <div class="w-8 h-10 rounded-full bg-gradient-to-b from-[#C23B22] to-[#8C1D0B] border border-[#D4AF37] flex items-center justify-center text-white text-[9px] font-bold shadow-md">
+                            寿
+                        </div>
+                    </div>
+                    <div class="absolute top-4 right-6 z-10 animate-lantern-sway origin-top" style="animation-delay: -1.2s;">
+                        <div class="w-0.5 h-5 bg-[#D4AF37]"></div>
+                        <div class="w-8 h-10 rounded-full bg-gradient-to-b from-[#C23B22] to-[#8C1D0B] border border-[#D4AF37] flex items-center justify-center text-white text-[9px] font-bold shadow-md">
+                            縁
+                        </div>
+                    </div>
+
                     <!-- Top Japanese Header -->
                     <div class="relative z-10 mt-6">
                         <span class="inline-block px-3.5 py-1 rounded-full border border-amber-300/30 bg-black/40 text-[10px] uppercase tracking-[0.25em] text-amber-200">
@@ -558,7 +699,7 @@ onBeforeUnmount(() => {
                                 />
                             </div>
                             <!-- Floating Petal Accent -->
-                            <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-[#C23B22] rounded-full border-2 border-amber-200 flex items-center justify-center text-white text-xs font-bold shadow-lg">
+                            <div class="absolute -bottom-2 -right-2 w-10 h-10 bg-[#C23B22] rounded-full border-2 border-amber-200 flex items-center justify-center text-white text-xs font-bold shadow-lg animate-bounce">
                                 寿
                             </div>
                         </div>
@@ -581,9 +722,16 @@ onBeforeUnmount(() => {
                 </div>
 
                 <!-- ====================================================
-                     SECTION 1: JAPANESE BLESSING & PROVERB (QUOTE)
+                     SECTION 1: JAPANESE BLESSING & BAMBOO FOUNTAIN (QUOTE)
                      ==================================================== -->
-                <section class="px-6 py-16 max-w-xl mx-auto text-center zen-fade-up">
+                <section class="px-6 py-16 max-w-xl mx-auto text-center zen-fade-up relative">
+                    <!-- Traditional Stylized Cloud Motif Background -->
+                    <div class="absolute -top-6 right-4 w-32 opacity-25 pointer-events-none animate-cloud-drift-1">
+                        <svg viewBox="0 0 200 60" class="fill-[#C23B22]">
+                            <path d="M20,40 Q40,15 70,30 Q90,10 130,25 Q160,15 180,40 Q150,55 100,50 Q50,55 20,40 Z" />
+                        </svg>
+                    </div>
+
                     <div class="inline-flex items-center justify-center space-x-2 text-xs tracking-widest text-[#8C6D4A] uppercase mb-4">
                         <span class="w-8 h-[1px] bg-[#D4AF37]"></span>
                         <span>一期一会 • ICHIGO ICHIE</span>
@@ -601,6 +749,30 @@ onBeforeUnmount(() => {
                     <p class="text-xs font-semibold text-[#8C6D4A] tracking-wider uppercase">
                         (QS. Ar-Rum: 21)
                     </p>
+
+                    <!-- ANIMATED JAPANESE BAMBOO FOUNTAIN (SHISHI-ODOSHI) -->
+                    <div class="mt-8 flex flex-col items-center justify-center">
+                        <div class="relative w-44 h-24">
+                            <!-- Water Spout Spilling Water -->
+                            <div class="absolute top-1 left-8 w-16 h-3 bg-[#698246] rounded-r-full rotate-12 shadow-sm border border-[#4E6233]"></div>
+                            <div class="absolute top-6 left-20 w-0.5 h-8 bg-cyan-300/80 rounded-full animate-water-drip"></div>
+
+                            <!-- Tilting Bamboo Rocker Arm -->
+                            <div class="absolute top-8 left-14 w-24 h-4 bg-[#7D9A54] rounded-full border border-[#4E6233] origin-[40%_50%] animate-shishi-rock shadow-md flex items-center justify-end pr-2">
+                                <div class="w-2 h-2 rounded-full bg-[#4E6233]"></div>
+                            </div>
+
+                            <!-- Supporting Bamboo Stand -->
+                            <div class="absolute top-10 left-16 w-3 h-12 bg-[#5A402E] rounded-t-sm shadow"></div>
+                            <div class="absolute top-10 left-22 w-3 h-12 bg-[#5A402E] rounded-t-sm shadow"></div>
+
+                            <!-- Stone Basin (Tsukubai) with Ripple -->
+                            <div class="absolute bottom-0 left-20 w-16 h-6 bg-[#6E6E6E] rounded-full shadow-inner border border-stone-600 flex items-center justify-center">
+                                <div class="w-8 h-2 rounded-full bg-cyan-800/40 animate-ping"></div>
+                            </div>
+                        </div>
+                        <span class="text-[9px] text-stone-500 uppercase tracking-widest mt-1">Shishi-odoshi • Suara Ketenangan Taman Zen</span>
+                    </div>
                 </section>
 
                 <!-- ====================================================
@@ -711,11 +883,100 @@ onBeforeUnmount(() => {
                 </section>
 
                 <!-- ====================================================
-                     SECTION 3: ZEN COUNTDOWN TIMER (SUNDIAL CLOCK)
+                     SECTION 3: INTERACTIVE ZEN KOI POND (SEPANGSAN KOI)
+                     ==================================================== -->
+                <section class="px-6 py-12 max-w-xl mx-auto zen-fade-up">
+                    <div class="text-center mb-6">
+                        <span class="text-[10px] tracking-[0.3em] uppercase text-[#8C6D4A] font-semibold">Taman Harmoni Zen</span>
+                        <h3 class="text-2xl font-serif font-bold text-[#2D2424] mt-1">Sepasang Ikan Koi Abadi</h3>
+                        <p class="text-xs text-stone-600 mt-1">Sentuh kolam air untuk menciptakan riak ketenangan</p>
+                    </div>
+
+                    <!-- Interactive Koi Pond Card -->
+                    <div
+                        @click="triggerPondRipple"
+                        class="relative h-64 sm:h-72 rounded-3xl bg-gradient-to-b from-[#1C2C28] via-[#142320] to-[#0D1816] border-2 border-[#D4AF37]/50 shadow-2xl overflow-hidden cursor-pointer select-none group"
+                    >
+                        <!-- Translucent Pond Waterbed & River Pebbles -->
+                        <div class="absolute inset-0 bg-radial from-transparent to-black/60 pointer-events-none"></div>
+
+                        <!-- Smooth Water Lilies / Lotus Leaves -->
+                        <div class="absolute top-6 left-8 w-14 h-14 rounded-full bg-[#2E4A3B] border border-[#48735C] opacity-75 shadow-md transform rotate-45"></div>
+                        <div class="absolute bottom-8 right-10 w-16 h-16 rounded-full bg-[#2E4A3B] border border-[#48735C] opacity-75 shadow-md transform -rotate-12"></div>
+                        <div class="absolute top-1/2 right-6 w-10 h-10 rounded-full bg-[#243B2F] border border-[#3A5F4B] opacity-60"></div>
+
+                        <!-- Animated Concentric Water Ripples from Click / Auto -->
+                        <div
+                            v-for="r in pondRipples"
+                            :key="r.id"
+                            class="absolute pointer-events-none rounded-full border border-cyan-300/60 animate-pond-ripple"
+                            :style="{ left: r.x + 'px', top: r.y + 'px', transform: 'translate(-50%, -50%)' }"
+                        ></div>
+
+                        <!-- 1. KOHAKU KOI (Crimson & White Swimming in Circle) -->
+                        <div class="absolute inset-0 pointer-events-none flex items-center justify-center animate-koi-swim-orbit-1">
+                            <div class="relative w-20 h-36 flex flex-col items-center">
+                                <!-- Head & Body SVG -->
+                                <svg viewBox="0 0 60 120" class="w-full h-full drop-shadow-xl">
+                                    <!-- Pectoral Fins (Left & Right Flapping) -->
+                                    <path d="M12,45 Q-10,35 2,25 Q12,35 15,45 Z" fill="#FBF8F3" opacity="0.8" class="animate-koi-fin-left origin-[15px_45px]" />
+                                    <path d="M48,45 Q70,35 58,25 Q48,35 45,45 Z" fill="#FBF8F3" opacity="0.8" class="animate-koi-fin-right origin-[45px_45px]" />
+                                    
+                                    <!-- Main Body -->
+                                    <ellipse cx="30" cy="50" rx="14" ry="32" fill="#FBF8F3" />
+                                    <!-- Crimson Kohaku Patches -->
+                                    <path d="M22,35 Q30,22 38,36 Q32,48 22,35 Z" fill="#C23B22" />
+                                    <path d="M24,56 Q36,52 35,68 Q24,70 24,56 Z" fill="#C23B22" />
+                                    <!-- Whisker Barbels -->
+                                    <path d="M27,18 Q20,12 18,8" stroke="#FBF8F3" stroke-width="1.2" fill="none" />
+                                    <path d="M33,18 Q40,12 42,8" stroke="#FBF8F3" stroke-width="1.2" fill="none" />
+                                    <!-- Undulating Caudal Tail Fin -->
+                                    <g class="animate-koi-tail origin-[30px_82px]">
+                                        <path d="M30,82 Q20,105 10,118 Q30,110 50,118 Q40,105 30,82 Z" fill="#F4C2C2" opacity="0.85" />
+                                        <path d="M28,85 Q30,102 32,85" stroke="#C23B22" stroke-width="1.5" />
+                                    </g>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- 2. YAMABUKI KOI (Golden Yellow Koi Swimming Reverse Path) -->
+                        <div class="absolute inset-0 pointer-events-none flex items-center justify-center animate-koi-swim-orbit-2">
+                            <div class="relative w-18 h-32 flex flex-col items-center">
+                                <svg viewBox="0 0 60 120" class="w-full h-full drop-shadow-xl">
+                                    <path d="M12,45 Q-8,35 2,25 Q12,35 15,45 Z" fill="#F3D17C" opacity="0.85" class="animate-koi-fin-left origin-[15px_45px]" />
+                                    <path d="M48,45 Q68,35 58,25 Q48,35 45,45 Z" fill="#F3D17C" opacity="0.85" class="animate-koi-fin-right origin-[45px_45px]" />
+                                    <ellipse cx="30" cy="50" rx="13" ry="30" fill="#E5A93C" />
+                                    <path d="M22,35 Q30,24 38,36 Q32,46 22,35 Z" fill="#FEEAA3" />
+                                    <path d="M27,20 Q22,14 20,10" stroke="#FEEAA3" stroke-width="1" fill="none" />
+                                    <path d="M33,20 Q38,14 40,10" stroke="#FEEAA3" stroke-width="1" fill="none" />
+                                    <g class="animate-koi-tail origin-[30px_80px]">
+                                        <path d="M30,80 Q20,102 12,114 Q30,106 48,114 Q40,102 30,80 Z" fill="#F5C765" opacity="0.85" />
+                                    </g>
+                                </svg>
+                            </div>
+                        </div>
+
+                        <!-- Center Japanese Symbol Floating in Deep Water -->
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                            <span class="text-white/10 text-8xl font-serif select-none font-bold">和</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ====================================================
+                     SECTION 4: ZEN COUNTDOWN TIMER (SUNDIAL CLOCK)
                      ==================================================== -->
                 <section class="px-6 py-12 max-w-xl mx-auto text-center zen-fade-up">
                     <div class="p-8 rounded-2xl bg-[#2D2424] text-white shadow-2xl relative overflow-hidden border border-[#D4AF37]/40">
-                        <div class="absolute -right-8 -bottom-8 w-40 h-40 rounded-full bg-[#C23B22]/20 blur-2xl pointer-events-none"></div>
+                        <!-- Floating Hanging Furin Windchime in Corner -->
+                        <div class="absolute top-2 right-4 flex flex-col items-center animate-furin-sway origin-top pointer-events-none">
+                            <div class="w-0.5 h-6 bg-[#D4AF37]"></div>
+                            <div class="w-6 h-5 rounded-t-full bg-cyan-200/50 border border-white/60 shadow-sm"></div>
+                            <div class="w-0.5 h-3 bg-amber-200"></div>
+                            <div class="w-3 h-8 bg-rose-200 text-[#8C1D0B] text-[6px] font-bold writing-mode-vertical flex items-center justify-center shadow-sm">
+                                祈
+                            </div>
+                        </div>
 
                         <div class="text-[10px] tracking-[0.3em] uppercase text-amber-200 mb-1">
                             Hitung Mundur Waktu Bahagia
@@ -767,7 +1028,7 @@ onBeforeUnmount(() => {
                 </section>
 
                 <!-- ====================================================
-                     SECTION 4: CEREMONY & RECEPTION (AGENDA ACARA)
+                     SECTION 5: CEREMONY & RECEPTION (AGENDA ACARA)
                      ==================================================== -->
                 <section class="px-6 py-12 max-w-xl mx-auto zen-fade-up">
                     <div class="text-center mb-10">
@@ -856,7 +1117,7 @@ onBeforeUnmount(() => {
                 </section>
 
                 <!-- ====================================================
-                     SECTION 5: LOVE STORY TIMELINE (TOBI-ISHI STEPPING STONES)
+                     SECTION 6: LOVE STORY TIMELINE (TOBI-ISHI STEPPING STONES)
                      ==================================================== -->
                 <section
                     v-if="invitationData.content.story && invitationData.content.story.length > 0"
@@ -893,7 +1154,7 @@ onBeforeUnmount(() => {
                 </section>
 
                 <!-- ====================================================
-                     SECTION 6: PHOTO GALLERY (KENANGAN INDAH)
+                     SECTION 7: PHOTO GALLERY (KENANGAN INDAH)
                      ==================================================== -->
                 <section
                     v-if="invitationData.content.gallery && invitationData.content.gallery.length > 0"
@@ -928,7 +1189,7 @@ onBeforeUnmount(() => {
                 </section>
 
                 <!-- ====================================================
-                     SECTION 7: WEDDING GIFT (SHUGI-BUKURO ENVELOPE)
+                     SECTION 8: WEDDING GIFT (SHUGI-BUKURO ENVELOPE)
                      ==================================================== -->
                 <section class="px-6 py-12 max-w-xl mx-auto zen-fade-up">
                     <div class="text-center mb-10">
@@ -994,7 +1255,7 @@ onBeforeUnmount(() => {
                 </section>
 
                 <!-- ====================================================
-                     SECTION 8: RSVP & TANZAKU WISHES (BUKU TAMU)
+                     SECTION 9: RSVP & TANZAKU WISHES (BUKU TAMU)
                      ==================================================== -->
                 <section class="px-6 py-12 max-w-xl mx-auto zen-fade-up">
                     <div class="text-center mb-10">
@@ -1103,7 +1364,7 @@ onBeforeUnmount(() => {
                 </section>
 
                 <!-- ====================================================
-                     SECTION 9: FOOTER & CLOSING BLESSINGS
+                     SECTION 10: FOOTER & CLOSING BLESSINGS
                      ==================================================== -->
                 <footer class="px-6 pt-12 pb-24 text-center max-w-xl mx-auto zen-fade-up">
                     <div class="w-12 h-12 mx-auto mb-4 border-2 border-[#D4AF37] rounded-full flex items-center justify-center text-[#D4AF37] font-serif font-bold text-lg bg-[#2D2424]">
@@ -1158,7 +1419,7 @@ onBeforeUnmount(() => {
              FLOATING AUDIO TOGGLE BUTTON
              ======================================================== -->
         <button
-            v-if="props.isOpen"
+            v-if="props.isOpen || isShojiOpening"
             @click="emit('toggleMusic')"
             class="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-[#2D2424] text-amber-200 border-2 border-[#D4AF37] shadow-xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all group"
             :title="props.isPlayingMusic ? 'Hentikan Musik' : 'Putar Musik'"
@@ -1177,6 +1438,7 @@ onBeforeUnmount(() => {
 </template>
 
 <style scoped>
+/* Slow Spin for Crest */
 @keyframes spinSlow {
     from {
         transform: rotate(0deg);
@@ -1187,5 +1449,171 @@ onBeforeUnmount(() => {
 }
 .animate-spin-slow {
     animation: spinSlow 12s linear infinite;
+}
+
+/* Swaying Sakura Branches in Top Corners */
+@keyframes swayBranchLeft {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(3deg); }
+    100% { transform: rotate(-2deg); }
+}
+.animate-sway-left {
+    animation: swayBranchLeft 6.5s ease-in-out infinite alternate;
+}
+
+@keyframes swayBranchRight {
+    0% { transform: rotate(0deg); }
+    50% { transform: rotate(-3deg); }
+    100% { transform: rotate(2deg); }
+}
+.animate-sway-right {
+    animation: swayBranchRight 7s ease-in-out infinite alternate;
+}
+
+/* Pendulum Lantern Swaying */
+@keyframes lanternSway {
+    0% { transform: rotate(-4deg); }
+    50% { transform: rotate(4deg); }
+    100% { transform: rotate(-4deg); }
+}
+.animate-lantern-sway {
+    animation: lanternSway 3.6s ease-in-out infinite;
+}
+
+/* Japanese Windchime (Furin) Sway */
+@keyframes furinSway {
+    0% { transform: rotate(-5deg); }
+    50% { transform: rotate(5deg); }
+    100% { transform: rotate(-5deg); }
+}
+.animate-furin-sway {
+    animation: furinSway 2.8s ease-in-out infinite;
+}
+
+/* Shishi-odoshi Bamboo Rocking Sequence */
+@keyframes shishiRock {
+    0%, 20% {
+        transform: rotate(0deg);
+    }
+    55% {
+        transform: rotate(22deg); /* Slowly filling with water */
+    }
+    60% {
+        transform: rotate(26deg); /* Full weight water spill */
+    }
+    68% {
+        transform: rotate(-6deg); /* Snapping back against stone with clack */
+    }
+    75%, 100% {
+        transform: rotate(0deg); /* Resting position */
+    }
+}
+.animate-shishi-rock {
+    animation: shishiRock 4.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Water Droplet Falling */
+@keyframes waterDrip {
+    0% {
+        transform: scaleY(0.2) translateY(0);
+        opacity: 0.3;
+    }
+    50% {
+        transform: scaleY(1.4) translateY(6px);
+        opacity: 0.9;
+    }
+    100% {
+        transform: scaleY(0.4) translateY(14px);
+        opacity: 0;
+    }
+}
+.animate-water-drip {
+    animation: waterDrip 1.2s ease-in infinite;
+}
+
+/* Drifting Stylized Golden Clouds */
+@keyframes cloudDrift1 {
+    0% { transform: translateX(-30px); }
+    50% { transform: translateX(35px); }
+    100% { transform: translateX(-30px); }
+}
+.animate-cloud-drift-1 {
+    animation: cloudDrift1 14s ease-in-out infinite;
+}
+
+@keyframes cloudDrift2 {
+    0% { transform: translateX(25px); }
+    50% { transform: translateX(-30px); }
+    100% { transform: translateX(25px); }
+}
+.animate-cloud-drift-2 {
+    animation: cloudDrift2 16s ease-in-out infinite;
+}
+
+/* Animated Swimming Koi Fish Orbits */
+@keyframes koiOrbit1 {
+    0% {
+        transform: rotate(0deg) translate(80px) rotate(90deg);
+    }
+    100% {
+        transform: rotate(360deg) translate(80px) rotate(90deg);
+    }
+}
+.animate-koi-swim-orbit-1 {
+    animation: koiOrbit1 16s linear infinite;
+}
+
+@keyframes koiOrbit2 {
+    0% {
+        transform: rotate(180deg) translate(65px) rotate(-90deg);
+    }
+    100% {
+        transform: rotate(-180deg) translate(65px) rotate(-90deg);
+    }
+}
+.animate-koi-swim-orbit-2 {
+    animation: koiOrbit2 19s linear infinite;
+}
+
+/* Koi Fin & Tail Flapping */
+@keyframes koiTail {
+    0%, 100% { transform: rotate(-14deg); }
+    50% { transform: rotate(14deg); }
+}
+.animate-koi-tail {
+    animation: koiTail 0.8s ease-in-out infinite;
+}
+
+@keyframes koiFinLeft {
+    0%, 100% { transform: rotate(-10deg); }
+    50% { transform: rotate(10deg); }
+}
+.animate-koi-fin-left {
+    animation: koiFinLeft 1.1s ease-in-out infinite;
+}
+
+@keyframes koiFinRight {
+    0%, 100% { transform: rotate(10deg); }
+    50% { transform: rotate(-10deg); }
+}
+.animate-koi-fin-right {
+    animation: koiFinRight 1.1s ease-in-out infinite;
+}
+
+/* Concentric Pond Water Ripples */
+@keyframes pondRipple {
+    0% {
+        width: 10px;
+        height: 10px;
+        opacity: 0.9;
+    }
+    100% {
+        width: 140px;
+        height: 140px;
+        opacity: 0;
+    }
+}
+.animate-pond-ripple {
+    animation: pondRipple 1.6s cubic-bezier(0, 0.2, 0.8, 1) forwards;
 }
 </style>
