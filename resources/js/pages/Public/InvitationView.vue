@@ -9,6 +9,8 @@ import BiancaBotanicalTemplate from '@/components/Templates/BiancaBotanicalTempl
 import EloiseRomanceTemplate from '@/components/Templates/EloiseRomanceTemplate.vue';
 import Celestia3DTemplate from '@/components/Templates/Celestia3DTemplate.vue';
 import SakuraZenTemplate from '@/components/Templates/SakuraZenTemplate.vue';
+import SkyLanternTemplate from '@/components/Templates/SkyLanternTemplate.vue';
+import OceanPearlTemplate from '@/components/Templates/OceanPearlTemplate.vue';
 
 const props = defineProps<{
     invitation: {
@@ -246,6 +248,16 @@ const isCelestia = computed(() => {
 const isSakura = computed(() => {
     const slug = (props.template?.slug || '').toLowerCase();
     return slug.includes('sakura') || slug.includes('zen') || slug.includes('japanese');
+});
+
+const isLantern = computed(() => {
+    const slug = (props.template?.slug || '').toLowerCase();
+    return slug.includes('lantern') || slug.includes('pingxi') || slug.includes('shuangxi') || slug.includes('lentera');
+});
+
+const isOcean = computed(() => {
+    const slug = (props.template?.slug || '').toLowerCase();
+    return slug.includes('ocean') || slug.includes('samudra') || slug.includes('pearl') || slug.includes('mutiara') || slug.includes('bali');
 });
 
 // Authentic Katsudoto Assets Resolution
@@ -1008,7 +1020,61 @@ const digitalGift = computed(() => {
         @toggle-music="toggleMusic"
     />
 
-    <!-- 8. STANDARD INVITATION TEMPLATE (Fallback / Minimalist) -->
+    <!-- 8. SKY LANTERNS OF PINGXI (ORIENTAL FESTIVAL & BLESSING LANTERNS 3D) -->
+    <SkyLanternTemplate
+        v-else-if="isLantern"
+        :invitation-data="invitationData"
+        :events="events"
+        :guestbook="localGuestbook"
+        :digital-gift="digitalGift"
+        :guest-name="guestName"
+        :guest-token="guestToken"
+        :is-demo="props.isDemo"
+        :template="props.template"
+        :is-open="isOpen"
+        :is-playing-music="isPlayingMusic"
+        :time-left="timeLeft"
+        :format-display-date="formatDisplayDate"
+        :format-event-time="formatEventTime"
+        :copy-address="copyAddress"
+        :open-qris="openQris"
+        :submit-rsvp="submitRsvp"
+        :rsvp-form="rsvpForm"
+        :rsvp-submitting="rsvpSubmitting"
+        :rsvp-success="rsvpSuccess"
+        :rsvp-error-message="rsvpErrorMessage"
+        @open-invitation="openInvitation"
+        @toggle-music="toggleMusic"
+    />
+
+    <!-- 9. OCEAN PEARL & SUNSET CAUSTICS (BALI CLIFFS & INTERACTIVE PEARL SHELL 3D) -->
+    <OceanPearlTemplate
+        v-else-if="isOcean"
+        :invitation-data="invitationData"
+        :events="events"
+        :guestbook="localGuestbook"
+        :digital-gift="digitalGift"
+        :guest-name="guestName"
+        :guest-token="guestToken"
+        :is-demo="props.isDemo"
+        :template="props.template"
+        :is-open="isOpen"
+        :is-playing-music="isPlayingMusic"
+        :time-left="timeLeft"
+        :format-display-date="formatDisplayDate"
+        :format-event-time="formatEventTime"
+        :copy-address="copyAddress"
+        :open-qris="openQris"
+        :submit-rsvp="submitRsvp"
+        :rsvp-form="rsvpForm"
+        :rsvp-submitting="rsvpSubmitting"
+        :rsvp-success="rsvpSuccess"
+        :rsvp-error-message="rsvpErrorMessage"
+        @open-invitation="openInvitation"
+        @toggle-music="toggleMusic"
+    />
+
+    <!-- 10. STANDARD INVITATION TEMPLATE (Fallback / Minimalist) -->
     <div
         v-else
         class="min-h-screen w-full relative transition-colors duration-500 overflow-x-hidden selection:bg-amber-400 selection:text-stone-900"

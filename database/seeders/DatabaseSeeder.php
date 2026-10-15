@@ -1025,6 +1025,225 @@ class DatabaseSeeder extends Seeder
             ]
         );
 
+        // 7b. SKY LANTERNS OF PINGXI (Oriental Night Festival & 3D Interactive Lanterns)
+        $designLantern = $makeDesign(
+            theme: [
+                'palette' => 'lantern-pingxi',
+                'isLight' => false,
+                'primaryColor' => '#F59E0B',
+                'secondaryColor' => '#EF4444',
+                'bgColor' => '#0B0914',
+                'cardBgColor' => '#151022',
+                'textColor' => '#FEF3C7',
+                'fontFamily' => 'Cinzel',
+                'goldAccent' => '#FBBF24',
+                'crimsonAccent' => '#DC2626',
+                'musicUrl' => '/audio/romantic-wedding.mp3',
+            ],
+            content: [
+                'weddingTitle' => 'Lentera Harapan Cinta: Wei & Meilin',
+                'weddingDate' => '2026-11-18',
+                'weddingDateText' => 'Rabu, 18 November 2026',
+                'groomNickname' => 'Wei',
+                'groomName' => 'Wei Chen, B.Eng.',
+                'groomParents' => 'Putra tercinta dari Bpk. Chen Zhihao & Ibu Lin Meihua',
+                'groomInstagram' => '@wei.chen',
+                'groomPhotoUrl' => '/images/templates/lantern/groom-real.jpg',
+                'brideNickname' => 'Meilin',
+                'brideName' => 'Meilin Wang, B.A.',
+                'brideParents' => 'Putri tercinta dari Bpk. Wang Jian & Ibu Zhang Xiu',
+                'brideInstagram' => '@meilin.wang',
+                'bridePhotoUrl' => '/images/templates/lantern/bride-real.jpg',
+                'coverPhotoUrl' => '/images/templates/lantern/sky-lanterns-night.jpg',
+                'coverImage' => '/images/templates/lantern/sky-lanterns-night.jpg',
+                'gallery' => [
+                    '/images/templates/lantern/sky-lanterns-night.jpg',
+                    '/images/templates/lantern/couple-lantern.jpg',
+                    '/images/templates/lantern/groom-real.jpg',
+                    '/images/templates/lantern/bride-real.jpg',
+                ],
+                'story' => [
+                    [
+                        'year' => '2022',
+                        'title' => 'Festival Lentera Pingxi',
+                        'description' => 'Pertemuan pertama kami di tengah ribuan lentera harapan yang membubung ke angkasa malam Taiwan.',
+                    ],
+                    [
+                        'year' => '2026',
+                        'title' => 'Dua Hati Satu Lentera Abadi',
+                        'description' => 'Kini kami menyalakan lentera cinta seumur hidup, memohon kebahagiaan dan keharmonisan rumah tangga.',
+                    ],
+                ],
+            ],
+            events: [
+                [
+                    'id' => 1,
+                    'name' => 'Upacara Tea Pai & Ikrar Suci',
+                    'starts_at' => now()->addDays(34)->setTime(9, 0)->toIso8601String(),
+                    'ends_at' => now()->addDays(34)->setTime(11, 30)->toIso8601String(),
+                    'timezone' => 'WIB',
+                    'venue_name' => 'Imperial Garden Pavilion',
+                    'address' => 'Jl. Harapan Emas No. 88, Kebayoran Baru, Jakarta Selatan',
+                    'maps_url' => 'https://maps.google.com',
+                ],
+                [
+                    'id' => 2,
+                    'name' => 'Resepsi Gala Lantern Night',
+                    'starts_at' => now()->addDays(34)->setTime(18, 30)->toIso8601String(),
+                    'ends_at' => now()->addDays(34)->setTime(21, 30)->toIso8601String(),
+                    'timezone' => 'WIB',
+                    'venue_name' => 'Grand Pagoda Ballroom',
+                    'address' => 'Jl. Harapan Emas No. 88, Kebayoran Baru, Jakarta Selatan',
+                    'maps_url' => 'https://maps.google.com',
+                ],
+            ],
+            giftAccounts: [
+                [
+                    'bank' => 'BCA',
+                    'account_number' => '8210984721',
+                    'account_name' => 'Wei Chen',
+                    'qr_image' => 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=BCA_WEI_CHEN_8210984721',
+                ],
+                [
+                    'bank' => 'Bank Mandiri',
+                    'account_number' => '1370019283741',
+                    'account_name' => 'Meilin Wang',
+                    'qr_image' => 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=MANDIRI_MEILIN_1370019283741',
+                ],
+            ],
+            guestbook: [
+                [
+                    'id' => 1,
+                    'guest_name' => 'Keluarga Besar Chen & Wang',
+                    'message' => 'Bai nian hao he! Semoga cinta Wei & Meilin senantiasa bersinar terang seperti lentera harapan di langit malam.',
+                    'created_at' => '15 menit yang lalu',
+                ],
+            ]
+        );
+
+        $tplLantern = Template::updateOrCreate(
+            ['slug' => 'lantern-pingxi-3d'],
+            [
+                'name' => 'Sky Lanterns of Pingxi (Oriental Festival 3D)',
+                'category' => '3d',
+                'thumbnail_path' => '/images/templates/lantern/sky-lanterns-night.jpg',
+                'default_design_json' => $designLantern,
+                'schema_version' => 1,
+                'is_premium' => true,
+                'is_active' => true,
+            ]
+        );
+
+        // 7c. OCEAN PEARL & SUNSET CAUSTICS (Bali Cliff 3D & Interactive Pearl Oyster)
+        $designOcean = $makeDesign(
+            theme: [
+                'palette' => 'ocean-pearl',
+                'isLight' => false,
+                'primaryColor' => '#06B6D4',
+                'secondaryColor' => '#F59E0B',
+                'bgColor' => '#04131D',
+                'cardBgColor' => '#0B2233',
+                'textColor' => '#ECFEFF',
+                'fontFamily' => 'Playfair Display',
+                'oceanBlue' => '#0284C7',
+                'sunsetGold' => '#F59E0B',
+                'musicUrl' => '/audio/romantic-wedding.mp3',
+            ],
+            content: [
+                'weddingTitle' => 'Samudra Mutiara Ajaib: Adrian & Sarah',
+                'weddingDate' => '2026-10-24',
+                'weddingDateText' => 'Sabtu, 24 Oktober 2026',
+                'groomNickname' => 'Adrian',
+                'groomName' => 'Adrian Pratama, S.E.',
+                'groomParents' => 'Putra dari Bpk. Hendrawan Pratama & Ibu Melati',
+                'groomInstagram' => '@adrian.pratama',
+                'groomPhotoUrl' => '/images/templates/ocean/groom-real.jpg',
+                'brideNickname' => 'Sarah',
+                'brideName' => 'Sarah Angelica, B.Bus.',
+                'brideParents' => 'Putri dari Bpk. Ir. Robert Wijaya & Ibu Christine',
+                'brideInstagram' => '@sarah.angelica',
+                'bridePhotoUrl' => '/images/templates/ocean/bride-real.jpg',
+                'coverPhotoUrl' => '/images/templates/ocean/ocean-sunset-cliff.jpg',
+                'coverImage' => '/images/templates/ocean/ocean-sunset-cliff.jpg',
+                'gallery' => [
+                    '/images/templates/ocean/ocean-sunset-cliff.jpg',
+                    '/images/templates/ocean/couple-ocean.jpg',
+                    '/images/templates/ocean/clear-water.jpg',
+                    '/images/templates/ocean/groom-real.jpg',
+                    '/images/templates/ocean/bride-real.jpg',
+                ],
+                'story' => [
+                    [
+                        'year' => '2023',
+                        'title' => 'Kilau Senja di Uluwatu',
+                        'description' => 'Di atas tebing samudra dengan deburan ombak dan langit jingga keemasan, janji hati ini bermula.',
+                    ],
+                    [
+                        'year' => '2026',
+                        'title' => 'Mutiara Bahagia Seumur Hidup',
+                        'description' => 'Menyatukan dua jiwa dalam ikatan cinta yang sedalam samudra dan seindah mutiara bercahaya.',
+                    ],
+                ],
+            ],
+            events: [
+                [
+                    'id' => 1,
+                    'name' => 'Holy Matrimony by the Ocean',
+                    'starts_at' => now()->addDays(20)->setTime(16, 30)->toIso8601String(),
+                    'ends_at' => now()->addDays(20)->setTime(18, 0)->toIso8601String(),
+                    'timezone' => 'WITA',
+                    'venue_name' => 'Cliffside Infinity Chapel Uluwatu',
+                    'address' => 'Jl. Pantai Suluban, Pecatu, Kuta Selatan, Bali',
+                    'maps_url' => 'https://maps.google.com',
+                ],
+                [
+                    'id' => 2,
+                    'name' => 'Sunset Cocktail & Starlit Dinner',
+                    'starts_at' => now()->addDays(20)->setTime(18, 30)->toIso8601String(),
+                    'ends_at' => now()->addDays(20)->setTime(22, 0)->toIso8601String(),
+                    'timezone' => 'WITA',
+                    'venue_name' => 'The Pearl Reef Lawn Bali',
+                    'address' => 'Jl. Pantai Suluban, Pecatu, Kuta Selatan, Bali',
+                    'maps_url' => 'https://maps.google.com',
+                ],
+            ],
+            giftAccounts: [
+                [
+                    'bank' => 'BCA',
+                    'account_number' => '5420192837',
+                    'account_name' => 'Adrian Pratama',
+                    'qr_image' => 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=BCA_ADRIAN_5420192837',
+                ],
+                [
+                    'bank' => 'Bank Mandiri',
+                    'account_number' => '1420083746192',
+                    'account_name' => 'Sarah Angelica',
+                    'qr_image' => 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=MANDIRI_SARAH_1420083746192',
+                ],
+            ],
+            guestbook: [
+                [
+                    'id' => 1,
+                    'guest_name' => 'Sahabat & Kerabat Bali',
+                    'message' => 'Congratulations Adrian & Sarah! Semoga rumah tangga kalian selalu damai, berkilau, dan penuh cinta sejati!',
+                    'created_at' => '5 menit yang lalu',
+                ],
+            ]
+        );
+
+        $tplOcean = Template::updateOrCreate(
+            ['slug' => 'ocean-pearl-3d'],
+            [
+                'name' => 'Ocean Pearl & Sunset Caustics (Bali Cliff 3D)',
+                'category' => '3d',
+                'thumbnail_path' => '/images/templates/ocean/ocean-sunset-cliff.jpg',
+                'default_design_json' => $designOcean,
+                'schema_version' => 1,
+                'is_premium' => true,
+                'is_active' => true,
+            ]
+        );
+
         // 8. MODERN MINIMALIST (Clean Scandinavian White & Royal Blue)
         $designModern = $makeDesign(
             theme: [

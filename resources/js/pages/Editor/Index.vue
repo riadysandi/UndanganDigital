@@ -222,6 +222,42 @@ const colorPalettes = [
         bg: '#1A130E',
         card: '#281B13',
     },
+    {
+        id: 'celestia',
+        name: 'Celestia (Starlight Midnight)',
+        badge: 'bg-indigo-600',
+        primary: '#C5A059',
+        secondary: '#E8D5B5',
+        bg: '#060814',
+        card: '#0D1226',
+    },
+    {
+        id: 'sakura',
+        name: 'Sakura Zen (Japanese Kyoto)',
+        badge: 'bg-rose-300',
+        primary: '#E87A90',
+        secondary: '#FBD2D7',
+        bg: '#0F1115',
+        card: '#181C22',
+    },
+    {
+        id: 'lantern',
+        name: 'Pingxi Lantern (Oriental Gold & Crimson)',
+        badge: 'bg-amber-600',
+        primary: '#F59E0B',
+        secondary: '#FDE68A',
+        bg: '#0B0914',
+        card: '#1A1424',
+    },
+    {
+        id: 'ocean',
+        name: 'Ocean Pearl (Bali Sunset Caustics)',
+        badge: 'bg-cyan-500',
+        primary: '#06B6D4',
+        secondary: '#CFFAFE',
+        bg: '#04131D',
+        card: '#0B2233',
+    },
 ];
 
 const fontOptions = [
