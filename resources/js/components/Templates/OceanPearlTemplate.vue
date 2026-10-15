@@ -303,19 +303,96 @@ const initAmbientOceanCanvas = () => {
     };
 };
 
-// Interactive 60fps Pearl Oyster Game Engine
+// =========================================================================
+// REVOLUTIONARY 60FPS REEF MINI-GAME: "PENYELAMAN MUTIARA KARANG AJAIB"
+// (Authentic Fluted Scallop Oyster, School of Reef Fish, & 5 Rare Pearls Loop)
+// =========================================================================
+interface RarePearl {
+    id: number;
+    name: string;
+    type: string;
+    icon: string;
+    colors: [string, string, string]; // Specular, Core, Deep
+    glowColor: string;
+    blessing: string;
+}
+
+const rarePearls: RarePearl[] = [
+    {
+        id: 1,
+        name: 'Akoya Putih',
+        type: 'White Akoya',
+        icon: '⚪',
+        colors: ['#FFFFFF', '#F0F9FF', '#BAE6FD'],
+        glowColor: 'rgba(255, 255, 255, 0.95)',
+        blessing: 'Cinta Murni Sedalam Samudra Luas',
+    },
+    {
+        id: 2,
+        name: 'South Sea Emas',
+        type: 'Golden South Sea',
+        icon: '🟡',
+        colors: ['#FFFFFF', '#FEF08A', '#D97706'],
+        glowColor: 'rgba(245, 158, 11, 0.95)',
+        blessing: 'Limpahan Rezeki & Kemakmuran Abadi',
+    },
+    {
+        id: 3,
+        name: 'Hitam Tahiti',
+        type: 'Tahitian Peacock',
+        icon: '🦚',
+        colors: ['#67E8F9', '#1E293B', '#0F172A'],
+        glowColor: 'rgba(56, 189, 248, 0.9)',
+        blessing: 'Kekuatan Mengarungi Bahtera Hidup',
+    },
+    {
+        id: 4,
+        name: 'Pink Kasih',
+        type: 'Rose Pearl',
+        icon: '🌸',
+        colors: ['#FFFFFF', '#FCE7F3', '#DB2777'],
+        glowColor: 'rgba(244, 114, 182, 0.9)',
+        blessing: 'Kelembutan Hati & Kesetiaan Sejati',
+    },
+    {
+        id: 5,
+        name: 'Kristal Laut',
+        type: 'Ocean Azure',
+        icon: '💎',
+        colors: ['#FFFFFF', '#A5F3FC', '#0284C7'],
+        glowColor: 'rgba(6, 182, 212, 0.95)',
+        blessing: 'Kedamaian & Ketenangan Jiwa',
+    },
+];
+
+const collectedPearlIds = ref<number[]>([1]); // Starts with 1 unlocked
+const isOysterOpen = ref(false);
+const latestBlessing = ref('Sentuh kerang mutiara untuk menyelami mutiara doa restu.');
+const currentDiscoveredPearl = ref<RarePearl>(rarePearls[0]);
+
 interface FloatingPearl {
+    x: number;
+    y: number;
+    targetY: number;
+    r: number;
+    speedY: number;
+    sway: number;
+    swaySpeed: number;
+    opacity: number;
+    pearl: RarePearl;
+}
+
+interface RisingBubble {
     x: number;
     y: number;
     r: number;
     speedY: number;
     speedX: number;
+    sway: number;
     opacity: number;
-    glow: number;
-    blessingText: string;
 }
 
-interface WaterRing {
+interface WaterRipple {
     x: number;
     y: number;
     r: number;
@@ -323,18 +400,21 @@ interface WaterRing {
     alpha: number;
 }
 
-const floatingPearls: FloatingPearl[] = [];
-const waterRings: WaterRing[] = [];
-const isOysterOpen = ref(false);
-const latestBlessing = ref('Semoga cinta abadi seluas samudra.');
+interface ReefFish {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    size: number;
+    color: string;
+    finPhase: number;
+    finSpeed: number;
+}
 
-const oceanBlessings = [
-    'Semoga cinta abadi sedalam samudra luas.',
-    'Diberikan ketenangan dalam setiap riak kehidupan.',
-    'Bahtera rumah tangga kokoh mengarungi setiap ombak.',
-    'Penuh limpahan rezeki berkilau bagai mutiara laut.',
-    'Saling mengasihi hingga ke ujung cakrawala senja.',
-];
+const activeFloatingPearls: FloatingPearl[] = [];
+const activeWaterRipples: WaterRipple[] = [];
+const activeBubbles: RisingBubble[] = [];
+const reefFishes: ReefFish[] = [];
 
 const initInteractivePearlGame = () => {
     const canvas = pearlGameCanvasRef.value;
@@ -354,154 +434,312 @@ const initInteractivePearlGame = () => {
     };
     window.addEventListener('resize', onResize);
 
-    const oysterCenter = {
-        get x() { return width / 2; },
-        get y() { return height * 0.72; }
-    };
+    // Initial school of reef fish
+    reefFishes.length = 0;
+    const fishColors = ['#F97316', '#38BDF8', '#FBBF24', '#06B6D4', '#FB7185'];
+    for (let i = 0; i < 7; i++) {
+        reefFishes.push({
+            x: Math.random() * width,
+            y: 40 + Math.random() * (height * 0.55),
+            vx: (Math.random() > 0.5 ? 1 : -1) * (0.8 + Math.random() * 0.7),
+            vy: (Math.random() - 0.5) * 0.3,
+            size: 14 + Math.random() * 8,
+            color: fishColors[i % fishColors.length],
+            finPhase: Math.random() * Math.PI * 2,
+            finSpeed: 0.15 + Math.random() * 0.1,
+        });
+    }
 
-    let oysterBreath = 0;
+    let oysterHingeProgress = 0;
+    let oysterTargetHinge = 0;
+    let breathTime = 0;
 
     const render = () => {
         ctx.clearRect(0, 0, width, height);
-        oysterBreath += 0.03;
+        breathTime += 0.03;
 
-        // 1. Draw Water Ripple Rings
-        for (let i = waterRings.length - 1; i >= 0; i--) {
-            const ring = waterRings[i];
-            ring.r += 1.4;
-            ring.alpha -= 0.015;
+        const ox = width / 2;
+        const oy = height * 0.78;
+        const oW = Math.min(width * 0.38, 130);
+        const oH = oW * 0.62;
+
+        // Smooth physics spring for oyster hinge
+        oysterTargetHinge = isOysterOpen.value ? 1 : (0.12 + Math.sin(breathTime) * 0.05);
+        oysterHingeProgress += (oysterTargetHinge - oysterHingeProgress) * 0.12;
+
+        // 1. Draw Water Ripple Waves
+        for (let i = activeWaterRipples.length - 1; i >= 0; i--) {
+            const rip = activeWaterRipples[i];
+            rip.r += 2.2;
+            rip.alpha -= 0.02;
 
             ctx.save();
             ctx.beginPath();
-            ctx.ellipse(ring.x, ring.y, ring.r, ring.r * 0.45, 0, 0, Math.PI * 2);
-            ctx.strokeStyle = `rgba(56, 189, 248, ${ring.alpha})`;
+            ctx.ellipse(rip.x, rip.y, rip.r, rip.r * 0.45, 0, 0, Math.PI * 2);
+            ctx.strokeStyle = `rgba(56, 189, 248, ${rip.alpha})`;
             ctx.lineWidth = 1.8;
             ctx.stroke();
             ctx.restore();
 
-            if (ring.alpha <= 0) {
-                waterRings.splice(i, 1);
+            if (rip.alpha <= 0 || rip.r >= rip.maxR) {
+                activeWaterRipples.splice(i, 1);
             }
         }
 
-        // 2. Draw 3D Pearl Oyster Shell (Mother of Pearl)
-        const ox = oysterCenter.x;
-        const oy = oysterCenter.y;
-        const oW = Math.min(width * 0.35, 120);
-        const oH = oW * 0.65;
+        // 2. Draw School of Reef Fish
+        for (const f of reefFishes) {
+            f.x += f.vx;
+            f.y += f.vy + Math.sin(f.finPhase) * 0.3;
+            f.finPhase += f.finSpeed;
 
+            // Turn around at borders
+            if (f.x > width + 30) {
+                f.x = -30;
+                f.y = 40 + Math.random() * (height * 0.5);
+            }
+            if (f.x < -30) {
+                f.x = width + 30;
+                f.y = 40 + Math.random() * (height * 0.5);
+            }
+
+            ctx.save();
+            ctx.translate(f.x, f.y);
+            const facingLeft = f.vx < 0;
+            if (facingLeft) ctx.scale(-1, 1);
+
+            // Fish body
+            ctx.fillStyle = f.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, f.size, f.size * 0.55, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tail fin with oscillation
+            const tailWiggle = Math.sin(f.finPhase) * 4;
+            ctx.fillStyle = f.color;
+            ctx.beginPath();
+            ctx.moveTo(-f.size * 0.8, 0);
+            ctx.lineTo(-f.size * 1.5, -f.size * 0.6 + tailWiggle);
+            ctx.lineTo(-f.size * 1.3, 0);
+            ctx.lineTo(-f.size * 1.5, f.size * 0.6 + tailWiggle);
+            ctx.closePath();
+            ctx.fill();
+
+            // Eye
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(f.size * 0.5, -f.size * 0.15, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#0F172A';
+            ctx.beginPath();
+            ctx.arc(f.size * 0.55, -f.size * 0.15, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // 3. Draw Sandy Ocean Floor & Coral Reef Base
+        ctx.save();
+        const sandGrad = ctx.createLinearGradient(0, height * 0.75, 0, height);
+        sandGrad.addColorStop(0, 'rgba(15, 23, 42, 0)');
+        sandGrad.addColorStop(0.3, 'rgba(8, 47, 73, 0.4)');
+        sandGrad.addColorStop(1, 'rgba(3, 105, 161, 0.7)');
+        ctx.fillStyle = sandGrad;
+        ctx.fillRect(0, height * 0.75, width, height * 0.25);
+
+        // Sea sand pebble accents
+        ctx.fillStyle = 'rgba(186, 230, 253, 0.3)';
+        ctx.beginPath();
+        ctx.ellipse(ox - oW * 0.7, oy + 20, 8, 4, 0, 0, Math.PI * 2);
+        ctx.ellipse(ox + oW * 0.8, oy + 18, 12, 6, 0.2, 0, Math.PI * 2);
+        ctx.ellipse(ox + oW * 0.3, oy + 25, 6, 3, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+
+        // 4. DRAW 3D AUTHENTIC FLUTED SCALLOP OYSTER SHELL
         ctx.save();
         ctx.translate(ox, oy);
 
-        // Lower Shell Half
-        const lowerGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, oW);
-        lowerGrad.addColorStop(0, '#E0F2FE');
-        lowerGrad.addColorStop(0.4, '#BAE6FD');
-        lowerGrad.addColorStop(0.8, '#0369A1');
+        // Shadow beneath shell
+        const shadowGrad = ctx.createRadialGradient(0, 15, 10, 0, 15, oW * 1.1);
+        shadowGrad.addColorStop(0, 'rgba(0, 0, 0, 0.8)');
+        shadowGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = shadowGrad;
+        ctx.beginPath();
+        ctx.ellipse(0, 15, oW * 1.1, oH * 0.45, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // --- LOWER SHELL (Static Deep Cup with Nacre) ---
+        const lowerGrad = ctx.createLinearGradient(0, -oH * 0.2, 0, oH);
+        lowerGrad.addColorStop(0, '#0284C7');
+        lowerGrad.addColorStop(0.5, '#0369A1');
         lowerGrad.addColorStop(1, '#0C4A6E');
 
+        // Scallop bottom fan contour with 5 curved ribs
         ctx.beginPath();
-        ctx.ellipse(0, 5, oW, oH, 0, 0, Math.PI);
+        ctx.moveTo(-oW, 0);
+        ctx.quadraticCurveTo(-oW * 0.7, oH * 0.9, 0, oH);
+        ctx.quadraticCurveTo(oW * 0.7, oH * 0.9, oW, 0);
+        ctx.quadraticCurveTo(0, -oH * 0.2, -oW, 0);
+        ctx.closePath();
         ctx.fillStyle = lowerGrad;
         ctx.fill();
         ctx.strokeStyle = '#38BDF8';
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Iridescent Mother-of-Pearl Cushion Bed
-        const bedGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, oW * 0.8);
-        bedGrad.addColorStop(0, '#FFFFFF');
-        bedGrad.addColorStop(0.3, '#FDF2F8');
-        bedGrad.addColorStop(0.7, '#E0F2FE');
-        bedGrad.addColorStop(1, '#7DD3FC');
+        // Iridescent Nacre (Mother-of-Pearl) interior bed
+        const nacreGrad = ctx.createRadialGradient(0, 5, 2, 0, 5, oW * 0.8);
+        nacreGrad.addColorStop(0, '#FFFFFF');
+        nacreGrad.addColorStop(0.3, '#FDF2F8');
+        nacreGrad.addColorStop(0.7, '#E0F2FE');
+        nacreGrad.addColorStop(1, '#7DD3FC');
         ctx.beginPath();
-        ctx.ellipse(0, 0, oW * 0.85, oH * 0.5, 0, 0, Math.PI * 2);
-        ctx.fillStyle = bedGrad;
+        ctx.ellipse(0, oH * 0.25, oW * 0.85, oH * 0.45, 0, 0, Math.PI * 2);
+        ctx.fillStyle = nacreGrad;
         ctx.fill();
 
-        // Shimmering Golden Core Pearl in Nest
-        const corePearlR = oW * 0.22;
-        const pearlGrad = ctx.createRadialGradient(-corePearlR * 0.3, -corePearlR * 0.3, 1, 0, 0, corePearlR);
-        pearlGrad.addColorStop(0, '#FFFFFF');
-        pearlGrad.addColorStop(0.25, '#FEF08A');
-        pearlGrad.addColorStop(0.65, '#F59E0B');
-        pearlGrad.addColorStop(1, '#D97706');
+        // Resting Pearl inside oyster nest
+        const nestPearlR = oW * 0.18;
+        const curPearl = currentDiscoveredPearl.value;
+        const pearlGrad = ctx.createRadialGradient(-nestPearlR * 0.3, oH * 0.25 - nestPearlR * 0.3, 1, 0, oH * 0.25, nestPearlR);
+        pearlGrad.addColorStop(0, curPearl.colors[0]);
+        pearlGrad.addColorStop(0.4, curPearl.colors[1]);
+        pearlGrad.addColorStop(1, curPearl.colors[2]);
 
-        ctx.beginPath();
-        ctx.arc(0, -2, corePearlR, 0, Math.PI * 2);
-        ctx.fillStyle = pearlGrad;
-        ctx.shadowColor = 'rgba(251, 191, 36, 0.85)';
+        ctx.save();
+        ctx.shadowColor = curPearl.glowColor;
         ctx.shadowBlur = 18;
-        ctx.fill();
-        ctx.shadowBlur = 0;
-
-        // Upper Shell Flap (Opens dynamically on click)
-        const openProgress = isOysterOpen.value ? 1 : 0.2 + Math.sin(oysterBreath) * 0.08;
-        const upperH = oH * (1 - openProgress * 0.9);
-        const upperOffsetY = -openProgress * (oH * 0.9);
-
-        const upperGrad = ctx.createRadialGradient(0, upperOffsetY, 10, 0, upperOffsetY, oW);
-        upperGrad.addColorStop(0, '#BAE6FD');
-        upperGrad.addColorStop(0.4, '#38BDF8');
-        upperGrad.addColorStop(0.8, '#0284C7');
-        upperGrad.addColorStop(1, '#082F49');
-
         ctx.beginPath();
-        ctx.ellipse(0, upperOffsetY, oW * 0.95, Math.max(8, upperH), 0, Math.PI, 0);
+        ctx.arc(0, oH * 0.25, nestPearlR, 0, Math.PI * 2);
+        ctx.fillStyle = pearlGrad;
+        ctx.fill();
+        ctx.restore();
+
+        // --- UPPER SHELL (Flap that hinges up and down) ---
+        // As oysterHingeProgress goes from 0 to 1, the upper shell rotates upward
+        const upperOffsetY = -oysterHingeProgress * (oH * 1.15);
+        const upperHeight = oH * (1 - oysterHingeProgress * 0.65);
+
+        ctx.save();
+        ctx.translate(0, upperOffsetY);
+
+        const upperGrad = ctx.createLinearGradient(0, -upperHeight, 0, 0);
+        upperGrad.addColorStop(0, '#38BDF8');
+        upperGrad.addColorStop(0.5, '#0284C7');
+        upperGrad.addColorStop(1, '#075985');
+
+        // Scalloped fluted fan upper contour
+        ctx.beginPath();
+        ctx.moveTo(-oW * 0.95, 0);
+        ctx.quadraticCurveTo(-oW * 0.7, -upperHeight * 1.1, 0, -upperHeight);
+        ctx.quadraticCurveTo(oW * 0.7, -upperHeight * 1.1, oW * 0.95, 0);
+        ctx.quadraticCurveTo(0, upperHeight * 0.2, -oW * 0.95, 0);
+        ctx.closePath();
         ctx.fillStyle = upperGrad;
         ctx.fill();
         ctx.strokeStyle = '#BAE6FD';
-        ctx.lineWidth = 2;
+        ctx.lineWidth = 2.2;
         ctx.stroke();
 
-        ctx.restore();
+        // Scallop radial ridges
+        ctx.strokeStyle = 'rgba(224, 242, 254, 0.4)';
+        ctx.lineWidth = 1.2;
+        for (let r = -3; r <= 3; r++) {
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.quadraticCurveTo((r * oW) / 4.5, -upperHeight * 0.6, (r * oW * 0.95) / 3.8, -upperHeight * 0.95);
+            ctx.stroke();
+        }
 
-        // 3. Draw Rising Floating Pearls
-        for (let i = floatingPearls.length - 1; i >= 0; i--) {
-            const p = floatingPearls[i];
-            p.y += p.speedY;
-            p.x += p.speedX;
-            p.glow += 0.08;
+        ctx.restore(); // restore upper shell
+        ctx.restore(); // restore oyster center
+
+        // 5. Rising Air Bubbles
+        for (let i = activeBubbles.length - 1; i >= 0; i--) {
+            const b = activeBubbles[i];
+            b.y += b.speedY;
+            b.x += b.speedX + Math.sin(b.sway) * 0.4;
+            b.sway += 0.05;
 
             ctx.save();
-            ctx.translate(p.x, p.y);
-
-            // Radiant Halo
-            const haloGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, p.r * 2.5);
-            haloGrad.addColorStop(0, `rgba(254, 240, 138, ${p.opacity * 0.8})`);
-            haloGrad.addColorStop(0.5, `rgba(56, 189, 248, ${p.opacity * 0.3})`);
-            haloGrad.addColorStop(1, 'rgba(2, 132, 199, 0)');
-            ctx.fillStyle = haloGrad;
             ctx.beginPath();
-            ctx.arc(0, 0, p.r * 2.5, 0, Math.PI * 2);
+            ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+            ctx.fillStyle = `rgba(186, 230, 253, ${b.opacity * 0.6})`;
             ctx.fill();
+            ctx.strokeStyle = `rgba(255, 255, 255, ${b.opacity * 0.8})`;
+            ctx.lineWidth = 1;
+            ctx.stroke();
+            ctx.restore();
 
-            // Pearl Sphere
-            const pGrad = ctx.createRadialGradient(-p.r * 0.3, -p.r * 0.3, 1, 0, 0, p.r);
-            pGrad.addColorStop(0, '#FFFFFF');
-            pGrad.addColorStop(0.3, '#FEF08A');
-            pGrad.addColorStop(0.75, '#F59E0B');
-            pGrad.addColorStop(1, '#B45309');
+            if (b.y < 20) {
+                activeBubbles.splice(i, 1);
+            }
+        }
+
+        // 6. Floating Discovered Pearls
+        for (let i = activeFloatingPearls.length - 1; i >= 0; i--) {
+            const fp = activeFloatingPearls[i];
+            fp.y += fp.speedY;
+            fp.x += Math.sin(fp.sway) * 0.5;
+            fp.sway += fp.swaySpeed;
+
+            // Decelerate as it reaches target mid-water zone
+            if (fp.y < fp.targetY) {
+                fp.speedY *= 0.92;
+            }
+
+            ctx.save();
+            ctx.translate(fp.x, fp.y);
+
+            // Shimmering Aqua Bubble Sheath
+            const bubbleR = fp.r * 1.7;
+            const bGrad = ctx.createRadialGradient(0, 0, 1, 0, 0, bubbleR);
+            bGrad.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+            bGrad.addColorStop(0.7, 'rgba(56, 189, 248, 0.3)');
+            bGrad.addColorStop(1, 'rgba(2, 132, 199, 0.1)');
+            ctx.fillStyle = bGrad;
+            ctx.beginPath();
+            ctx.arc(0, 0, bubbleR, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            // 3D Luminous Pearl Sphere
+            const pGrad = ctx.createRadialGradient(-fp.r * 0.35, -fp.r * 0.35, 1, 0, 0, fp.r);
+            pGrad.addColorStop(0, fp.pearl.colors[0]);
+            pGrad.addColorStop(0.4, fp.pearl.colors[1]);
+            pGrad.addColorStop(1, fp.pearl.colors[2]);
+
+            ctx.shadowColor = fp.pearl.glowColor;
+            ctx.shadowBlur = 22;
+            ctx.beginPath();
+            ctx.arc(0, 0, fp.r, 0, Math.PI * 2);
             ctx.fillStyle = pGrad;
-            ctx.beginPath();
-            ctx.arc(0, 0, p.r, 0, Math.PI * 2);
             ctx.fill();
+            ctx.shadowBlur = 0;
 
-            // Text Tag for Pearl
-            ctx.fillStyle = `rgba(240, 249, 255, ${p.opacity})`;
-            ctx.font = 'bold 10px sans-serif';
+            // Blessing Banner Tag beneath floating pearl
+            ctx.fillStyle = 'rgba(8, 47, 73, 0.85)';
+            ctx.strokeStyle = '#38BDF8';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(-80, fp.r + 8, 160, 22, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 9px sans-serif';
             ctx.textAlign = 'center';
-            ctx.fillText(p.blessingText, 0, -p.r - 8);
+            ctx.textBaseline = 'middle';
+            ctx.fillText(fp.pearl.blessing, 0, fp.r + 19);
 
             ctx.restore();
 
-            // Dissolve as it reaches top water surface
-            if (p.y < 40) {
-                p.opacity -= 0.025;
-            }
-
-            if (p.opacity <= 0) {
-                floatingPearls.splice(i, 1);
+            // Fade if reached top
+            if (fp.y < 35) {
+                fp.opacity -= 0.03;
+                if (fp.opacity <= 0) activeFloatingPearls.splice(i, 1);
             }
         }
 
@@ -516,60 +754,106 @@ const initInteractivePearlGame = () => {
     };
 };
 
-// Interactive Tap on Oyster Game
+// Interactive Tap Handler (Exact Oyster Hitbox + Water Ripple Physics)
 const handleTapOysterPond = (e: MouseEvent | TouchEvent) => {
     const container = pearlGameContainerRef.value;
     if (!container) return;
 
     const rect = container.getBoundingClientRect();
     let clickX = container.clientWidth / 2;
-    let clickY = container.clientHeight * 0.72;
+    let clickY = container.clientHeight * 0.78;
 
     if ('clientX' in e) {
         clickX = e.clientX - rect.left;
         clickY = e.clientY - rect.top;
+    } else if (e.touches && e.touches[0]) {
+        clickX = e.touches[0].clientX - rect.left;
+        clickY = e.touches[0].clientY - rect.top;
     }
 
-    // Ripple
-    waterRings.push({
+    const ox = container.clientWidth / 2;
+    const oy = container.clientHeight * 0.78;
+    const oW = Math.min(container.clientWidth * 0.38, 130);
+
+    // Dynamic Water Ripple from touch position
+    activeWaterRipples.push({
         x: clickX,
         y: clickY,
-        r: 10,
-        maxR: 90,
+        r: 8,
+        maxR: 120,
         alpha: 0.9,
     });
 
-    // Open oyster shell
-    isOysterOpen.value = true;
-    setTimeout(() => {
-        isOysterOpen.value = false;
-    }, 1200);
+    // Make nearby fish scatter away naturally!
+    for (const f of reefFishes) {
+        const dist = Math.hypot(f.x - clickX, f.y - clickY);
+        if (dist < 140) {
+            f.vx = (f.x > clickX ? 1 : -1) * (2.4 + Math.random() * 1.5);
+            f.vy = (f.y > clickY ? 1 : -1) * (1.2 + Math.random() * 0.8);
+        }
+    }
 
-    // Pick random blessing
-    const pickedBlessing = oceanBlessings[Math.floor(Math.random() * oceanBlessings.length)];
-    latestBlessing.value = pickedBlessing;
+    // HITBOX TEST: ONLY open oyster if clicked on or near the oyster shell!
+    const distToOyster = Math.hypot(clickX - ox, clickY - oy);
+    const isClickedOnOyster = distToOyster < oW * 1.1;
 
-    // Launch luminous floating pearl
-    floatingPearls.push({
-        x: clickX + (Math.random() - 0.5) * 20,
-        y: clickY - 15,
-        r: 14 + Math.random() * 4,
-        speedY: -(1.5 + Math.random() * 0.8),
-        speedX: (Math.random() - 0.5) * 0.6,
-        opacity: 1,
-        glow: 0,
-        blessingText: pickedBlessing,
-    });
+    if (isClickedOnOyster || isOysterOpen.value === false) {
+        isOysterOpen.value = true;
 
-    pearlsCollectedCount.value++;
+        // Spawn bubbles erupting from oyster opening
+        for (let b = 0; b < 10; b++) {
+            activeBubbles.push({
+                x: ox + (Math.random() - 0.5) * (oW * 0.7),
+                y: oy - 5,
+                r: 3 + Math.random() * 4,
+                speedY: -(1.8 + Math.random() * 1.5),
+                speedX: (Math.random() - 0.5) * 0.8,
+                sway: Math.random() * Math.PI * 2,
+                opacity: 0.9,
+            });
+        }
 
-    // Sparkling coastal confetti
-    confetti({
-        particleCount: 20,
-        spread: 50,
-        origin: { y: 0.75 },
-        colors: ['#38BDF8', '#F59E0B', '#F0F9FF', '#0284C7'],
-    });
+        // Cycle or discover next pearl in collection
+        const nextId = (collectedPearlIds.value.length % rarePearls.length) + 1;
+        if (!collectedPearlIds.value.includes(nextId)) {
+            collectedPearlIds.value.push(nextId);
+        }
+
+        const pickedPearl = rarePearls.find((p) => p.id === nextId) || rarePearls[0];
+        currentDiscoveredPearl.value = pickedPearl;
+        latestBlessing.value = pickedPearl.blessing;
+
+        // Launch pearl strictly OUT OF THE CENTER OF THE OYSTER BED!
+        activeFloatingPearls.push({
+            x: ox,
+            y: oy - 15,
+            targetY: container.clientHeight * 0.35,
+            r: 16,
+            speedY: -2.2,
+            sway: 0,
+            swaySpeed: 0.04,
+            opacity: 1,
+            pearl: pickedPearl,
+        });
+
+        pearlsCollectedCount.value++;
+
+        // Confetti burst for pearl discovery
+        confetti({
+            particleCount: 28,
+            spread: 55,
+            origin: {
+                x: (rect.left + ox) / window.innerWidth,
+                y: (rect.top + oy) / window.innerHeight,
+            },
+            colors: [pickedPearl.colors[1], '#38BDF8', '#FFFFFF', '#F59E0B'],
+        });
+
+        // Auto close after 2.5s
+        setTimeout(() => {
+            isOysterOpen.value = false;
+        }, 2200);
+    }
 };
 
 let cleanupCaustics: (() => void) | undefined;
@@ -971,27 +1255,29 @@ onBeforeUnmount(() => {
                 </section>
 
                 <!-- ====================================================
-                     SECTION 3: 60FPS INTERACTIVE PEARL OYSTER MINI-GAME
+                     SECTION 3: 60FPS INTERACTIVE PEARL REEF MINI-GAME
                      ==================================================== -->
                 <section class="px-6 py-12 max-w-xl mx-auto ocean-fade-up">
                     <div class="text-center mb-6">
-                        <span class="text-[10px] tracking-[0.3em] uppercase text-sky-400 font-semibold">Wahana Interaktif Laut</span>
-                        <h3 class="text-2xl sm:text-3xl font-serif font-bold text-white mt-1">Mutiara Berkah Samudra</h3>
-                        <p class="text-xs text-sky-200/70 mt-1">Sentuh kerang mutiara untuk melepaskan mutiara doa restu</p>
+                        <span class="text-[10px] tracking-[0.3em] uppercase text-sky-400 font-semibold">WAHANA INTERAKTIF DASAR LAUT</span>
+                        <h3 class="text-2xl sm:text-3xl font-serif font-bold text-white mt-1">Penyelaman Mutiara Karang Ajaib</h3>
+                        <p class="text-xs text-sky-200/70 mt-1">
+                            Sentuh kerang mutiara untuk membukanya dan temukan 5 mutiara berkah samudra langka!
+                        </p>
                     </div>
 
                     <!-- Interactive Pearl Oyster Pool Container -->
                     <div
                         ref="pearlGameContainerRef"
                         @click="handleTapOysterPond"
-                        class="relative h-80 sm:h-96 rounded-3xl border-2 border-sky-400/60 shadow-[0_0_50px_rgba(56,189,248,0.25)] overflow-hidden cursor-pointer select-none bg-[#03152B]"
+                        class="relative h-84 sm:h-96 rounded-3xl border-2 border-sky-400/60 shadow-[0_0_50px_rgba(56,189,248,0.35)] overflow-hidden cursor-pointer select-none bg-[#03152B]"
                     >
                         <div
                             class="absolute inset-0 pointer-events-none filter brightness-70"
-                            style="background: radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.4) 0%, rgba(3, 21, 43, 0.95) 80%), url('/images/templates/ocean/clear-water.jpg') center/cover;"
+                            style="background: radial-gradient(circle at 50% 50%, rgba(14, 165, 233, 0.45) 0%, rgba(3, 21, 43, 0.95) 80%), url('/images/templates/ocean/clear-water.jpg') center/cover;"
                         ></div>
 
-                        <!-- 60 FPS Canvas for Oyster Shell & Floating Pearls -->
+                        <!-- 60 FPS Canvas for Scallop Shell, Fish & Floating Pearls -->
                         <canvas
                             ref="pearlGameCanvasRef"
                             class="absolute inset-0 w-full h-full z-10"
@@ -999,19 +1285,43 @@ onBeforeUnmount(() => {
 
                         <!-- Counter and Cue Overlay -->
                         <div class="absolute top-4 inset-x-4 z-20 flex items-center justify-between pointer-events-none">
-                            <div class="px-3.5 py-1 rounded-full bg-black/75 backdrop-blur-md border border-sky-400/50 text-sky-200 text-xs font-semibold shadow-lg">
-                                🦪 {{ pearlsCollectedCount }} Mutiara Doa Terkumpul
+                            <div class="px-3.5 py-1.5 rounded-full bg-black/80 backdrop-blur-md border border-sky-400/50 text-sky-200 text-xs font-semibold shadow-lg flex items-center space-x-1.5">
+                                <span>🦪</span>
+                                <span>Koleksi: <strong>{{ collectedPearlIds.length }}/5</strong> Mutiara</span>
                             </div>
-                            <div class="text-[11px] text-amber-200 bg-sky-950/80 px-3 py-1 rounded-full border border-sky-400/40 animate-pulse">
-                                Ketuk Kerang di Dasar Air ✨
+                            <div class="text-[11px] text-amber-200 bg-sky-950/85 px-3 py-1.5 rounded-full border border-sky-400/40 animate-pulse font-medium">
+                                Ketuk Kerang di Dasar 🌊
                             </div>
                         </div>
 
-                        <!-- Current Blessing Card -->
+                        <!-- Current Blessing Card Overlay -->
                         <div class="absolute bottom-4 inset-x-4 z-20 pointer-events-none">
-                            <div class="p-3 rounded-2xl bg-black/80 backdrop-blur-md border border-sky-400/40 text-center shadow-xl">
-                                <div class="text-[10px] uppercase text-sky-300 font-semibold tracking-wider">Doa Restu Samudra:</div>
-                                <div class="text-xs text-white italic mt-0.5">"{{ latestBlessing }}"</div>
+                            <div class="p-3.5 rounded-2xl bg-black/85 backdrop-blur-md border border-sky-400/50 text-center shadow-xl">
+                                <div class="text-[10px] uppercase text-sky-300 font-bold tracking-wider flex items-center justify-center space-x-1">
+                                    <span>✨</span>
+                                    <span>{{ currentDiscoveredPearl.name }} ({{ currentDiscoveredPearl.type }})</span>
+                                </div>
+                                <div class="text-xs text-white font-medium italic mt-1">"{{ latestBlessing }}"</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 5 Rare Blessing Pearls Collection Tray -->
+                    <div class="mt-4 p-4 rounded-2xl bg-[#08182E]/90 border border-sky-500/30 shadow-lg">
+                        <div class="text-[11px] uppercase tracking-wider text-sky-300 font-bold mb-2.5 text-center">
+                            Koleksi 5 Mutiara Berkah Samudra
+                        </div>
+                        <div class="grid grid-cols-5 gap-2 text-center">
+                            <div
+                                v-for="p in rarePearls"
+                                :key="p.id"
+                                class="p-2 rounded-xl border transition-all duration-300 flex flex-col items-center justify-between"
+                                :class="collectedPearlIds.includes(p.id) ? 'bg-sky-500/20 border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.4)]' : 'bg-black/40 border-stone-800 opacity-40'"
+                            >
+                                <span class="text-xl mb-1">{{ collectedPearlIds.includes(p.id) ? p.icon : '🔒' }}</span>
+                                <div class="text-[9px] font-bold text-white truncate max-w-full">
+                                    {{ p.name }}
+                                </div>
                             </div>
                         </div>
                     </div>
